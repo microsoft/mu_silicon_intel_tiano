@@ -8,6 +8,10 @@ tags/
 *.bak
 BuildConfig.conf
 
+# Ignore our repos from CI
+/MU_BASECORE/
+/Common/
+
 # Ignore unused UDK PKGs.
 /ArmPkg/
 /ArmPlatformPkg/
