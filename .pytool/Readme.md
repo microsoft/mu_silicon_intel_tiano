@@ -4,6 +4,9 @@
 
 | Package             | Windows VS2019 (IA32/X64)| Ubuntu GCC (IA32/X64/ARM/AARCH64) | Known Issues |
 | :----               | :-----                   | :----                             | :---         |
+| IntelFsp2Pkg        |
+| IntelFsp2WrapperPkg |
+| IntelSiliconPkg     |
 
 For more detailed status look at the test results of the latest CI run on the
 repo readme.
