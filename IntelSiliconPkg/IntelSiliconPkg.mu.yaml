@@ -1,0 +1,5 @@
+{
+  "DSCCheck": {
+        "IgnoreInf": ["IntelSiliconPkg/Feature/Capsule/MicrocodeCapsuleTxt/Microcode/Microcode.inf"]
+    }
+}
