@@ -142,7 +142,7 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
 
     def GetDependencies(self):
         # MU_CHANGE BEGIN
-        ''' Return Git Repository Dependendencies
+        ''' Return Git Repository Dependencies
 
         Return an iterable of dictionary objects with the following fields
         {
@@ -158,12 +158,12 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "dev/201911_pre"
+                "Branch": "release/201911"
             },
             {
                 "Path": "MU_BASECORE",
                 "Url": "https://github.com/Microsoft/mu_basecore.git",
-                "Branch": "dev/201911_pre"
+                "Branch": "release/201911"
             }
         ]
         # MU_CHANGE END
