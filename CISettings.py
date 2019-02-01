@@ -55,12 +55,12 @@ class Settings(CiBuildSettingsManager, CiSetupSettingsManager, UpdateSettingsMan
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "dev/201905"
+                "Branch": "dev/201908"
             },
             {
                 "Path": "MU_BASECORE",
                 "Url": "https://github.com/Microsoft/mu_basecore.git",
-                "Branch": "dev/201905"
+                "Branch": "dev/201908"
             }
         ]
 
