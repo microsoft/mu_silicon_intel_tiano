@@ -236,7 +236,7 @@ VTdSetAttribute (
   UINT16               Segment;
   VTD_SOURCE_ID        SourceId;
   CHAR8                PerfToken[sizeof("VTD(S0000.B00.D00.F00)")];
-  UINT32               Identifier;
+  //UINT32               Identifier; //MU_CHANGE - Remove custom perf identifier
 
   DumpVtdIfError ();
 
@@ -263,18 +263,25 @@ VTdSetAttribute (
     }
     Status = RequestAccessAttribute (Segment, SourceId, DeviceAddress, Length, IoMmuAccess);
   } else {
-    PERF_CODE (
-      AsciiSPrint (PerfToken, sizeof(PerfToken), "S%04xB%02xD%02xF%01x", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function);
-      Identifier = (Segment << 16) | SourceId.Uint16;
-      PERF_START_EX (gImageHandle, PerfToken, "IntelVTD", 0, Identifier);
-    );
+    //MU_CHANGE Begin - Remove custom perf identifier
+    //PERF_CODE (
+    //  AsciiSPrint (PerfToken, sizeof(PerfToken), "S%04xB%02xD%02xF%01x", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function);
+    //  Identifier = (Segment << 16) | SourceId.Uint16;
+    //  PERF_START_EX (gImageHandle, PerfToken, "IntelVTD", 0, Identifier);
+    //);
+    //
+    //Status = SetAccessAttribute (Segment, SourceId, DeviceAddress, Length, IoMmuAccess);
+    //
+    //PERF_CODE (
+    //  Identifier = (Segment << 16) | SourceId.Uint16;
+    //  PERF_END_EX (gImageHandle, PerfToken, "IntelVTD", 0, Identifier);
+    //);
 
+    AsciiSPrint (PerfToken, sizeof(PerfToken), "S%04xB%02xD%02xF%01x", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function);
+    PERF_INMODULE_BEGIN(PerfToken);
     Status = SetAccessAttribute (Segment, SourceId, DeviceAddress, Length, IoMmuAccess);
-
-    PERF_CODE (
-      Identifier = (Segment << 16) | SourceId.Uint16;
-      PERF_END_EX (gImageHandle, PerfToken, "IntelVTD", 0, Identifier);
-    );
+    PERF_INMODULE_END(PerfToken);
+    //MU_CHANGE End - Remove custom perf identifier
   }
 
   if (!EFI_ERROR(Status)) {
