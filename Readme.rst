@@ -20,7 +20,7 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- None
+- Change IoMmuProtocol installation order so that it only occurs after the DMAR table is available.
 
 Bug Fixes-dev
 -------------
