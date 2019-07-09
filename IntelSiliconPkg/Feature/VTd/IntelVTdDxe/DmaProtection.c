@@ -559,6 +559,7 @@ AcpiNotificationFunc (
   )
 {
   EFI_STATUS          Status;
+  EFI_HANDLE          Handle;  //MU_CHANGE
 
   Status = GetDmarAcpiTable ();
   if (EFI_ERROR (Status)) {
@@ -568,6 +569,18 @@ AcpiNotificationFunc (
     return;
   }
   SetupVtd ();
+
+ // MU_CHANGE [BEGIN] - Delay IOMMU protocol install until DMAR table has been initialized
+  Handle = NULL;
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &Handle,
+                  &gEdkiiIoMmuProtocolGuid, &mIntelVTd,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE [END]
+
+
   gBS->CloseEvent (Event);
 }
 
