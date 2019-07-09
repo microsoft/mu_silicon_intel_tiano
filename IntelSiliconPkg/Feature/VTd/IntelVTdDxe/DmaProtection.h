@@ -128,6 +128,9 @@ extern UINT64                           mAbove4GMemoryLimit;
 
 extern EDKII_PLATFORM_VTD_POLICY_PROTOCOL   *mPlatformVTdPolicy;
 
+// MU_CHANGE - Delay IOMMU protocol install until DMAR table has been initialized.
+extern EDKII_IOMMU_PROTOCOL             mIntelVTd;
+
 /**
   Prepare VTD configuration.
 **/
