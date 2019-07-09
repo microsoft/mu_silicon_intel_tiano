@@ -382,7 +382,8 @@ IntelVTdInitialize (
   )
 {
   EFI_STATUS  Status;
-  EFI_HANDLE  Handle;
+
+  // EFI_HANDLE  Handle;     // MU_CHANGE
 
   if ((PcdGet8 (PcdVTdPolicyPropertyMask) & BIT0) == 0) {
     return EFI_UNSUPPORTED;
@@ -390,14 +391,16 @@ IntelVTdInitialize (
 
   InitializeDmaProtection ();
 
-  Handle = NULL;
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &Handle,
-                  &gEdkiiIoMmuProtocolGuid,
-                  &mIntelVTd,
-                  NULL
-                  );
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE [BEGIN] - Delay IOMMU protocol install until DMAR table has been initialized
+  // Handle = NULL;
+  // Status = gBS->InstallMultipleProtocolInterfaces (
+  //                &Handle,
+  //                &gEdkiiIoMmuProtocolGuid, &mIntelVTd,
+  //                NULL
+  //                );
+  // ASSERT_EFI_ERROR (Status);
+  Status = EFI_SUCCESS;
+  // MU_CHANGE [END]
 
   return Status;
 }
