@@ -1,0 +1,70 @@
+## @file
+# Component INF file for the Intel VTd DMAR PEIM.
+#
+# This driver initializes VTd engine based upon EDKII_VTD_INFO_PPI
+# and provide DMA protection in PEI.
+#
+# Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION     = 0x00010017
+  BASE_NAME       = IntelVTdCorePei
+  MODULE_UNI_FILE = IntelVTdCorePei.uni
+  FILE_GUID       = 9311b0cc-5c08-4c0a-bec8-23afab024e48
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 2.0
+  ENTRY_POINT     = IntelVTdDmarInitialize
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  IntelSiliconPkg/IntelSiliconPkg.dec
+
+[Sources]
+  IntelVTdCorePei.c
+  IntelVTdCorePei.h
+  IntelVTdDmar.c
+  DmarTable.c
+  TranslationTable.c
+
+[LibraryClasses]
+  DebugLib
+  BaseMemoryLib
+  BaseLib
+  PeimEntryPoint
+  PeiServicesLib
+  HobLib
+  IoLib
+  CacheMaintenanceLib
+  PciSegmentLib
+  IntelVTdPeiDxeLib
+
+[Guids]
+  gVTdLogBufferHobGuid                ## PRODUCES CONSUMES
+  gVtdPmrInfoDataHobGuid              ## CONSUMES
+
+[Ppis]
+  gEdkiiIoMmuPpiGuid                  ## PRODUCES
+  gEdkiiVTdInfoPpiGuid                ## CONSUMES
+  gEfiPeiMemoryDiscoveredPpiGuid      ## CONSUMES
+  gEfiEndOfPeiSignalPpiGuid           ## CONSUMES
+  gEdkiiVTdNullRootEntryTableGuid     ## CONSUMES
+
+[Pcd]
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdPolicyPropertyMask       ## CONSUMES
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiDmaBufferSize         ## CONSUMES
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiDmaBufferSizeS3       ## CONSUMES
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdSupportAbortDmaMode      ## CONSUMES
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdLogLevel                 ## CONSUMES
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiPostMemLogBufferSize  ## CONSUMES
+
+[Depex]
+  gEfiPeiMasterBootModePpiGuid AND
+  gEdkiiVTdInfoPpiGuid
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  IntelVTdCorePeiExtra.uni
+
