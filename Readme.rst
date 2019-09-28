@@ -48,7 +48,7 @@ Bug Fixes-dev
 1908_CIBuild Changes
 --------------------
 
-- Incomplete
+- Update to latest Stuart tools. IntelFsp packages skipped for now.
 
 1908_Rebase Changes
 -------------------
