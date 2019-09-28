@@ -3,10 +3,16 @@ strategy:
   matrix:
     TARGET_INTELSILICONPKG:
       Build.Pkgs: 'IntelSiliconPkg'
+    TARGET_INTELFSP2:
+      Build.Pkgs: 'IntelFsp2Pkg,IntelFsp2WrapperPkg'
+
+pool:
+  vmImage: ubuntu-16.04
 
 variables:
   GCC_AARCH_PREFIX: bin/aarch64-linux-gnu-
   GCC_ARM_PREFIX: bin/arm-linux-gnueabihf-
+  tool_chain_selection: GCC5
 
 workspace:
   clean: all
@@ -14,44 +20,33 @@ workspace:
 steps:
 - checkout: self
   clean: true
-  
+
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '3.7.x'
     architecture: 'x64'
 
-- script: python -m pip install --upgrade pip
-  displayName: 'Install/Upgrade pip'
-
 - script: pip install -r requirements.txt --upgrade
   displayName: 'Install/Upgrade mu_build'
 
-
 #Build repo
 - task: CmdLine@1
-  displayName: CI Setup $(Build.Pkgs)
+  displayName: Setup $(Build.Pkgs)
   inputs:
     filename: stuart_ci_setup
-    arguments: -c CISettings.py --force-git
-
-- task: CmdLine@1
-  displayName: Submodule Setup $(Build.Pkgs)
-  inputs:
-    filename: stuart_setup
-    arguments: -c CISettings.py
+    arguments: -c CISettings.py --force-git TOOL_CHAIN_TAG=$(tool_chain_selection)
 
 - task: CmdLine@1
   displayName: Update $(Build.Pkgs)
   inputs:
     filename: stuart_update
-    arguments: -c CISettings.py --Tool_Chain GCC5
+    arguments: -c CISettings.py TOOL_CHAIN_TAG=$(tool_chain_selection)
 
 - task: CmdLine@1
   displayName: Build and Test $(Build.Pkgs)
   inputs:
     filename: stuart_ci_build
-    arguments: -c CISettings.py --Tool_Chain GCC5 -p $(Build.Pkgs)
-
+    arguments: -c CISettings.py TOOL_CHAIN_TAG=$(tool_chain_selection) -p $(Build.Pkgs)
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
@@ -71,6 +66,8 @@ steps:
 # Copy the build logs to the artifact staging directory
 - task: CopyFiles@2
   displayName: "Copy build logs"
+  continueOnError: true
+  condition: succeededOrFailed()
   inputs:
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     contents: |
@@ -78,12 +75,18 @@ steps:
       Build/**/BUILDLOG_*.md
       Build/**/CI_*.txt
       Build/**/CI_*.md
+      Build/**/CISETUP.txt
+      Build/**/SETUPLOG.txt
+      Build/**/UPDATELOG.txt
       Build/**/TestSuites.xml
+      Build/**/BUILD_TOOLS_REPORT.html
+      Build/**/OVERRIDELOG.txt
     flattenFolders: true
 
 # Publish build artifacts to Azure Artifacts/TFS or a file share
 - task: PublishBuildArtifacts@1
   continueOnError: true
+  condition: succeededOrFailed()
   displayName: "Publish build logs"
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
