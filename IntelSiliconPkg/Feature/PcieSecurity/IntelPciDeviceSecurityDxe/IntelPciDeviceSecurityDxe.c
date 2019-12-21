@@ -22,14 +22,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/PciIo.h>
 #include <Protocol/DeviceSecurity.h>
 #include <Protocol/PlatformDeviceSecurityPolicy.h>
-#include "TcgDeviceEvent.h"
 
 typedef struct {
-  EDKII_DEVICE_SECURITY_EVENT_DATA_HEADER       EventData;
+  TCG_DEVICE_SECURITY_EVENT_DATA_HEADER         EventData;
   SPDM_MEASUREMENT_BLOCK_COMMON_HEADER          CommonHeader;
   SPDM_MEASUREMENT_BLOCK_DMTF_HEADER            DmtfHeader;
   UINT8                                         Digest[SHA256_DIGEST_SIZE];
-  EDKII_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT  PciContext;
+  TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT    PciContext;
 } EDKII_DEVICE_SECURITY_PCI_EVENT_DATA;
 
 typedef struct {
@@ -327,14 +326,17 @@ ExtendDigestRegister (
   Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0, sizeof(PciData), &PciData);
   ASSERT_EFI_ERROR(Status);
 
-  PcrIndex = EDKII_DEVICE_MEASUREMENT_COMPONENT_PCR_INDEX;
-  EventType = EDKII_DEVICE_MEASUREMENT_COMPONENT_EVENT_TYPE;
+  //
+  // Use PCR 2 for Firmware Blob code.
+  //
+  PcrIndex = 2;
+  EventType = EV_EFI_SPDM_FIRMWARE_BLOB;
 
-  CopyMem (EventLog.EventData.Signature, EDKII_DEVICE_SECURITY_EVENT_DATA_SIGNATURE, sizeof(EventLog.EventData.Signature));
-  EventLog.EventData.Version                  = EDKII_DEVICE_SECURITY_EVENT_DATA_VERSION;
+  CopyMem (EventLog.EventData.Signature, TCG_DEVICE_SECURITY_EVENT_DATA_SIGNATURE, sizeof(EventLog.EventData.Signature));
+  EventLog.EventData.Version                  = TCG_DEVICE_SECURITY_EVENT_DATA_VERSION;
   EventLog.EventData.Length                   = sizeof(EDKII_DEVICE_SECURITY_PCI_EVENT_DATA);
   EventLog.EventData.SpdmHashAlgo             = TcgAlgIdToSpdmHashAlgo (TcgAlgId);
-  EventLog.EventData.DeviceType               = EDKII_DEVICE_SECURITY_EVENT_DATA_DEVICE_TYPE_PCI;
+  EventLog.EventData.DeviceType               = TCG_DEVICE_SECURITY_EVENT_DATA_DEVICE_TYPE_PCI;
 
   EventLog.CommonHeader.Index                      = DigestSel;
   EventLog.CommonHeader.MeasurementSpecification   = SPDM_MEASUREMENT_BLOCK_HEADER_SPECIFICATION_DMTF;
@@ -343,8 +345,8 @@ ExtendDigestRegister (
   EventLog.DmtfHeader.DMTFSpecMeasurementValueSize = SHA256_DIGEST_SIZE;
   CopyMem (&EventLog.Digest, Digest, SHA256_DIGEST_SIZE);
 
-  EventLog.PciContext.Version           = EDKII_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT_VERSION;
-  EventLog.PciContext.Length            = sizeof(EDKII_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT);
+  EventLog.PciContext.Version           = TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT_VERSION;
+  EventLog.PciContext.Length            = sizeof(TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT);
   EventLog.PciContext.VendorId          = PciData.Hdr.VendorId;
   EventLog.PciContext.DeviceId          = PciData.Hdr.DeviceId;
   EventLog.PciContext.RevisionID        = PciData.Hdr.RevisionID;

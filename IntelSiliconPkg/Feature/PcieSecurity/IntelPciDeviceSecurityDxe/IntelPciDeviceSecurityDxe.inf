@@ -16,7 +16,6 @@
 
 [Sources]
   IntelPciDeviceSecurityDxe.c
-  TcgDeviceEvent.h
 
 [Packages]
   MdePkg/MdePkg.dec
