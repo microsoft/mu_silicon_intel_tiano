@@ -18,7 +18,7 @@ LIBRARY_CLASS  = ConfigBlockLib
 
 [Packages]
 MdePkg/MdePkg.dec
-KabylakeSiliconPkg/SiPkg.dec
+IntelSiliconPkg/IntelSiliconPkg.dec
 
 [Sources]
 BaseConfigBlockLib.c
