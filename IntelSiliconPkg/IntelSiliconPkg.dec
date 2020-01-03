@@ -30,10 +30,6 @@
   #
   PeiGetVtdPmrAlignmentLib|Include/Library/PeiGetVtdPmrAlignmentLib.h
 
-  ## @libraryclass Provides services to access ConfigBlock
-  #
-  ConfigBlockLib|Include/Library/ConfigBlockLib.h
-
 [Guids]
   ## GUID for Package token space
   # {A9F8D54E-1107-4F0A-ADD0-4587E7A4A735}
