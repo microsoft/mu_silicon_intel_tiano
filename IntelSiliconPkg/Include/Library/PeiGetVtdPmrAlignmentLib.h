@@ -13,7 +13,6 @@
   Get the global VT-d protected memory alignment.
   @return The maximum protected memory alignment. Ex: 0x100000
 **/
-
 UINTN
 EFIAPI
 GetGlobalVtdPmrAlignment (
