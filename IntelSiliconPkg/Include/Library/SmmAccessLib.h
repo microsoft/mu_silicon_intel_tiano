@@ -1,7 +1,7 @@
 /** @file
   Header file for SMM Access Driver.
 
-  Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -11,10 +11,7 @@
 /**
   This function is to install an SMM Access PPI
   - <b>Introduction</b> \n
-    A module to install a PPI for controlling SMM mode memory access basically for S3 resume usage.
-
-  - @result
-    Publish _PEI_MM_ACCESS_PPI.
+    An API to install an instance of EFI_PEI_MM_ACCESS_PPI. This PPI is commonly used to control SMM mode memory access for S3 resume.
 
     @retval EFI_SUCCESS           - Ppi successfully started and installed.
     @retval EFI_NOT_FOUND         - Ppi can't be found.
