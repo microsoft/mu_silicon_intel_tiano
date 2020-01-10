@@ -2,7 +2,7 @@
   This is the driver that publishes the SMM Access Protocol
   instance for System Agent.
 
-  Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -11,14 +11,24 @@
 static SMM_ACCESS_PRIVATE_DATA  mSmmAccess;
 
 /**
-  This is the standard EFI driver point that
-  installs an SMM Access Protocol
+  <b>SMM Access Driver Entry Point</b>
+  This driver installs an SMM Access Protocol
+  - <b>Introduction</b> \n
+    This module publishes the SMM access protocol.  The protocol is used by the SMM Base driver to access the SMRAM region when the processor is not in SMM.
+    The SMM Base driver uses the services provided by the SMM access protocol to open SMRAM during POST and copy the SMM handler.
+    SMM access protocol is also used to close the SMRAM region once the copying is done.
+    Finally, the SMM access protocol provides services to "Lock" the SMRAM region.
+    Please refer the SMM Protocols section in the attached SMM CIS Specification version 0.9 for further details.
+    This driver is required if SMM is supported. Proper configuration of SMM registers is recommended even if SMM is not supported.
 
-  @param[in] ImageHandle     - Handle for the image of this driver
-  @param[in] SystemTable     - Pointer to the EFI System Table
+  - <b>Porting Recommendations</b> \n
+    No modification of this module is recommended.  Any modification should be done in compliance with the _EFI_SMM_ACCESS_PROTOCOL protocol definition.
+
+  @param[in] ImageHandle        - Handle for the image of this driver
+  @param[in] SystemTable        - Pointer to the EFI System Table
 
   @retval EFI_SUCCESS           - Protocol was installed successfully
-  @exception EFI_UNSUPPORTED    - Protocol was not installed
+  @retval EFI_UNSUPPORTED       - Protocol was not installed
   @retval EFI_NOT_FOUND         - Protocol can't be found.
   @retval EFI_OUT_OF_RESOURCES  - Protocol does not have enough resources to initialize the driver.
 **/
@@ -108,8 +118,7 @@ SmmAccessDriverEntryPoint (
   @param[in] This               - Pointer to the SMM Access Interface.
 
   @retval EFI_SUCCESS           - The region was successfully opened.
-  @retval EFI_DEVICE_ERROR      - The region could not be opened because locked by
-                          chipset.
+  @retval EFI_DEVICE_ERROR      - The region could not be opened because locked by chipset.
   @retval EFI_INVALID_PARAMETER - The descriptor index was out of bounds.
 **/
 EFI_STATUS
@@ -229,13 +238,13 @@ Lock (
   memory controller capabilities.
 
   @param[in] This                  - Pointer to the SMRAM Access Interface.
-  @param[in] SmramMapSize          - Pointer to the variable containing size of the
+  @param[in, out] SmramMapSize     - Pointer to the variable containing size of the
                                      buffer to contain the description information.
-  @param[in] SmramMap              - Buffer containing the data describing the Smram
+  @param[in, out] SmramMap         - Buffer containing the data describing the Smram
                                      region descriptors.
 
-  @retval EFI_BUFFER_TOO_SMALL  - The user did not provide a sufficient buffer.
-  @retval EFI_SUCCESS           - The user provided a sufficiently-sized buffer.
+  @retval EFI_BUFFER_TOO_SMALL     - The user did not provide a sufficient buffer.
+  @retval EFI_SUCCESS              - The user provided a sufficiently-sized buffer.
 **/
 EFI_STATUS
 EFIAPI
