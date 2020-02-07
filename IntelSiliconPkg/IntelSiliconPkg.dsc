@@ -84,6 +84,7 @@
   IntelSiliconPkg/Feature/VTd/PlatformVTdInfoSamplePei/PlatformVTdInfoSamplePei.inf
   IntelSiliconPkg/Feature/Capsule/MicrocodeUpdateDxe/MicrocodeUpdateDxe.inf
   IntelSiliconPkg/Feature/Capsule/Library/MicrocodeFlashAccessLibNull/MicrocodeFlashAccessLibNull.inf
+  IntelSiliconPkg/Feature/ShadowMicrocode/ShadowMicrocodePei.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/PeiFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/DxeSmmFirmwareBootMediaLib.inf
 
