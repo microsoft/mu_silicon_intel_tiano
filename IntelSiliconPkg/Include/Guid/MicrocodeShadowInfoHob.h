@@ -33,7 +33,7 @@ typedef struct {
   // An array with MicrocodeCount elements that stores
   // the shadowed microcode patch address in memory.
   //
-  UINT64    MicrocodeAddrInMemory[];
+  UINT64    MicrocodeAddrInMemory[0];
   //
   // A buffer which contains details about the storage information
   // specific to StorageType.
