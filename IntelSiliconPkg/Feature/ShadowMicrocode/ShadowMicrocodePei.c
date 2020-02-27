@@ -247,7 +247,7 @@ ShadowMicrocodePatchWorker (
       (VOID *) Patches[Index].Address,
       Patches[Index].Size
       );
-    MicrocodeAddressInMemory[Index] = (UINT64) Walker;
+    MicrocodeAddressInMemory[Index] = (UINT64) (UINTN) Walker;
     Flashcontext->MicrocodeAddressInFlash[Index]  = (UINT64) Patches[Index].Address;
     Walker += Patches[Index].Size;
   }
