@@ -58,7 +58,7 @@ typedef struct {
   // microcode patch address on flash. The address is placed in same
   // order as the microcode patches in MicrocodeAddrInMemory.
   //
-  UINT64  MicrocodeAddressInFlash[];
+  UINT64  MicrocodeAddressInFlash[0];
 } EFI_MICROCODE_STORAGE_TYPE_FLASH_CONTEXT;
 
 #endif
