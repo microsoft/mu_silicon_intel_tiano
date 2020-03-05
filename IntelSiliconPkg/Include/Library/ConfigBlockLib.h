@@ -10,7 +10,7 @@
 #define _CONFIG_BLOCK_LIB_H_
 
 /**
-  Create config block table
+  Create config block table.
 
   @param[in]     TotalSize                    - Max size to be allocated for the Config Block Table
   @param[out]    ConfigBlockTableAddress      - On return, points to a pointer to the beginning of Config Block Table Address
@@ -27,7 +27,7 @@ CreateConfigBlockTable (
   );
 
 /**
-  Add config block into config block table structure
+  Add config block into config block table structure.
 
   @param[in]     ConfigBlockTableAddress      - A pointer to the beginning of Config Block Table Address
   @param[out]    ConfigBlockAddress           - On return, points to a pointer to the beginning of Config Block Address
@@ -44,7 +44,7 @@ AddConfigBlock (
   );
 
 /**
-  Retrieve a specific Config Block data by GUID
+  Retrieve a specific Config Block data by GUID.
 
   @param[in]      ConfigBlockTableAddress      - A pointer to the beginning of Config Block Table Address
   @param[in]      ConfigBlockGuid              - A pointer to the GUID uses to search specific Config Block
