@@ -2,26 +2,26 @@
 Project Mu Silicon Intel Tiano Repository
 =========================================
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_silicon_intel_tiano%20PR%20gate?branchName=release/201911
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_silicon_intel_tiano%20PR%20gate?branchName=release/202002
 
-|build_status_windows| Current build status for release/201911
+|build_status_windows| Current build status for release/202002
 
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
-Branch Status - release/201911
+Branch Status - release/202002
 ==============================
 
 Status:
   In Development
 
 Entered Development:
-  2019/12/06
+  2020/03/06
 
 Anticipated Stabilization:
-  January 2020
+  May 2020
 
-Branch Changes - release/201911
+Branch Changes - release/202002
 
 ===============================
 
@@ -40,20 +40,20 @@ Bug Fixes-dev
 
 - None
 
-1911_RefBoot Changes
+2002_RefBoot Changes
 --------------------
 
 - Incomplete
 
-1911_CIBuild Changes
+2002_CIBuild Changes
 --------------------
 
 - Update to latest Stuart tools. IntelFsp packages skipped for now.
 
-1911_Rebase Changes
+2002_Rebase Changes
 -------------------
 
-Source Commit from dev/201908: 0a0708877d
+Source Commit from release/201911: d32f2b488c
 
 - None
 
