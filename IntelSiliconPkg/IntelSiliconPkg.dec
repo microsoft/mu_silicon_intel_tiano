@@ -31,9 +31,14 @@
   PeiGetVtdPmrAlignmentLib|Include/Library/PeiGetVtdPmrAlignmentLib.h
 
   # MU_CHANGE
-  ## @libraryclass  Install SMM Access PPI
+  ## @libraryclass  TODO: Bug for Intel
   #
   SmmAccessLib|Include/Library/SmmAccessLib.h
+
+  # MU_CHANGE
+  ## @libraryclass  TODO: Bug for Intel
+  #
+  ConfigBlockLib|Include/Library/ConfigBlockLib.h
 
 [Guids]
   ## GUID for Package token space
