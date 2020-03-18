@@ -6,44 +6,43 @@ Project Mu Silicon Intel Tiano Repository
 
 |build_status_windows| Current build status for release/201911
 
-
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
 Branch Status - release/201911
 ==============================
 
 Status:
-  In Development
+  Stabilized
 
 Entered Development:
   2019/12/06
 
-Anticipated Stabilization:
-  January 2020
+Stabilized:
+  2020/03/18
 
 Branch Changes - release/201911
 
 ===============================
 
-Breaking Changes-dev
---------------------
-
-- None
-
-Main Changes-dev
+Breaking Changes
 ----------------
 
 - None
 
-Bug Fixes-dev
--------------
+Main Changes
+------------
+
+- None
+
+Bug Fixes
+---------
 
 - None
 
 1911_RefBoot Changes
 --------------------
 
-- Incomplete
+- None
 
 1911_CIBuild Changes
 --------------------
