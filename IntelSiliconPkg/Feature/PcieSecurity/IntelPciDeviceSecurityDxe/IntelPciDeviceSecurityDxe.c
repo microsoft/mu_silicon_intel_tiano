@@ -69,7 +69,7 @@ RecordPciDeviceInList(
   ASSERT_EFI_ERROR(Status);
 
   NewPciDevice = AllocateZeroPool(sizeof(*NewPciDevice));
-  ASSERT_EFI_ERROR(NewPciDevice != NULL);
+  ASSERT(NewPciDevice != NULL);
 
   NewPciDevice->Signature   = PCI_DEVICE_INSTANCE_SIGNATURE;
   NewPciDevice->PciSegment  = PciSegment;
