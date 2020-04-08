@@ -20,10 +20,7 @@
             "UefiCpuPkg/UefiCpuPkg.dec",
         ],
         "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec"
         ],
         "IgnoreInf": [
             "IntelSiliconPkg/Library/BaseConfigBlockLib/BaseConfigBlockLib.inf"         # Requires KBL RC!

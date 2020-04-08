@@ -21,10 +21,7 @@
             "IntelFsp2WrapperPkg/IntelFsp2WrapperPkg.dec",
         ],
         "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec" # MS_CHANGE
         ],
         "IgnoreInf": []
     },
