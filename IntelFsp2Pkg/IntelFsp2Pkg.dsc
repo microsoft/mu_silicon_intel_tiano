@@ -66,6 +66,7 @@
   IntelFsp2Pkg/FspSecCore/FspSecCoreM.inf
   IntelFsp2Pkg/FspSecCore/FspSecCoreS.inf
   IntelFsp2Pkg/FspNotifyPhase/FspNotifyPhasePeim.inf
+  IntelFsp2Pkg/FspSecCore/Fsp22SecCoreS.inf # mu_change -- add for dsc complete
 
 [PcdsFixedAtBuild.common]
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x1f
