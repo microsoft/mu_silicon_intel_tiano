@@ -66,6 +66,7 @@
   IntelFsp2Pkg/FspSecCore/FspSecCoreM.inf
   IntelFsp2Pkg/FspSecCore/FspSecCoreS.inf
   IntelFsp2Pkg/FspNotifyPhase/FspNotifyPhasePeim.inf
+  IntelFsp2Pkg/FspSecCore/Fsp22SecCoreS.inf # MU_CHANGE - TCBZ2788
 
 [PcdsFixedAtBuild.common]
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x1f
