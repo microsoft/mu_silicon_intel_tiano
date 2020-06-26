@@ -95,11 +95,12 @@
   IntelSiliconPkg/Feature/ShadowMicrocode/ShadowMicrocodePei.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/PeiFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/DxeSmmFirmwareBootMediaLib.inf
-
+  IntelSiliconPkg/Library/DxeAslUpdateLib/DxeAslUpdateLib.inf # MU_CHANGE - TCBZ2824
   # MU_CHANGE
   IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLib/PeiSmmAccessLib.inf
   IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
   IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
+
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
