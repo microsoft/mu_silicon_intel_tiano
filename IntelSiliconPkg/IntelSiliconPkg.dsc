@@ -2,6 +2,7 @@
 # This package provides common open source Intel silicon modules.
 #
 # Copyright (c) 2017 - 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) Microsoft Corporation.<BR>
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -87,6 +88,7 @@
   IntelSiliconPkg/Feature/ShadowMicrocode/ShadowMicrocodePei.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/PeiFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/DxeSmmFirmwareBootMediaLib.inf
+  IntelSiliconPkg/Library/DxeAslUpdateLib/DxeAslUpdateLib.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
