@@ -78,14 +78,11 @@ CreateExtContextEntry (
 
     DEBUG ((DEBUG_INFO,"DOMAIN: S%04x, B%02x D%02x F%02x\n", mVtdUnitInformation[VtdIndex].Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
 
-    switch (mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW) {
-    case BIT1:
-      ExtContextEntry->Bits.AddressWidth = 0x1;
-      break;
-    case BIT2:
-      ExtContextEntry->Bits.AddressWidth = 0x2;
-      break;
+    if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) == 0) {
+      DEBUG((DEBUG_ERROR, "!!!! 4-level page-table is not supported on VTD %d !!!!\n", VtdIndex));
+      return EFI_UNSUPPORTED;
     }
+    ExtContextEntry->Bits.AddressWidth = 0x2;
   }
 
   FlushPageTableMemory (VtdIndex, (UINTN)mVtdUnitInformation[VtdIndex].ExtRootEntryTable, EFI_PAGES_TO_SIZE(EntryTablePages));
