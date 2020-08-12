@@ -132,6 +132,10 @@ IsMicrocodePatchNeedLoad (
   CPU_MICROCODE_EXTENDED_TABLE           *ExtendedTable;
   UINTN                                  Index;
 
+  if (FeaturePcdGet (PcdShadowAllMicrocode)) {
+    return TRUE;
+  }
+
   //
   // Check the 'ProcessorSignature' and 'ProcessorFlags' in microcode patch header.
   //
