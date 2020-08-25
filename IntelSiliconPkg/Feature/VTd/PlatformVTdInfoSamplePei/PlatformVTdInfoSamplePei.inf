@@ -38,7 +38,8 @@
   IoLib
 
 [Ppis]
-  gEdkiiVTdInfoPpiGuid         ## PRODUCES
+  gEdkiiVTdInfoPpiGuid              ## PRODUCES
+  gEdkiiVTdNullRootEntryTableGuid   ## PRODUCES
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid

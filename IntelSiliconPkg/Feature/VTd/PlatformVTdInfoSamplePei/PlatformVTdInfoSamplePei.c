@@ -9,6 +9,7 @@
 #include <PiPei.h>
 
 #include <Ppi/VtdInfo.h>
+#include <Ppi/VtdNullRootEntryTable.h>
 
 #include <Library/PeiServicesLib.h>
 #include <Library/DebugLib.h>
@@ -162,6 +163,15 @@ EFI_PEI_PPI_DESCRIPTOR mPlatformVTdNoIgdInfoSampleDesc = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEdkiiVTdInfoPpiGuid,
   &mPlatformVTdNoIgdSample
+};
+
+// BIOS uses TE with a null root entry table to block VT-d engine access to block any DMA traffic in pre-memory phase.
+EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI mNullRootEntryTable = 0xFED20000;
+
+EFI_PEI_PPI_DESCRIPTOR mPlatformNullRootEntryTableDesc = {
+  (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+  &gEdkiiVTdNullRootEntryTableGuid,
+  &mNullRootEntryTable
 };
 
 /**
@@ -344,6 +354,12 @@ PlatformVTdInfoSampleInitialize (
   if (!EFI_ERROR(Status)) {
     SiliconInitialized = TRUE;
   }
+
+  Status = PeiServicesInstallPpi (&mPlatformNullRootEntryTableDesc);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+  }
+
   DEBUG ((DEBUG_INFO, "SiliconInitialized - %x\n", SiliconInitialized));
   if (!SiliconInitialized) {
     Status = PeiServicesNotifyPpi (&mSiliconInitializedNotifyList);
