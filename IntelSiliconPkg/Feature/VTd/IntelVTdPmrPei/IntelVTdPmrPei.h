@@ -98,6 +98,21 @@ GetHighMemoryAlignment (
   );
 
 /**
+  Enable VTd translation table protection in pre-memory phase.
+
+  @param VTdInfo            The VTd engine context information.
+  @param EngineMask         The mask of the VTd engine to be accessed.
+
+  @retval EFI_SUCCESS       DMAR translation protection is enabled.
+  @retval EFI_UNSUPPORTED   Null Root Entry Table is not supported.
+**/
+EFI_STATUS
+PreMemoryEnableVTdTranslationProtection (
+  IN VTD_INFO      *VTdInfo,
+  IN UINT64        EngineMask
+  );
+
+/**
   Enable VTd translation table protection.
 
   @param VTdInfo            The VTd engine context information.

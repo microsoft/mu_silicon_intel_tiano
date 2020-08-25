@@ -745,7 +745,21 @@ VTdInfoNotify (
     // Protect all system memory
     //
     InitVTdInfo ();
+
+    Hob = GetFirstGuidHob (&mVTdInfoGuid);
+    VTdInfo = GET_GUID_HOB_DATA(Hob);
+
+    //
+    // NOTE: We need check if PMR is enabled or not.
+    //
+    EnabledEngineMask = GetDmaProtectionEnabledEngineMask (VTdInfo, VTdInfo->EngineMask);
+    if (EnabledEngineMask != 0) {
+      Status = PreMemoryEnableVTdTranslationProtection (VTdInfo, EnabledEngineMask);
+    }
     InitVTdPmrForAll ();
+    if (((EnabledEngineMask != 0) && (!EFI_ERROR (Status)))) {
+      DisableVTdTranslationProtection (VTdInfo, EnabledEngineMask);
+    }
 
     //
     // Install PPI.

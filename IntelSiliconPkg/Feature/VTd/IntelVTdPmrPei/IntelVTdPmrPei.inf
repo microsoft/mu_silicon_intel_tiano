@@ -48,6 +48,7 @@
   gEdkiiVTdInfoPpiGuid                ## CONSUMES
   gEfiPeiMemoryDiscoveredPpiGuid      ## CONSUMES
   gEfiEndOfPeiSignalPpiGuid           ## CONSUMES
+  gEdkiiVTdNullRootEntryTableGuid     ## PRODUCES
 
 [Pcd]
   gIntelSiliconPkgTokenSpaceGuid.PcdVTdPolicyPropertyMask   ## CONSUMES
