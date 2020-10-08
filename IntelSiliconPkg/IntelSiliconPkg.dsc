@@ -38,6 +38,21 @@
   PeiGetVtdPmrAlignmentLib|IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
 
+##MSCHANGE Begin
+[LibraryClasses.common]
+  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019
+!if $(TARGET) == DEBUG
+[LibraryClasses.X64, LibraryClasses.IA32]
+  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports on MSVC
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+[LibraryClasses.X64]
+  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+!endif
+##MSCHANGE End
+
 [LibraryClasses.common.PEIM]
   PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
@@ -90,6 +105,11 @@
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/PeiFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/DxeSmmFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/DxeAslUpdateLib/DxeAslUpdateLib.inf
+
+  # MU_CHANGE
+  IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLib/PeiSmmAccessLib.inf
+  IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
+  IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
