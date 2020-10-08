@@ -1,87 +1,45 @@
-## @file
-# Core CI configuration for IntelFsp2Pkg
-#
-# Copyright (c) Microsoft Corporation
-#
-# SPDX-License-Identifier: BSD-2-Clause-Patent
-##
 {
-    ## options defined .pytool/Plugin/LicenseCheck
-    "LicenseCheck": {
-        "IgnoreFiles": []
-    },
-
-    "EccCheck": {
-        ## Exception sample looks like below:
-        ## "ExceptionList": [
-        ##     "<ErrorID>", "<KeyWord>"
-        ## ]
-        "ExceptionList": [
-        ],
-        ## Both file path and directory path are accepted.
-        "IgnoreFiles": []
-    },
-
-    ## options defined .pytool/Plugin/CompilerPlugin
     "CompilerPlugin": {
         "DscPath": "IntelFsp2Pkg.dsc"
     },
-
-    ## options defined .pytool/Plugin/HostUnitTestCompilerPlugin
     "HostUnitTestCompilerPlugin": {
-        "DscPath": "" # Don't support this test
+        # remove for now.  "DscPath": "IntelFsp2PkgTest.dsc"
     },
-
-    ## options defined .pytool/Plugin/CharEncodingCheck
+    "HostUnitTestDscCompleteCheck": {
+        #"DscPath": "IntelFsp2PkgTest.dsc",
+        "IgnoreInf": []
+    },
     "CharEncodingCheck": {
         "IgnoreFiles": []
     },
-
-    ## options defined .pytool/Plugin/DependencyCheck
     "DependencyCheck": {
         "AcceptableDependencies": [
-          "IntelFsp2Pkg/IntelFsp2Pkg.dec",
-          "MdeModulePkg/MdeModulePkg.dec",
-          "MdePkg/MdePkg.dec",
-          "UefiCpuPkg/UefiCpuPkg.dec"
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "IntelFsp2Pkg/IntelFsp2Pkg.dec",
+            "UefiCpuPkg/UefiCpuPkg.dec"
         ],
-        # For host based unit tests
-        "AcceptableDependencies-HOST_APPLICATION":[
-          "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec"
+        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec" #MS_CHANGE
         ],
-        # For UEFI shell based apps
-        "AcceptableDependencies-UEFI_APPLICATION":[],
         "IgnoreInf": []
     },
-
-    ## options defined .pytool/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
-        "IgnoreInf": [""],
-        "DscPath": "IntelFsp2Pkg.dsc"
+        "DscPath": "IntelFsp2Pkg.dsc",
+        "IgnoreInf": []
     },
-
-    ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
-    "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [""],
-        "DscPath": "" # Don't support this test
-    },
-
-    ## options defined .pytool/Plugin/GuidCheck
     "GuidCheck": {
         "IgnoreGuidName": [],
-        "IgnoreGuidValue": [],
-        "IgnoreFoldersAndFiles": [],
-        "IgnoreDuplicates": [],
+        "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
+        "IgnoreFoldersAndFiles": []
     },
-
-    ## options defined .pytool/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
     },
 
-    ## options defined .pytool/Plugin/SpellCheck
+    ## options defined ci/Plugin/SpellCheck
     "SpellCheck": {
-        "AuditOnly": True,           # Fails right now
+        "AuditOnly": True,           # Fails test but run in AuditOnly mode to collect log
         "IgnoreFiles": [],           # use gitignore syntax to ignore errors in matching files
         "ExtendWords": [],           # words to extend to the dictionary for this package
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
