@@ -132,7 +132,7 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
             is_linux = GetHostInfo().os.upper() == "LINUX"
 
             if self.UseBuiltInBaseTools is None:
-                is_linux = GetHostInfo().os.upper() == "LINUX"
+                # MU_CHANGE - redundant is_linux = GetHostInfo().os.upper() == "LINUX"
                 # try and import the pip module for basetools
                 try:
                     import edk2basetools
@@ -186,13 +186,13 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
         return [
             {
                 "Path": "Common/MU_TIANO",
-                "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "release/202005"
+                "Url": "https://github.com/microsoft/mu_tiano_plus.git",
+                "Branch": "release/202208"
             },
             {
                 "Path": "MU_BASECORE",
-                "Url": "https://github.com/Microsoft/mu_basecore.git",
-                "Branch": "release/202005"
+                "Url": "https://github.com/microsoft/mu_basecore.git",
+                "Branch": "release/202208"
             }
         ]
         # MU_CHANGE END
