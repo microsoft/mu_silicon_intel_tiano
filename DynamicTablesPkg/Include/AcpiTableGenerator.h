@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2017 - 2020, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -55,6 +55,10 @@ The Dynamic Tables Framework implements the following ACPI table generators:
             the Configuration Manager and builds the PPTT table.
   - SRAT  : The SRAT generator collates the system resource affinity information
             from the Configuration Manager and builds the SRAT table.
+  - SSDT Serial-Port:
+            The SSDT Serial generator collates the Serial port information
+            from the Configuration Manager and patches the SSDT Serial Port
+            template to build the SSDT Serial port table.
 */
 
 /** The ACPI_TABLE_GENERATOR_ID type describes ACPI table generator ID.
@@ -78,6 +82,7 @@ typedef enum StdAcpiTableId {
   EStdAcpiTableIdIort,                          ///< IORT Generator
   EStdAcpiTableIdPptt,                          ///< PPTT Generator
   EStdAcpiTableIdSrat,                          ///< SRAT Generator
+  EStdAcpiTableIdSsdtSerialPort,                ///< SSDT Serial-Port Generator
   EStdAcpiTableIdMax
 } ESTD_ACPI_TABLE_ID;
 
@@ -287,10 +292,10 @@ typedef struct AcpiTableGenerator {
   UINT32                                 AcpiTableSignature;
 
   /// The ACPI table revision.
-  UINT32                                 AcpiTableRevision;
+  UINT8                                  AcpiTableRevision;
 
   /// The minimum supported ACPI table revision.
-  UINT32                                 MinAcpiTableRevision;
+  UINT8                                  MinAcpiTableRevision;
 
   /// The ACPI table creator ID.
   UINT32                                 CreatorId;

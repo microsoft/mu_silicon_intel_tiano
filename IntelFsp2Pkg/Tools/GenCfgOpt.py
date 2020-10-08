@@ -546,11 +546,11 @@ EndList
                 #DEFINE FSP_T_UPD_TOOL_GUID = 34686CA3-34F9-4901-B82A-BA630F0714C6
                 #DEFINE FSP_M_UPD_TOOL_GUID = 39A250DB-E465-4DD1-A2AC-E2BD3C0E2385
                 #DEFINE FSP_S_UPD_TOOL_GUID = CAE3605B-5B34-4C85-B3D7-27D54273C40F
-                Match = re.match("^\s*(?:DEFINE\s+)*(\w+)\s*=\s*([-.\w]+)", DscLine)
+                Match = re.match("^\s*(?:DEFINE\s+)*(\w+)\s*=\s*([/$()-.\w]+)", DscLine)
                 if Match:
-                    self._MacroDict[Match.group(1)] = Match.group(2)
+                    self._MacroDict[Match.group(1)] = self.ExpandMacros(Match.group(2))
                     if self.Debug:
-                        print ("INFO : DEFINE %s = [ %s ]" % (Match.group(1), Match.group(2)))
+                        print ("INFO : DEFINE %s = [ %s ]" % (Match.group(1), self.ExpandMacros(Match.group(2))))
             elif IsPcdSect:
                 #gSiPkgTokenSpaceGuid.PcdTxtEnable|FALSE
                 #gSiPkgTokenSpaceGuid.PcdOverclockEnable|TRUE
@@ -1175,7 +1175,7 @@ EndList
         UpdRegionCheck = ['FSPT', 'FSPM', 'FSPS']     # FSPX_UPD_REGION
         UpdConfigCheck = ['FSP_T', 'FSP_M', 'FSP_S']  # FSP_X_CONFIG, FSP_X_TEST_CONFIG, FSP_X_RESTRICTED_CONFIG
         UpdSignatureCheck = ['FSPT_UPD_SIGNATURE', 'FSPM_UPD_SIGNATURE', 'FSPS_UPD_SIGNATURE']
-        ExcludedSpecificUpd = 'FSPM_ARCH_UPD'
+        ExcludedSpecificUpd = ['FSPT_ARCH_UPD', 'FSPM_ARCH_UPD', 'FSPS_ARCH_UPD']
 
         if InputHeaderFile != '':
             if not os.path.exists(InputHeaderFile):
@@ -1229,7 +1229,7 @@ EndList
                 if Match:
                     StartIndex = Index - 1
                 Match = re.match("}\s([_A-Z0-9]+);", Line)
-                if Match and (UpdRegionCheck[item] in Match.group(1) or UpdConfigCheck[item] in Match.group(1)) and (ExcludedSpecificUpd not in Match.group(1)):
+                if Match and (UpdRegionCheck[item] in Match.group(1) or UpdConfigCheck[item] in Match.group(1)) and (ExcludedSpecificUpd[item] not in Match.group(1)):
                     EndIndex = Index
                     StructStart.append(StartIndex)
                     StructEnd.append(EndIndex)
@@ -1466,7 +1466,7 @@ EndList
 
 
 def Usage():
-    print ("GenCfgOpt Version 0.54")
+    print ("GenCfgOpt Version 0.55")
     print ("Usage:")
     print ("    GenCfgOpt  UPDTXT  PlatformDscFile BuildFvDir                 [-D Macros]")
     print ("    GenCfgOpt  HEADER  PlatformDscFile BuildFvDir  InputHFile     [-D Macros]")

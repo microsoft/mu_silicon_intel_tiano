@@ -7,11 +7,13 @@
 
 **/
 
-#include <Uefi.h>
-#include <Chipset/AArch64.h>
+#include <Base.h>
+
 #include <Library/ArmLib.h>
-#include <Library/BaseLib.h>
-#include <Library/IoLib.h>
+#include <Library/DebugLib.h>
+
+#include <Chipset/AArch64.h>
+
 #include "AArch64Lib.h"
 #include "ArmLibPrivate.h"
 
@@ -40,6 +42,8 @@ ArmInvalidateDataCache (
   VOID
   )
 {
+  ASSERT (!ArmMmuEnabled ());
+
   ArmDataSynchronizationBarrier ();
   AArch64DataCacheOperation (ArmInvalidateDataCacheEntryBySetWay);
 }
@@ -50,6 +54,8 @@ ArmCleanInvalidateDataCache (
   VOID
   )
 {
+  ASSERT (!ArmMmuEnabled ());
+
   ArmDataSynchronizationBarrier ();
   AArch64DataCacheOperation (ArmCleanInvalidateDataCacheEntryBySetWay);
 }
@@ -60,6 +66,8 @@ ArmCleanDataCache (
   VOID
   )
 {
+  ASSERT (!ArmMmuEnabled ());
+
   ArmDataSynchronizationBarrier ();
   AArch64DataCacheOperation (ArmCleanDataCacheEntryBySetWay);
 }

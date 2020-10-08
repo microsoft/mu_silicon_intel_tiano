@@ -49,7 +49,8 @@ struct _UNIT_TEST_FAILURE_TYPE_STRING mFailureTypeStrings[] = {
   { FAILURETYPE_ASSERTNOTEQUAL,    "ASSERT_NOTEQUAL FAILURE"},
   { FAILURETYPE_ASSERTNOTEFIERROR, "ASSERT_NOTEFIERROR FAILURE"},
   { FAILURETYPE_ASSERTSTATUSEQUAL, "ASSERT_STATUSEQUAL FAILURE"},
-  { FAILURETYPE_ASSERTNOTNULL ,    "ASSERT_NOTNULL FAILURE"},
+  { FAILURETYPE_ASSERTNOTNULL,     "ASSERT_NOTNULL FAILURE"},
+  { FAILURETYPE_EXPECTASSERT,      "EXPECT_ASSERT FAILURE"},
   { 0,                             "*UNKNOWN* Failure"}
 };
 
@@ -65,7 +66,7 @@ GetStringForUnitTestStatus (
 {
   UINTN  Index;
 
-  for (Index = 0; Index < ARRAY_SIZE (mStatusStrings); Index++) {
+  for (Index = 0; Index < ARRAY_SIZE (mStatusStrings) - 1; Index++) {
     if (mStatusStrings[Index].Status == Status) {
       //
       // Return string from matching entry
@@ -87,7 +88,7 @@ GetStringForFailureType (
 {
   UINTN  Index;
 
-  for (Index = 0; Index < ARRAY_SIZE (mFailureTypeStrings); Index++) {
+  for (Index = 0; Index < ARRAY_SIZE (mFailureTypeStrings) - 1; Index++) {
     if (mFailureTypeStrings[Index].Type == Failure) {
       //
       // Return string from matching entry

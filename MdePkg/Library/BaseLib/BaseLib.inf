@@ -1,9 +1,10 @@
 ## @file
 #  Base Library implementation.
 #
-#  Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
 #  Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
 #  Portions copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
+#  Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -20,7 +21,7 @@
   LIBRARY_CLASS                  = BaseLib
 
 #
-#  VALID_ARCHITECTURES           = IA32 X64 EBC ARM AARCH64
+#  VALID_ARCHITECTURES           = IA32 X64 EBC ARM AARCH64 RISCV64
 #
 
 [Sources]
@@ -155,6 +156,7 @@
 
 
   Ia32/GccInline.c | GCC
+  Ia32/GccInlinePriv.c | GCC
   Ia32/Thunk16.nasm
   Ia32/EnableDisableInterrupts.nasm| GCC
   Ia32/EnablePaging64.nasm
@@ -181,6 +183,8 @@
   Ia32/EnableCache.nasm| GCC
   Ia32/DisableCache.nasm| GCC
   Ia32/RdRand.nasm
+  Ia32/XGetBv.nasm
+  Ia32/VmgExit.nasm
 
   Ia32/DivS64x64Remainder.c
   Ia32/InternalSwitchStack.c | MSFT
@@ -309,9 +313,12 @@
   X86PatchInstruction.c
   X86SpeculationBarrier.c
   X64/GccInline.c | GCC
+  X64/GccInlinePriv.c | GCC
   X64/EnableDisableInterrupts.nasm
   X64/DisablePaging64.nasm
   X64/RdRand.nasm
+  X64/XGetBv.nasm
+  X64/VmgExit.nasm
   ChkStkGcc.c  | GCC
 
 [Sources.EBC]
@@ -380,6 +387,21 @@
   AArch64/SetJumpLongJump.asm       | MSFT
   AArch64/CpuBreakpoint.asm         | MSFT
   AArch64/SpeculationBarrier.asm    | MSFT
+
+[Sources.RISCV64]
+  Math64.c
+  Unaligned.c
+  RiscV64/InternalSwitchStack.c
+  RiscV64/CpuBreakpoint.c
+  RiscV64/GetInterruptState.c
+  RiscV64/DisableInterrupts.c
+  RiscV64/EnableInterrupts.c
+  RiscV64/CpuPause.c
+  RiscV64/RiscVSetJumpLongJump.S    | GCC
+  RiscV64/RiscVCpuBreakpoint.S      | GCC
+  RiscV64/RiscVCpuPause.S           | GCC
+  RiscV64/RiscVInterrupt.S          | GCC
+  RiscV64/FlushCache.S              | GCC
 
 [Packages]
   MdePkg/MdePkg.dec

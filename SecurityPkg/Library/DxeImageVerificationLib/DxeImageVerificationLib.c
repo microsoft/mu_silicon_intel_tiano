@@ -1465,7 +1465,7 @@ IsAllowedByDb (
 
   //
   // Fetch 'dbx' content. If 'dbx' doesn't exist, continue to check 'db'.
-  // If any other errors occured, no need to check 'db' but just return
+  // If any other errors occurred, no need to check 'db' but just return
   // not-allowed-by-db (FALSE) to avoid bypass.
   //
   DbxDataSize = 0;
@@ -1630,7 +1630,7 @@ EFI_STATUS
 EFIAPI
 DxeImageVerificationHandler (
   IN  UINT32                           AuthenticationStatus,
-  IN  CONST EFI_DEVICE_PATH_PROTOCOL   *File,
+  IN  CONST EFI_DEVICE_PATH_PROTOCOL   *File, OPTIONAL
   IN  VOID                             *FileBuffer,
   IN  UINTN                            FileSize,
   IN  BOOLEAN                          BootPolicy
@@ -1652,6 +1652,8 @@ DxeImageVerificationHandler (
   UINT8                                *AuthData;
   UINTN                                AuthDataSize;
   EFI_IMAGE_DATA_DIRECTORY             *SecDataDir;
+  UINT32                               SecDataDirEnd;
+  UINT32                               SecDataDirLeft;
   UINT32                               OffSet;
   CHAR16                               *NameStr;
   RETURN_STATUS                        PeCoffStatus;
@@ -1849,12 +1851,18 @@ DxeImageVerificationHandler (
   // "Attribute Certificate Table".
   // The first certificate starts at offset (SecDataDir->VirtualAddress) from the start of the file.
   //
+  SecDataDirEnd = SecDataDir->VirtualAddress + SecDataDir->Size;
   for (OffSet = SecDataDir->VirtualAddress;
-       OffSet < (SecDataDir->VirtualAddress + SecDataDir->Size);
+       OffSet < SecDataDirEnd;
        OffSet += (WinCertificate->dwLength + ALIGN_SIZE (WinCertificate->dwLength))) {
+    SecDataDirLeft = SecDataDirEnd - OffSet;
+    if (SecDataDirLeft <= sizeof (WIN_CERTIFICATE)) {
+      break;
+    }
     WinCertificate = (WIN_CERTIFICATE *) (mImageBase + OffSet);
-    if ((SecDataDir->VirtualAddress + SecDataDir->Size - OffSet) <= sizeof (WIN_CERTIFICATE) ||
-        (SecDataDir->VirtualAddress + SecDataDir->Size - OffSet) < WinCertificate->dwLength) {
+    if (SecDataDirLeft < WinCertificate->dwLength ||
+        (SecDataDirLeft - WinCertificate->dwLength <
+         ALIGN_SIZE (WinCertificate->dwLength))) {
       break;
     }
 
@@ -1948,7 +1956,7 @@ DxeImageVerificationHandler (
     }
   }
 
-  if (OffSet != (SecDataDir->VirtualAddress + SecDataDir->Size)) {
+  if (OffSet != SecDataDirEnd) {
     //
     // The Size in Certificate Table or the attribute certificate table is corrupted.
     //

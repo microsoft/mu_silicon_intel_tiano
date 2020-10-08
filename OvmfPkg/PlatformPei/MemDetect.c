@@ -27,12 +27,14 @@ Module Name:
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/IoLib.h>
+#include <Library/MemEncryptSevLib.h>
 #include <Library/PcdLib.h>
 #include <Library/PciLib.h>
 #include <Library/PeimEntryPoint.h>
 #include <Library/ResourcePublicationLib.h>
 #include <Library/MtrrLib.h>
 #include <Library/QemuFwCfgLib.h>
+#include <Library/QemuFwCfgSimpleParserLib.h>
 
 #include "Platform.h"
 #include "Cmos.h"
@@ -336,7 +338,7 @@ GetFirstNonAddress (
 {
   UINT64               FirstNonAddress;
   UINT64               Pci64Base, Pci64Size;
-  CHAR8                MbString[7 + 1];
+  UINT32               FwCfgPciMmio64Mb;
   EFI_STATUS           Status;
   FIRMWARE_CONFIG_ITEM FwCfgItem;
   UINTN                FwCfgSize;
@@ -379,30 +381,35 @@ GetFirstNonAddress (
 
   //
   // See if the user specified the number of megabytes for the 64-bit PCI host
-  // aperture. The number of non-NUL characters in MbString allows for
-  // 9,999,999 MB, which is approximately 10 TB.
+  // aperture. Accept an aperture size up to 16TB.
   //
   // As signaled by the "X-" prefix, this knob is experimental, and might go
   // away at any time.
   //
-  Status = QemuFwCfgFindFile ("opt/ovmf/X-PciMmio64Mb", &FwCfgItem,
-             &FwCfgSize);
-  if (!EFI_ERROR (Status)) {
-    if (FwCfgSize >= sizeof MbString) {
-      DEBUG ((EFI_D_WARN,
-        "%a: ignoring malformed 64-bit PCI host aperture size from fw_cfg\n",
-        __FUNCTION__));
-    } else {
-      QemuFwCfgSelectItem (FwCfgItem);
-      QemuFwCfgReadBytes (FwCfgSize, MbString);
-      MbString[FwCfgSize] = '\0';
-      Pci64Size = LShiftU64 (AsciiStrDecimalToUint64 (MbString), 20);
+  Status = QemuFwCfgParseUint32 ("opt/ovmf/X-PciMmio64Mb", FALSE,
+             &FwCfgPciMmio64Mb);
+  switch (Status) {
+  case EFI_UNSUPPORTED:
+  case EFI_NOT_FOUND:
+    break;
+  case EFI_SUCCESS:
+    if (FwCfgPciMmio64Mb <= 0x1000000) {
+      Pci64Size = LShiftU64 (FwCfgPciMmio64Mb, 20);
+      break;
     }
+    //
+    // fall through
+    //
+  default:
+    DEBUG ((DEBUG_WARN,
+      "%a: ignoring malformed 64-bit PCI host aperture size from fw_cfg\n",
+      __FUNCTION__));
+    break;
   }
 
   if (Pci64Size == 0) {
     if (mBootMode != BOOT_ON_S3_RESUME) {
-      DEBUG ((EFI_D_INFO, "%a: disabling 64-bit PCI host aperture\n",
+      DEBUG ((DEBUG_INFO, "%a: disabling 64-bit PCI host aperture\n",
         __FUNCTION__));
       PcdStatus = PcdSet64S (PcdPciMmio64Size, 0);
       ASSERT_RETURN_ERROR (PcdStatus);
@@ -460,7 +467,7 @@ GetFirstNonAddress (
     PcdStatus = PcdSet64S (PcdPciMmio64Size, Pci64Size);
     ASSERT_RETURN_ERROR (PcdStatus);
 
-    DEBUG ((EFI_D_INFO, "%a: Pci64Base=0x%Lx Pci64Size=0x%Lx\n",
+    DEBUG ((DEBUG_INFO, "%a: Pci64Base=0x%Lx Pci64Size=0x%Lx\n",
       __FUNCTION__, Pci64Base, Pci64Size));
   }
 
@@ -620,7 +627,7 @@ PublishPeiMemory (
     MemorySize = mS3AcpiReservedMemorySize;
   } else {
     PeiMemoryCap = GetPeiMemoryCap ();
-    DEBUG ((EFI_D_INFO, "%a: mPhysMemAddressWidth=%d PeiMemoryCap=%u KB\n",
+    DEBUG ((DEBUG_INFO, "%a: mPhysMemAddressWidth=%d PeiMemoryCap=%u KB\n",
       __FUNCTION__, mPhysMemAddressWidth, PeiMemoryCap >> 10));
 
     //
@@ -699,7 +706,7 @@ QemuInitializeRam (
   MTRR_SETTINGS               MtrrSettings;
   EFI_STATUS                  Status;
 
-  DEBUG ((EFI_D_INFO, "%a called\n", __FUNCTION__));
+  DEBUG ((DEBUG_INFO, "%a called\n", __FUNCTION__));
 
   //
   // Determine total memory size available
@@ -860,6 +867,28 @@ InitializeRamRegions (
       (UINT64)(UINTN) PcdGet32 (PcdOvmfSecPageTablesSize),
       EfiACPIMemoryNVS
       );
+
+    if (MemEncryptSevEsIsEnabled ()) {
+      //
+      // If SEV-ES is enabled, reserve the GHCB-related memory area. This
+      // includes the extra page table used to break down the 2MB page
+      // mapping into 4KB page entries where the GHCB resides and the
+      // GHCB area itself.
+      //
+      // Since this memory range will be used by the Reset Vector on S3
+      // resume, it must be reserved as ACPI NVS.
+      //
+      BuildMemoryAllocationHob (
+        (EFI_PHYSICAL_ADDRESS)(UINTN) PcdGet32 (PcdOvmfSecGhcbPageTableBase),
+        (UINT64)(UINTN) PcdGet32 (PcdOvmfSecGhcbPageTableSize),
+        EfiACPIMemoryNVS
+        );
+      BuildMemoryAllocationHob (
+        (EFI_PHYSICAL_ADDRESS)(UINTN) PcdGet32 (PcdOvmfSecGhcbBase),
+        (UINT64)(UINTN) PcdGet32 (PcdOvmfSecGhcbSize),
+        EfiACPIMemoryNVS
+        );
+    }
 #endif
   }
 
@@ -911,5 +940,25 @@ InitializeRamRegions (
           );
       }
     }
+
+#ifdef MDE_CPU_X64
+    if (MemEncryptSevEsIsEnabled ()) {
+      //
+      // If SEV-ES is enabled, reserve the SEV-ES work area.
+      //
+      // Since this memory range will be used by the Reset Vector on S3
+      // resume, it must be reserved as ACPI NVS.
+      //
+      // If S3 is unsupported, then various drivers might still write to the
+      // work area. We ought to prevent DXE from serving allocation requests
+      // such that they would overlap the work area.
+      //
+      BuildMemoryAllocationHob (
+        (EFI_PHYSICAL_ADDRESS)(UINTN) FixedPcdGet32 (PcdSevEsWorkAreaBase),
+        (UINT64)(UINTN) FixedPcdGet32 (PcdSevEsWorkAreaSize),
+        mS3Supported ? EfiACPIMemoryNVS : EfiBootServicesData
+        );
+    }
+#endif
   }
 }

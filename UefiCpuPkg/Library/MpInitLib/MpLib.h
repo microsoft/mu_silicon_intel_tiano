@@ -31,6 +31,7 @@
 #include <Library/SynchronizationLib.h>
 #include <Library/MtrrLib.h>
 #include <Library/HobLib.h>
+#include <Library/PcdLib.h>
 
 #include <Guid/MicrocodePatchHob.h>
 
@@ -172,6 +173,11 @@ typedef struct {
   UINT8             *RelocateApLoopFuncAddress;
   UINTN             RelocateApLoopFuncSize;
   UINTN             ModeTransitionOffset;
+  UINTN             SwitchToRealSize;
+  UINTN             SwitchToRealOffset;
+  UINTN             SwitchToRealNoNxOffset;
+  UINTN             SwitchToRealPM16ModeOffset;
+  UINTN             SwitchToRealPM16ModeSize;
 } MP_ASSEMBLY_ADDRESS_MAP;
 
 typedef struct _CPU_MP_DATA  CPU_MP_DATA;
@@ -210,6 +216,8 @@ typedef struct {
   // Enable5LevelPaging indicates whether 5-level paging is enabled in long mode.
   //
   BOOLEAN               Enable5LevelPaging;
+  BOOLEAN               SevEsIsEnabled;
+  UINTN                 GhcbBase;
 } MP_CPU_EXCHANGE_INFO;
 
 #pragma pack()
@@ -256,6 +264,7 @@ struct _CPU_MP_DATA {
   UINT8                          ApLoopMode;
   UINT8                          ApTargetCState;
   UINT16                         PmCodeSegment;
+  UINT16                         Pm16CodeSegment;
   CPU_AP_DATA                    *CpuData;
   volatile MP_CPU_EXCHANGE_INFO  *MpCpuExchangeInfo;
 
@@ -275,7 +284,49 @@ struct _CPU_MP_DATA {
   // driver.
   //
   BOOLEAN                        WakeUpByInitSipiSipi;
+
+  BOOLEAN                        SevEsIsEnabled;
+  UINTN                          SevEsAPBuffer;
+  UINTN                          SevEsAPResetStackStart;
+  CPU_MP_DATA                    *NewCpuMpData;
+
+  UINT64                         GhcbBase;
 };
+
+#define AP_SAFE_STACK_SIZE  128
+#define AP_RESET_STACK_SIZE AP_SAFE_STACK_SIZE
+
+#pragma pack(1)
+
+typedef struct {
+  UINT8   InsnBuffer[8];
+  UINT16  Rip;
+  UINT16  Segment;
+} SEV_ES_AP_JMP_FAR;
+
+#pragma pack()
+
+/**
+  Assembly code to move an AP from long mode to real mode.
+
+  Move an AP from long mode to real mode in preparation to invoking
+  the reset vector.  This is used for SEV-ES guests where a hypervisor
+  is not allowed to set the CS and RIP to point to the reset vector.
+
+  @param[in]  BufferStart  The reset vector target.
+  @param[in]  Code16       16-bit protected mode code segment value.
+  @param[in]  Code32       32-bit protected mode code segment value.
+  @param[in]  StackStart   The start of a stack to be used for transitioning
+                           from long mode to real mode.
+**/
+typedef
+VOID
+(EFIAPI AP_RESET) (
+  IN UINTN    BufferStart,
+  IN UINT16   Code16,
+  IN UINT16   Code32,
+  IN UINTN    StackStart
+  );
 
 extern EFI_GUID mCpuInitMpLibHobGuid;
 
@@ -300,7 +351,10 @@ VOID
   IN UINTN                   ApTargetCState,
   IN UINTN                   PmCodeSegment,
   IN UINTN                   TopOfApStack,
-  IN UINTN                   NumberToFinish
+  IN UINTN                   NumberToFinish,
+  IN UINTN                   Pm16CodeSegment,
+  IN UINTN                   SevEsAPJumpTable,
+  IN UINTN                   WakeupBuffer
   );
 
 /**
@@ -380,6 +434,19 @@ GetWakeupBuffer (
 UINTN
 GetModeTransitionBuffer (
   IN UINTN                BufferSize
+  );
+
+/**
+  Return the address of the SEV-ES AP jump table.
+
+  This buffer is required in order for an SEV-ES guest to transition from
+  UEFI into an OS.
+
+  @return         Return SEV-ES AP jump table buffer
+**/
+UINTN
+GetSevEsAPMemory (
+  VOID
   );
 
 /**
@@ -661,7 +728,7 @@ GetProcessorNumber (
   This funtion will try to invoke platform specific microcode shadow logic to
   relocate microcode update patches into memory.
 
-  @param[in] CpuMpData  The pointer to CPU MP Data structure.
+  @param[in, out] CpuMpData  The pointer to CPU MP Data structure.
 
   @retval EFI_SUCCESS              Shadow microcode success.
   @retval EFI_OUT_OF_RESOURCES     No enough resource to complete the operation.

@@ -2,11 +2,29 @@
 # CI configuration for FmpDevicePkg
 #
 # Copyright (c) Microsoft Corporation
+# Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
+    "LicenseCheck": {
+        "IgnoreFiles": []
+    },
+    "EccCheck": {
+        ## Exception sample looks like below:
+        ## "ExceptionList": [
+        ##     "<ErrorID>", "<KeyWord>"
+        ## ]
+        "ExceptionList": [
+        ],
+        ## Both file path and directory path are accepted.
+        "IgnoreFiles": [
+        ]
+    },
     "CompilerPlugin": {
         "DscPath": "FmpDevicePkg.dsc"
+    },
+    "HostUnitTestCompilerPlugin": {
+        "DscPath": "Test/FmpDeviceHostPkgTest.dsc"
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -18,11 +36,18 @@
             "FmpDevicePkg/FmpDevicePkg.dec",
             "CryptoPkg/CryptoPkg.dec"
         ],
+        "AcceptableDependencies-HOST_APPLICATION":[
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec"
+        ],
         "IgnoreInf": []
     },
     "DscCompleteCheck": {
         "DscPath": "FmpDevicePkg.dsc",
         "IgnoreInf": []
+    },
+    "HostUnitTestDscCompleteCheck": {
+        "IgnoreInf": [],
+        "DscPath": "Test/FmpDeviceHostPkgTest.dsc"
     },
     "GuidCheck": {
         "IgnoreGuidName": [],

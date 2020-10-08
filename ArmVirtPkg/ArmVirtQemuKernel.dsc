@@ -56,6 +56,8 @@
   VirtioMmioDeviceLib|OvmfPkg/Library/VirtioMmioDeviceLib/VirtioMmioDeviceLib.inf
   QemuFwCfgLib|ArmVirtPkg/Library/QemuFwCfgLib/QemuFwCfgLib.inf
   QemuFwCfgS3Lib|OvmfPkg/Library/QemuFwCfgS3Lib/BaseQemuFwCfgS3LibNull.inf
+  QemuFwCfgSimpleParserLib|OvmfPkg/Library/QemuFwCfgSimpleParserLib/QemuFwCfgSimpleParserLib.inf
+  QemuLoadImageLib|OvmfPkg/Library/GenericQemuLoadImageLib/GenericQemuLoadImageLib.inf
 
   ArmVirtMemInfoLib|ArmVirtPkg/Library/QemuVirtMemInfoLib/QemuVirtMemInfoLib.inf
 
@@ -73,6 +75,7 @@
   PciPcdProducerLib|ArmVirtPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
   PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
   PciHostBridgeLib|ArmVirtPkg/Library/FdtPciHostBridgeLib/FdtPciHostBridgeLib.inf
+  TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
 
 [LibraryClasses.common.DXE_DRIVER]
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
@@ -80,14 +83,12 @@
 [LibraryClasses.common.UEFI_DRIVER]
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
 
-[BuildOptions.common.EDKII.SEC, BuildOptions.common.EDKII.BASE]
+[BuildOptions]
   #
-  # CLANG38 with LTO support enabled uses the GNU GOLD linker, which insists
-  # on emitting GOT based symbol references when running in shared mode, unless
-  # we override visibility to 'hidden' in all modules that make up the PrePi
-  # build.
+  # We need to avoid jump tables in SEC modules, so that the PE/COFF
+  # self-relocation code itself is guaranteed to be position independent.
   #
-  GCC:*_CLANG38_*_CC_FLAGS = -include $(WORKSPACE)/ArmVirtPkg/Include/Platform/Hidden.h
+  GCC:*_*_*_CC_FLAGS = -fno-jump-tables
 
 ################################################################################
 #
@@ -172,6 +173,12 @@
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|3
 
 [PcdsPatchableInModule.common]
+  # we need to provide a resolution for this PCD that supports PcdSet64()
+  # being called from ArmVirtPkg/Library/PlatformPeiLib/PlatformPeiLib.c,
+  # even though that call will be compiled out on this platform as it does
+  # not (and cannot) support the TPM2 driver stack
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress|0x0
+
   #
   # This will be overridden in the code
   #
@@ -230,6 +237,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion|0x0300
   gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosDocRev|0x0
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuSmbiosValidated|FALSE
+
+  #
+  # IPv4 and IPv6 PXE Boot support.
+  #
+  gEfiNetworkPkgTokenSpaceGuid.PcdIPv4PXESupport|0x01
+  gEfiNetworkPkgTokenSpaceGuid.PcdIPv6PXESupport|0x01
 
 ################################################################################
 #
@@ -355,11 +368,18 @@
       NULL|MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
       NULL|MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
   }
+  OvmfPkg/QemuKernelLoaderFsDxe/QemuKernelLoaderFsDxe.inf
 
   #
   # Networking stack
   #
 !include NetworkPkg/NetworkComponents.dsc.inc
+
+  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf {
+    <LibraryClasses>
+      NULL|OvmfPkg/Library/PxeBcPcdProducerLib/PxeBcPcdProducerLib.inf
+  }
+
 !if $(NETWORK_TLS_ENABLE) == TRUE
   NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe.inf {
     <LibraryClasses>
@@ -372,6 +392,11 @@
   #
   MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe.inf
   MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
+
+  #
+  # NVME Driver
+  #
+  MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
 
   #
   # SMBIOS Support

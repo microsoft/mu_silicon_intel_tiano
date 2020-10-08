@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2017 - 2020, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -56,6 +56,7 @@ typedef enum ArmObjectID {
   EArmObjDeviceHandleAcpi,             ///< 32 - Device Handle Acpi
   EArmObjDeviceHandlePci,              ///< 33 - Device Handle Pci
   EArmObjGenericInitiatorAffinityInfo, ///< 34 - Generic Initiator Affinity
+  EArmObjSerialPortInfo,               ///< 35 - Generic Serial Port Info
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -68,12 +69,8 @@ typedef struct CmArmBootArchInfo {
   /** This is the ARM_BOOT_ARCH flags field of the FADT Table
       described in the ACPI Table Specification.
   */
-  UINT32  BootArchFlags;
+  UINT16  BootArchFlags;
 } CM_ARM_BOOT_ARCH_INFO;
-
-typedef struct CmArmCpuInfo {
-  // Reserved for use when SMBIOS tables are implemented
-} CM_ARM_CPU_INFO;
 
 /** A structure that describes the
     Power Management Profile Information for the Platform.
@@ -274,7 +271,8 @@ typedef struct CmArmGicItsInfo {
     Serial Port information for the Platform.
 
     ID: EArmObjSerialConsolePortInfo or
-        EArmObjSerialDebugPortInfo
+        EArmObjSerialDebugPortInfo or
+        EArmObjSerialPortInfo
 */
 typedef struct CmArmSerialPortInfo {
   /// The physical base address for the serial port
@@ -291,6 +289,9 @@ typedef struct CmArmSerialPortInfo {
 
   /// Serial Port subtype
   UINT16  PortSubtype;
+
+  /// The Base address length
+  UINT64  BaseAddressLength;
 } CM_ARM_SERIAL_PORT_INFO;
 
 /** A structure that describes the
@@ -686,7 +687,7 @@ typedef struct CmArmProcHierarchyInfo {
   UINT32            NoOfPrivateResources;
   /// Token of the array which contains references to the resources private to
   /// this CM_ARM_PROC_HIERARCHY_INFO instance. This field is ignored if
-  /// the NoOfPrivateResources is 0, in which case it is recomended to set
+  /// the NoOfPrivateResources is 0, in which case it is recommended to set
   /// this field to CM_NULL_TOKEN.
   CM_OBJECT_TOKEN   PrivateResourcesArrayToken;
 } CM_ARM_PROC_HIERARCHY_INFO;
@@ -799,7 +800,7 @@ typedef struct CmArmDeviceHandlePci {
   /// PCI Bus Number - Max 256 busses (Bits 15:8 of BDF)
   UINT8  BusNumber;
 
-  /// PCI Device Mumber - Max 32 devices (Bits 7:3 of BDF)
+  /// PCI Device Number - Max 32 devices (Bits 7:3 of BDF)
   UINT8   DeviceNumber;
 
   /// PCI Function Number - Max 8 functions (Bits 2:0 of BDF)

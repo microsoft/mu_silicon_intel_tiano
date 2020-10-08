@@ -1,7 +1,7 @@
 /** @file
   Header file for AcpiView
 
-  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -22,17 +22,6 @@
   Offset to the RSDP length from the start of the RSDP
 **/
 #define RSDP_LENGTH_OFFSET   20
-
-/**
-  The EREPORT_OPTION enum describes ACPI table Reporting options.
-**/
-typedef enum ReportOption {
-  ReportAll,            ///< Report All tables.
-  ReportSelected,       ///< Report Selected table.
-  ReportTableList,      ///< Report List of tables.
-  ReportDumpBinFile,    ///< Dump selected table to a file.
-  ReportMax,
-} EREPORT_OPTION;
 
 /**
   This function resets the ACPI table error counter to Zero.
@@ -71,53 +60,11 @@ GetWarningCount (
   );
 
 /**
-  This function returns the colour highlighting status.
-
-  @retval TRUE if colour highlighting is enabled.
-**/
-BOOLEAN
-GetColourHighlighting (
-  VOID
-  );
-
-/**
-  This function sets the colour highlighting status.
-
-  @param  Highlight       The Highlight status.
-
-**/
-VOID
-SetColourHighlighting (
-  BOOLEAN Highlight
-  );
-
-/**
-  This function returns the consistency checking status.
-
-  @retval TRUE if consistency checking is enabled.
-**/
-BOOLEAN
-GetConsistencyChecking (
-  VOID
-  );
-
-/**
-  This function sets the consistency checking status.
-
-  @param  ConsistencyChecking   The consistency checking status.
-
-**/
-VOID
-SetConsistencyChecking (
-  BOOLEAN ConsistencyChecking
-  );
-
-/**
   This function processes the table reporting options for the ACPI table.
 
   @param [in] Signature The ACPI table Signature.
   @param [in] TablePtr  Pointer to the ACPI table data.
-  @param [in] Length    The length fo the ACPI table.
+  @param [in] Length    The length of the ACPI table.
 
   @retval Returns TRUE if the ACPI table should be traced.
 **/
@@ -126,6 +73,22 @@ ProcessTableReportOptions (
   IN CONST UINT32  Signature,
   IN CONST UINT8*  TablePtr,
   IN CONST UINT32  Length
+  );
+
+/**
+  This function iterates the configuration table entries in the
+  system table, retrieves the RSDP pointer and starts parsing the ACPI tables.
+
+  @param [in] SystemTable Pointer to the EFI system table.
+
+  @retval EFI_NOT_FOUND   The RSDP pointer was not found.
+  @retval EFI_UNSUPPORTED The RSDP version was less than 2.
+  @retval EFI_SUCCESS     The command was successful.
+**/
+EFI_STATUS
+EFIAPI
+AcpiView (
+  IN EFI_SYSTEM_TABLE* SystemTable
   );
 
 #endif // ACPIVIEW_H_

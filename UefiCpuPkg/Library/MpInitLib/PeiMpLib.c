@@ -281,6 +281,25 @@ GetModeTransitionBuffer (
 }
 
 /**
+  Return the address of the SEV-ES AP jump table.
+
+  This buffer is required in order for an SEV-ES guest to transition from
+  UEFI into an OS.
+
+  @return         Return SEV-ES AP jump table buffer
+**/
+UINTN
+GetSevEsAPMemory (
+  VOID
+  )
+{
+  //
+  // PEI phase doesn't need to do such transition. So simply return 0.
+  //
+  return 0;
+}
+
+/**
   Checks APs status and updates APs status if needed.
 
 **/
@@ -644,7 +663,7 @@ MpInitLibEnableDisableAP (
   This funtion will try to invoke platform specific microcode shadow logic to
   relocate microcode update patches into memory.
 
-  @param[in] CpuMpData  The pointer to CPU MP Data structure.
+  @param[in, out] CpuMpData  The pointer to CPU MP Data structure.
 
   @retval EFI_SUCCESS              Shadow microcode success.
   @retval EFI_OUT_OF_RESOURCES     No enough resource to complete the operation.

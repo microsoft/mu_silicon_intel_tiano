@@ -35,11 +35,19 @@ EFI_DRIVER_BINDING_PROTOCOL gPartitionDriverBinding = {
 
 //
 // Prioritized function list to detect partition table.
+// Refer to UEFI Spec 13.3.2 Partition Discovery, the block device
+// should be scanned in below order:
+// 1. GPT
+// 2. ISO 9660 (El Torito) (or UDF)
+// 3. MBR
+// 4. no partiton found
+// Note: UDF is using a same method as booting from CD-ROM, so put it along
+//        with CD-ROM check.
 //
 PARTITION_DETECT_ROUTINE mPartitionDetectRoutineTable[] = {
   PartitionInstallGptChildHandles,
-  PartitionInstallMbrChildHandles,
   PartitionInstallUdfChildHandles,
+  PartitionInstallMbrChildHandles,
   NULL
 };
 
@@ -1141,8 +1149,8 @@ PartitionInstallChildHandle (
 
   Private->Signature        = PARTITION_PRIVATE_DATA_SIGNATURE;
 
-  Private->Start            = MultU64x32 (Start, ParentBlockIo->Media->BlockSize);
-  Private->End              = MultU64x32 (End + 1, ParentBlockIo->Media->BlockSize);
+  Private->Start            = MultU64x32 (Start, BlockSize);
+  Private->End              = MultU64x32 (End + 1, BlockSize);
 
   Private->BlockSize        = BlockSize;
   Private->ParentBlockIo    = ParentBlockIo;
@@ -1179,13 +1187,7 @@ PartitionInstallChildHandle (
 
   Private->Media.IoAlign   = 0;
   Private->Media.LogicalPartition = TRUE;
-  Private->Media.LastBlock = DivU64x32 (
-                               MultU64x32 (
-                                 End - Start + 1,
-                                 ParentBlockIo->Media->BlockSize
-                                 ),
-                                BlockSize
-                               ) - 1;
+  Private->Media.LastBlock = End - Start;
 
   Private->Media.BlockSize = (UINT32) BlockSize;
 
@@ -1276,6 +1278,15 @@ PartitionInstallChildHandle (
   } else {
     FreePool (Private->DevicePath);
     FreePool (Private);
+
+    //
+    // if the Status == EFI_ALREADY_STARTED, it means the child handles
+    // are already installed. So return EFI_SUCCESS to avoid do the next
+    // partition type check.
+    //
+    if (Status == EFI_ALREADY_STARTED) {
+      Status = EFI_SUCCESS;
+    }
   }
 
   return Status;

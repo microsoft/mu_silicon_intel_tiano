@@ -51,7 +51,6 @@ BEGIN {
                 "no-afalgeng",
                 "no-asm",
                 "no-async",
-                "no-autoalginit",
                 "no-autoerrinit",
                 "no-autoload-config",
                 "no-bf",
@@ -63,6 +62,7 @@ BEGIN {
                 "no-cms",
                 "no-ct",
                 "no-deprecated",
+                "no-des",
                 "no-dgram",
                 "no-dsa",
                 "no-dynamic-engine",
@@ -74,12 +74,14 @@ BEGIN {
                 "no-gost",
                 "no-hw",
                 "no-idea",
+                "no-md4",
                 "no-mdc2",
                 "no-pic",
                 "no-ocb",
                 "no-poly1305",
                 "no-posix-io",
                 "no-rc2",
+                "no-rc4",
                 "no-rfc3779",
                 "no-rmd160",
                 "no-scrypt",
@@ -109,8 +111,8 @@ BEGIN {
             # Generate dso_conf.h per config data
             system(
                 "perl -I. -Mconfigdata util/dofile.pl " .
-                "crypto/include/internal/dso_conf.h.in " .
-                "> include/internal/dso_conf.h"
+                "include/crypto/dso_conf.h.in " .
+                "> include/crypto/dso_conf.h"
                 ) == 0 ||
                     die "Failed to generate dso_conf.h!\n";
 
@@ -142,6 +144,7 @@ foreach my $product ((@{$unified_info{libraries}},
             next if $s =~ "crypto/rand/randfile.c";
             next if $s =~ "crypto/store/";
             next if $s =~ "crypto/err/err_all.c";
+            next if $s =~ "crypto/aes/aes_ecb.c";
 
             if ($product =~ "libssl") {
                 push @sslfilelist, '  $(OPENSSL_PATH)/' . $s . "\r\n";
@@ -157,7 +160,7 @@ foreach my $product ((@{$unified_info{libraries}},
 # Update the perl script to generate the missing header files
 #
 my @dir_list = ();
-for (keys %{$unified_info{dirinfo}}){
+for (sort keys %{$unified_info{dirinfo}}){
   push @dir_list,$_;
 }
 
@@ -260,14 +263,21 @@ print "Done!";
 # Copy opensslconf.h and dso_conf.h generated from OpenSSL Configuration
 #
 print "\n--> Duplicating opensslconf.h into Include/openssl ... ";
-copy($OPENSSL_PATH . "/include/openssl/opensslconf.h",
-     $OPENSSL_PATH . "/../../Include/openssl/") ||
-   die "Cannot copy opensslconf.h!";
+system(
+    "perl -pe 's/\\n/\\r\\n/' " .
+    "< " . $OPENSSL_PATH . "/include/openssl/opensslconf.h " .
+    "> " . $OPENSSL_PATH . "/../../Include/openssl/opensslconf.h"
+    ) == 0 ||
+    die "Cannot copy opensslconf.h!";
 print "Done!";
-print "\n--> Duplicating dso_conf.h into Include/internal ... ";
-copy($OPENSSL_PATH . "/include/internal/dso_conf.h",
-     $OPENSSL_PATH . "/../../Include/internal/") ||
-   die "Cannot copy dso_conf.h!";
+
+print "\n--> Duplicating dso_conf.h into Include/crypto ... ";
+system(
+    "perl -pe 's/\\n/\\r\\n/' " .
+    "< " . $OPENSSL_PATH . "/include/crypto/dso_conf.h" .
+    "> " . $OPENSSL_PATH . "/../../Include/crypto/dso_conf.h"
+    ) == 0 ||
+    die "Cannot copy dso_conf.h!";
 print "Done!\n";
 
 print "\nProcessing Files Done!\n";

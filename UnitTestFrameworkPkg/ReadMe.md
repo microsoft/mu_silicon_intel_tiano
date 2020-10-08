@@ -58,7 +58,7 @@ header for the `UnitTestLib` is located in `MdePkg`, so you shouldn't need to de
 packages. As long as your DSC file knows where to find the lib implementation that you want to use,
 you should be good to go.
 
-See this example in 'SampleUnitTestApp.inf'...
+See this example in 'SampleUnitTestUefiShell.inf'...
 
 ```
 [Packages]
@@ -70,6 +70,14 @@ See this example in 'SampleUnitTestApp.inf'...
   DebugLib
   UnitTestLib
   PrintLib
+```
+
+Also, if you want you test to automatically be picked up by the Test Runner plugin, you will need
+to make sure that the module `BASE_NAME` contains the word `Test`...
+
+```
+[Defines]
+  BASE_NAME      = SampleUnitTestUefiShell
 ```
 
 ### Requirements - Code
@@ -221,13 +229,180 @@ https://api.cmocka.org/
 
 ## Development
 
-When using the EDK2 Pytools for CI testing, the host-based unit tests will be built and run on any build that includes the `NOOPT` build target.
+### Iterating on a Single Test
 
-If you are trying to iterate on a single test, a convenient pattern is to build only that test module. For example, the following command will build only the SafeIntLib host-based test from the MdePkg...
+When using the EDK2 Pytools for CI testing, the host-based unit tests will be built and run on any build that includes
+the `NOOPT` build target.
+
+If you are trying to iterate on a single test, a convenient pattern is to build only that test module. For example,
+the following command will build only the SafeIntLib host-based test from the MdePkg...
 
 ```bash
 stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2017 -p MdePkg -t NOOPT BUILDMODULE=MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLib.inf
 ```
+
+### Hooking BaseLib
+
+Most unit test mocking can be performed by the functions provided in the UnitTestFramework libraries, but since
+BaseLib is consumed by the Framework itself, it requires different techniques to substitute parts of the
+functionality.
+
+To solve some of this, the UnitTestFramework consumes a special implementation of BaseLib for host-based tests.
+This implementation contains a [hook table](https://github.com/tianocore/edk2/blob/e188ecc8b4aed8fdd26b731d43883861f5e5e7b4/MdePkg/Test/UnitTest/Include/Library/UnitTestHostBaseLib.h#L507)
+that can be used to substitute test functionality for any of the BaseLib functions. By default, this implementation
+will use the underlying BaseLib implementation, so the unit test writer only has to supply minimal code to test a
+particular case.
+
+### Debugging the Framework Itself
+
+While most of the tests that are produced by the UnitTestFramework are easy to step through in a debugger, the Framework
+itself consumes code (mostly Cmocka) that sets its own build flags. These flags cause parts of the Framework to not
+export symbols and captures exceptions, and as such are harder to debug. We have provided a Stuart parameter to force
+symbolic debugging to be enabled.
+
+You can run a build by adding the `BLD_*_UNIT_TESTING_DEBUG=TRUE` parameter to enable this build option.
+
+```bash
+stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2019 -p MdePkg -t NOOPT BLD_*_UNIT_TESTING_DEBUG=TRUE
+```
+
+## Building and Running Host-Based Tests
+
+The EDK2 CI infrastructure provides a convenient way to run all host-based tests -- in the the entire tree or just
+selected packages -- and aggregate all the the reports, including highlighting any failures. This functionality is
+provided through the Stuart build system (published by EDK2-PyTools) and the `NOOPT` build target.
+
+### Building Locally
+
+First, to make sure you're working with the latest PyTools, run the following command:
+
+```bash
+# Would recommend to run this in a Python venv, but that's out of scope for this doc.
+python -m pip install --upgrade -r ./pip-requirements.txt
+```
+
+After that, the following commands will set up the build and run the host-based tests.
+
+```bash
+# Setup repo for building
+# stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
+stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
+
+# Update all binary dependencies
+# stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
+stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
+
+# Build and run the tests
+# stuart_ci_build -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.> -t NOOPT [-p <Package Name>]
+stuart_ci_build -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019 -t NOOPT -p MdePkg
+```
+
+### Evaluating the Results
+
+In your immediate output, any build failures will be highlighted. You can see these below as "WARNING" and "ERROR" messages.
+
+```text
+(edk_env) PS C:\_uefi\edk2> stuart_ci_build -c .\.pytool\CISettings.py TOOL_CHAIN_TAG=VS2019 -t NOOPT -p MdePkg
+
+SECTION - Init SDE
+SECTION - Loading Plugins
+SECTION - Start Invocable Tool
+SECTION - Getting Environment
+SECTION - Loading plugins
+SECTION - Building MdePkg Package
+PROGRESS - --Running MdePkg: Host Unit Test Compiler Plugin NOOPT --
+WARNING - Allowing Override for key TARGET_ARCH
+PROGRESS - Start time: 2020-07-27 17:18:08.521672
+PROGRESS - Setting up the Environment
+PROGRESS - Running Pre Build
+PROGRESS - Running Build NOOPT
+PROGRESS - Running Post Build
+SECTION - Run Host based Unit Tests
+SUBSECTION - Testing for architecture: X64
+WARNING - TestBaseSafeIntLibHost.exe Test Failed
+WARNING -   Test SafeInt8ToUint8 - UT_ASSERT_EQUAL(0x5b:5b, Result:5c)
+c:\_uefi\edk2\MdePkg\Test\UnitTest\Library\BaseSafeIntLib\TestBaseSafeIntLib.c:35: error: Failure!
+ERROR - Plugin Failed: Host-Based Unit Test Runner returned 1
+CRITICAL - Post Build failed
+PROGRESS - End time: 2020-07-27 17:18:19.792313  Total time Elapsed: 0:00:11
+ERROR - --->Test Failed: Host Unit Test Compiler Plugin NOOPT returned 1
+ERROR - Overall Build Status: Error
+PROGRESS - There were 1 failures out of 1 attempts
+SECTION - Summary
+ERROR - Error
+
+(edk_env) PS C:\_uefi\edk2>
+```
+
+If a test fails, you can run it manually to get more details...
+
+```text
+(edk_env) PS C:\_uefi\edk2> .\Build\MdePkg\HostTest\NOOPT_VS2019\X64\TestBaseSafeIntLibHost.exe
+
+Int Safe Lib Unit Test Application v0.1
+---------------------------------------------------------
+------------     RUNNING ALL TEST SUITES   --------------
+---------------------------------------------------------
+---------------------------------------------------------
+RUNNING TEST SUITE: Int Safe Conversions Test Suite
+---------------------------------------------------------
+[==========] Running 71 test(s).
+[ RUN      ] Test SafeInt8ToUint8
+[  ERROR   ] --- UT_ASSERT_EQUAL(0x5b:5b, Result:5c)
+[   LINE   ] --- c:\_uefi\edk2\MdePkg\Test\UnitTest\Library\BaseSafeIntLib\TestBaseSafeIntLib.c:35: error: Failure!
+[  FAILED  ] Test SafeInt8ToUint8
+[ RUN      ] Test SafeInt8ToUint16
+[       OK ] Test SafeInt8ToUint16
+[ RUN      ] Test SafeInt8ToUint32
+[       OK ] Test SafeInt8ToUint32
+[ RUN      ] Test SafeInt8ToUintn
+[       OK ] Test SafeInt8ToUintn
+...
+```
+
+You can also, if you are so inclined, read the output from the exact instance of the test that was run during
+`stuart_ci_build`. The ouput file can be found on a path that looks like:
+
+`Build/<Package>/HostTest/<Arch>/<TestName>.<TestSuiteName>.<Arch>.result.xml`
+
+A sample of this output looks like:
+
+```xml
+<!--
+  Excerpt taken from:
+  Build\MdePkg\HostTest\NOOPT_VS2019\X64\TestBaseSafeIntLibHost.exe.Int Safe Conversions Test Suite.X64.result.xml
+  -->
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+  <testsuite name="Int Safe Conversions Test Suite" time="0.000" tests="71" failures="1" errors="0" skipped="0" >
+    <testcase name="Test SafeInt8ToUint8" time="0.000" >
+      <failure><![CDATA[UT_ASSERT_EQUAL(0x5c:5c, Result:5b)
+c:\_uefi\MdePkg\Test\UnitTest\Library\BaseSafeIntLib\TestBaseSafeIntLib.c:35: error: Failure!]]></failure>
+    </testcase>
+    <testcase name="Test SafeInt8ToUint16" time="0.000" >
+    </testcase>
+    <testcase name="Test SafeInt8ToUint32" time="0.000" >
+    </testcase>
+    <testcase name="Test SafeInt8ToUintn" time="0.000" >
+    </testcase>
+```
+
+### XML Reporting Mode
+
+Since these applications are built using the CMocka framework, they can also use the following env variables to output
+in a structured XML rather than text:
+
+```text
+CMOCKA_MESSAGE_OUTPUT=xml
+CMOCKA_XML_FILE=<absolute or relative path to output file>
+```
+
+This mode is used by the test running plugin to aggregate the results for CI test status reporting in the web view.
+
+### Important Note
+
+This works on both Windows and Linux, but is currently limited to x64 architectures. Working on getting others, but we
+also welcome contributions.
 
 ## Known Limitations
 
@@ -250,8 +425,72 @@ reporting lib. This isn't currently possible with host-based. Only the assertion
 
 We will continue trying to make these as similar as possible.
 
+## Unit Test Location/Layout Rules
+
+Code/Test                                   | Location
+---------                                   | --------
+Host-Based Unit Tests for a Library/Protocol/PPI/GUID Interface   | If what's being tested is an interface (e.g. a library with a public header file, like DebugLib), the test should be scoped to the parent package.<br/>Example: `MdePkg/Test/UnitTest/[Library/Protocol/Ppi/Guid]/`<br/><br/>A real-world example of this is the BaseSafeIntLib test in MdePkg.<br/>`MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf`
+Host-Based Unit Tests for a Library/Driver (PEI/DXE/SMM) implementation   | If what's being tested is a specific implementation (e.g. BaseDebugLibSerialPort for DebugLib), the test should be scoped to the implementation directory itself, in a UnitTest subdirectory.<br/><br/>Module Example: `MdeModulePkg/Universal/EsrtFmpDxe/UnitTest/`<br/>Library Example: `MdePkg/Library/BaseMemoryLib/UnitTest/`
+Host-Based Tests for a Functionality or Feature   | If you're writing a functional test that operates at the module level (i.e. if it's more than a single file or library), the test should be located in the package-level Tests directory under the HostFuncTest subdirectory.<br/>For example, if you were writing a test for the entire FMP Device Framework, you might put your test in:<br/>`FmpDevicePkg/Test/HostFuncTest/FmpDeviceFramework`<br/><br/>If the feature spans multiple packages, it's location should be determined by the package owners related to the feature.
+Non-Host-Based (PEI/DXE/SMM/Shell) Tests for a Functionality or Feature   | Similar to Host-Based, if the feature is in one package, should be located in the `*Pkg/Test/[Shell/Dxe/Smm/Pei]Test` directory.<br/><br/>If the feature spans multiple packages, it's location should be determined by the package owners related to the feature.<br/><br/>USAGE EXAMPLES<br/>PEI Example: MP_SERVICE_PPI. Or check MTRR configuration in a notification function.<br/> SMM Example: a test in a protocol callback function. (It is different with the solution that SmmAgent+ShellApp)<br/>DXE Example: a test in a UEFI event call back to check SPI/SMRAM status. <br/> Shell Example: the SMM handler audit test has a shell-based app that interacts with an SMM handler to get information. The SMM paging audit test gathers information about both DXE and SMM. And the SMM paging functional test actually forces errors into SMM via a DXE driver.
+
+### Example Directory Tree
+
+```text
+<PackageName>Pkg/
+  ComponentY/
+    ComponentY.inf
+    ComponentY.c
+    UnitTest/
+      ComponentYHostUnitTest.inf      # Host-Based Test for Driver Module
+      ComponentYUnitTest.c
+
+  Library/
+    GeneralPurposeLibBase/
+      ...
+
+    GeneralPurposeLibSerial/
+      ...
+
+    SpecificLibDxe/
+      SpecificLibDxe.c
+      SpecificLibDxe.inf
+      UnitTest/                      # Host-Based Test for Specific Library Implementation
+        SpecificLibDxeHostUnitTest.c
+        SpecificLibDxeHostUnitTest.inf
+  Test/
+    <Package>HostTest.dsc             # Host-Based Test Apps
+    UnitTest/
+      InterfaceX
+        InterfaceXHostUnitTest.inf    # Host-Based App (should be in Test/<Package>HostTest.dsc)
+        InterfaceXPeiUnitTest.inf     # PEIM Target-Based Test (if applicable)
+        InterfaceXDxeUnitTest.inf     # DXE Target-Based Test (if applicable)
+        InterfaceXSmmUnitTest.inf     # SMM Target-Based Test (if applicable)
+        InterfaceXShellUnitTest.inf   # Shell App Target-Based Test (if applicable)
+        InterfaceXUnitTest.c          # Test Logic
+
+      GeneralPurposeLib/              # Host-Based Test for any implementation of GeneralPurposeLib
+        GeneralPurposeLibTest.c
+        GeneralPurposeLibHostUnitTest.inf
+
+  <Package>Pkg.dsc          # Standard Modules and any Target-Based Test Apps (including in Test/)
+
+```
+
+### Future Locations in Consideration
+
+We don't know if these types will exist or be applicable yet, but if you write a support library or module that matches the following, please make sure they live in the correct place.
+
+Code/Test                                   | Location
+---------                                   | --------
+Host-Based Library Implementations                 | Host-Based Implementations of common libraries (eg. MemoryAllocationLibHost) should live in the same package that declares the library interface in its .DEC file in the `*Pkg/HostLibrary` directory. Should have 'Host' in the name.
+Host-Based Mocks and Stubs  | Mock and Stub libraries should live in the `UefiTestFrameworkPkg/StubLibrary` with either 'Mock' or 'Stub' in the library name.
+
+### If still in doubt...
+
+Hop on GitHub and ask @corthon, @mdkinney, or @spbrogan. ;)
+
 ## Copyright
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
-

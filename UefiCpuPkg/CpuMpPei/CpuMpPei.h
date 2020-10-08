@@ -398,6 +398,18 @@ SecPlatformInformation2 (
   );
 
 /**
+  Migrates the Global Descriptor Table (GDT) to permanent memory.
+
+  @retval   EFI_SUCCESS           The GDT was migrated successfully.
+  @retval   EFI_OUT_OF_RESOURCES  The GDT could not be migrated due to lack of available memory.
+
+**/
+EFI_STATUS
+MigrateGdt (
+  VOID
+  );
+
+/**
   Initializes MP and exceptions handlers.
 
   @param  PeiServices                The pointer to the PEI Services Table.
@@ -412,7 +424,7 @@ InitializeCpuMpWorker (
   );
 
 /**
-  Enabl/setup stack guard for each processor if PcdCpuStackGuard is set to TRUE.
+  Enable/setup stack guard for each processor if PcdCpuStackGuard is set to TRUE.
 
   Doing this in the memory-discovered callback is to make sure the Stack Guard
   feature to cover as most PEI code as possible.

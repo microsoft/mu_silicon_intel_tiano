@@ -2,9 +2,27 @@
 # CI configuration for MdeModulePkg
 #
 # Copyright (c) Microsoft Corporation
+# Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
+    ## options defined .pytool/Plugin/LicenseCheck
+    "LicenseCheck": {
+        "IgnoreFiles": []
+    },
+    "EccCheck": {
+        ## Exception sample looks like below:
+        ## "ExceptionList": [
+        ##     "<ErrorID>", "<KeyWord>"
+        ## ]
+        "ExceptionList": [
+        ],
+        ## Both file path and directory path are accepted.
+        "IgnoreFiles": [
+            "Library/BrotliCustomDecompressLib/brotli",
+            "Universal/RegularExpressionDxe/oniguruma"
+        ]
+    },
     ## options defined ci/Plugin/CompilerPlugin
     "CompilerPlugin": {
         "DscPath": "MdeModulePkg.dsc"
@@ -16,7 +34,10 @@
 
     ## options defined ci/Plugin/CharEncodingCheck
     "CharEncodingCheck": {
-        "IgnoreFiles": []
+        "IgnoreFiles": [
+            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/test/testc.c",
+            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/windows/testc.c"
+        ]
     },
 
     ## options defined ci/Plugin/DependencyCheck
@@ -53,7 +74,6 @@
         "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
         "IgnoreFoldersAndFiles": [],
         "IgnoreDuplicates": [
-            "gEdkiiFormBrowserExProtocolGuid=gEfiFormBrowserExProtocolGuid",
             "gEfiPeiMmAccessPpiGuid=gPeiSmmAccessPpiGuid",
             "gPeiSmmControlPpiGuid=gEfiPeiMmControlPpiGuid",
         ]

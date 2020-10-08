@@ -6,11 +6,14 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
-#include <Uefi.h>
-#include <Chipset/ArmV7.h>
+
+#include <Base.h>
+
 #include <Library/ArmLib.h>
-#include <Library/BaseLib.h>
-#include <Library/IoLib.h>
+#include <Library/DebugLib.h>
+
+#include <Chipset/ArmV7.h>
+
 #include "ArmV7Lib.h"
 #include "ArmLibPrivate.h"
 
@@ -39,6 +42,8 @@ ArmInvalidateDataCache (
   VOID
   )
 {
+  ASSERT (!ArmMmuEnabled ());
+
   ArmDataSynchronizationBarrier ();
   ArmV7DataCacheOperation (ArmInvalidateDataCacheEntryBySetWay);
 }
@@ -49,6 +54,8 @@ ArmCleanInvalidateDataCache (
   VOID
   )
 {
+  ASSERT (!ArmMmuEnabled ());
+
   ArmDataSynchronizationBarrier ();
   ArmV7DataCacheOperation (ArmCleanInvalidateDataCacheEntryBySetWay);
 }
@@ -59,6 +66,8 @@ ArmCleanDataCache (
   VOID
   )
 {
+  ASSERT (!ArmMmuEnabled ());
+
   ArmDataSynchronizationBarrier ();
   ArmV7DataCacheOperation (ArmCleanDataCacheEntryBySetWay);
 }

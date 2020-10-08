@@ -41,7 +41,7 @@
 #define CALL_BASECRYPTLIB(Enable, Function, Args, ErrorReturnValue) \
   EDKII_CRYPTO_PCD->Enable                                          \
     ? Function Args                                                 \
-    : (BaseCryptLibServciceNotEnabled (#Function), ErrorReturnValue)
+    : (BaseCryptLibServiceNotEnabled (#Function), ErrorReturnValue)
 
 /**
   A macro used to call a void BaseCryptLib function if it is enabled.
@@ -61,7 +61,7 @@
 #define CALL_VOID_BASECRYPTLIB(Enable, Function, Args)  \
   EDKII_CRYPTO_PCD->Enable                              \
     ? Function Args                                     \
-    : BaseCryptLibServciceNotEnabled (#Function)
+    : BaseCryptLibServiceNotEnabled (#Function)
 
 /**
   Internal worker function that prints a debug message and asserts if a call is
@@ -78,11 +78,29 @@
 **/
 static
 VOID
-BaseCryptLibServciceNotEnabled (
+BaseCryptLibServiceNotEnabled (
   IN CONST CHAR8  *FunctionName
   )
 {
   DEBUG ((DEBUG_ERROR, "[%a] Function %a() is not enabled\n", gEfiCallerBaseName, FunctionName));
+  ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
+}
+
+/**
+  Internal worker function that prints a debug message and asserts if a call is
+  made to a BaseCryptLib function that is deprecated and unsupported any longer.
+
+  @param[in]  FunctionName  Null-terminated ASCII string that is the name of an
+                            EDK II Crypto service.
+
+**/
+static
+VOID
+BaseCryptLibServiceDeprecated (
+  IN CONST CHAR8  *FunctionName
+  )
+{
+  DEBUG ((DEBUG_ERROR, "[%a] Function %a() is deprecated and unsupported any longer\n", gEfiCallerBaseName, FunctionName));
   ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
 }
 
@@ -106,163 +124,273 @@ CryptoServiceGetCryptoVersion (
 //=====================================================================================
 
 /**
-  Retrieves the size, in bytes, of the context buffer required for MD4 hash operations.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
-  If this interface is not supported, then return zero.
-
-  @return  The size, in bytes, of the context buffer required for MD4 hash operations.
   @retval  0   This interface is not supported.
 
 **/
 UINTN
 EFIAPI
-CryptoServiceMd4GetContextSize (
+DeprecatedCryptoServiceMd4GetContextSize (
   VOID
   )
 {
-  return CALL_BASECRYPTLIB (Md4.Services.GetContextSize, Md4GetContextSize, (), 0);
+  return BaseCryptLibServiceDeprecated ("Md4GetContextSize"), 0;
 }
 
 /**
-  Initializes user-supplied memory pointed by Md4Context as MD4 hash context for
-  subsequent use.
-
-  If Md4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[out]  Md4Context  Pointer to MD4 context being initialized.
 
-  @retval TRUE   MD4 context initialization succeeded.
-  @retval FALSE  MD4 context initialization failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceMd4Init (
+DeprecatedCryptoServiceMd4Init (
   OUT  VOID  *Md4Context
   )
 {
-  return CALL_BASECRYPTLIB (Md4.Services.Init, Md4Init, (Md4Context), FALSE);
+  return BaseCryptLibServiceDeprecated ("Md4Init"), FALSE;
 }
 
 /**
-  Makes a copy of an existing MD4 context.
-
-  If Md4Context is NULL, then return FALSE.
-  If NewMd4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]  Md4Context     Pointer to MD4 context being copied.
   @param[out] NewMd4Context  Pointer to new MD4 context.
 
-  @retval TRUE   MD4 context copy succeeded.
-  @retval FALSE  MD4 context copy failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceMd4Duplicate (
+DeprecatedCryptoServiceMd4Duplicate (
   IN   CONST VOID  *Md4Context,
   OUT  VOID        *NewMd4Context
   )
 {
-  return CALL_BASECRYPTLIB (Md4.Services.Duplicate, Md4Duplicate, (Md4Context, NewMd4Context), FALSE);
+  return BaseCryptLibServiceDeprecated ("Md4Duplicate"), FALSE;
 }
 
 /**
-  Digests the input data and updates MD4 context.
-
-  This function performs MD4 digest on a data buffer of the specified size.
-  It can be called multiple times to compute the digest of long or discontinuous data streams.
-  MD4 context should be already correctly initialized by Md4Init(), and should not be finalized
-  by Md4Final(). Behavior with invalid context is undefined.
-
-  If Md4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  Md4Context  Pointer to the MD4 context.
   @param[in]       Data        Pointer to the buffer containing the data to be hashed.
   @param[in]       DataSize    Size of Data buffer in bytes.
 
-  @retval TRUE   MD4 data digest succeeded.
-  @retval FALSE  MD4 data digest failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceMd4Update (
+DeprecatedCryptoServiceMd4Update (
   IN OUT  VOID        *Md4Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   )
 {
-  return CALL_BASECRYPTLIB (Md4.Services.Update, Md4Update, (Md4Context, Data, DataSize), FALSE);
+  return BaseCryptLibServiceDeprecated ("Md4Update"), FALSE;
 }
 
 /**
-  Completes computation of the MD4 digest value.
-
-  This function completes MD4 hash computation and retrieves the digest value into
-  the specified memory. After this function has been called, the MD4 context cannot
-  be used again.
-  MD4 context should be already correctly initialized by Md4Init(), and should not be
-  finalized by Md4Final(). Behavior with invalid MD4 context is undefined.
-
-  If Md4Context is NULL, then return FALSE.
-  If HashValue is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  Md4Context  Pointer to the MD4 context.
   @param[out]      HashValue   Pointer to a buffer that receives the MD4 digest
                                value (16 bytes).
 
-  @retval TRUE   MD4 digest computation succeeded.
-  @retval FALSE  MD4 digest computation failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceMd4Final (
+DeprecatedCryptoServiceMd4Final (
   IN OUT  VOID   *Md4Context,
   OUT     UINT8  *HashValue
   )
 {
-  return CALL_BASECRYPTLIB (Md4.Services.Final, Md4Final, (Md4Context, HashValue), FALSE);
+  return BaseCryptLibServiceDeprecated ("Md4Final"), FALSE;
 }
 
 /**
-  Computes the MD4 message digest of a input data buffer.
-
-  This function performs the MD4 message digest of a given data buffer, and places
-  the digest value into the specified memory.
-
-  If this interface is not supported, then return FALSE.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   Data        Pointer to the buffer containing the data to be hashed.
   @param[in]   DataSize    Size of Data buffer in bytes.
   @param[out]  HashValue   Pointer to a buffer that receives the MD4 digest
                            value (16 bytes).
 
-  @retval TRUE   MD4 digest computation succeeded.
-  @retval FALSE  MD4 digest computation failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceMd4HashAll (
+DeprecatedCryptoServiceMd4HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
   )
 {
-  return CALL_BASECRYPTLIB (Md4.Services.HashAll, Md4HashAll, (Data, DataSize, HashValue), FALSE);
+  return BaseCryptLibServiceDeprecated ("Md4HashAll"), FALSE;
 }
 
+#ifdef DISABLE_MD5_DEPRECATED_INTERFACES
+/**
+  Retrieves the size, in bytes, of the context buffer required for MD5 hash operations.
+
+  If this interface is not supported, then return zero.
+
+  @retval  0   This interface is not supported.
+
+**/
+UINTN
+EFIAPI
+DeprecatedCryptoServiceMd5GetContextSize (
+  VOID
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Md5GetContextSize"), 0;
+}
+
+/**
+  Initializes user-supplied memory pointed by Md5Context as MD5 hash context for
+  subsequent use.
+
+  If Md5Context is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[out]  Md5Context  Pointer to MD5 context being initialized.
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceMd5Init (
+  OUT  VOID  *Md5Context
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Md5Init"), FALSE;
+}
+
+/**
+  Makes a copy of an existing MD5 context.
+
+  If Md5Context is NULL, then return FALSE.
+  If NewMd5Context is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[in]  Md5Context     Pointer to MD5 context being copied.
+  @param[out] NewMd5Context  Pointer to new MD5 context.
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceMd5Duplicate (
+  IN   CONST VOID  *Md5Context,
+  OUT  VOID        *NewMd5Context
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Md5Init"), FALSE;
+}
+
+/**
+  Digests the input data and updates MD5 context.
+
+  This function performs MD5 digest on a data buffer of the specified size.
+  It can be called multiple times to compute the digest of long or discontinuous data streams.
+  MD5 context should be already correctly initialized by Md5Init(), and should not be finalized
+  by Md5Final(). Behavior with invalid context is undefined.
+
+  If Md5Context is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[in, out]  Md5Context  Pointer to the MD5 context.
+  @param[in]       Data        Pointer to the buffer containing the data to be hashed.
+  @param[in]       DataSize    Size of Data buffer in bytes.
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceMd5Update (
+  IN OUT  VOID        *Md5Context,
+  IN      CONST VOID  *Data,
+  IN      UINTN       DataSize
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Md5Init"), FALSE;
+}
+
+/**
+  Completes computation of the MD5 digest value.
+
+  This function completes MD5 hash computation and retrieves the digest value into
+  the specified memory. After this function has been called, the MD5 context cannot
+  be used again.
+  MD5 context should be already correctly initialized by Md5Init(), and should not be
+  finalized by Md5Final(). Behavior with invalid MD5 context is undefined.
+
+  If Md5Context is NULL, then return FALSE.
+  If HashValue is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[in, out]  Md5Context  Pointer to the MD5 context.
+  @param[out]      HashValue   Pointer to a buffer that receives the MD5 digest
+                               value (16 bytes).
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceMd5Final (
+  IN OUT  VOID   *Md5Context,
+  OUT     UINT8  *HashValue
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Md5Final"), FALSE;
+}
+
+/**
+  Computes the MD5 message digest of a input data buffer.
+
+  This function performs the MD5 message digest of a given data buffer, and places
+  the digest value into the specified memory.
+
+  If this interface is not supported, then return FALSE.
+
+  @param[in]   Data        Pointer to the buffer containing the data to be hashed.
+  @param[in]   DataSize    Size of Data buffer in bytes.
+  @param[out]  HashValue   Pointer to a buffer that receives the MD5 digest
+                           value (16 bytes).
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceMd5HashAll (
+  IN   CONST VOID  *Data,
+  IN   UINTN       DataSize,
+  OUT  UINT8       *HashValue
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Md5HashAll"), FALSE;
+}
+#else
 /**
   Retrieves the size, in bytes, of the context buffer required for MD5 hash operations.
 
@@ -420,7 +548,158 @@ CryptoServiceMd5HashAll (
 {
   return CALL_BASECRYPTLIB (Md5.Services.HashAll, Md5HashAll, (Data, DataSize, HashValue), FALSE);
 }
+#endif
 
+#ifdef DISABLE_SHA1_DEPRECATED_INTERFACES
+/**
+  Retrieves the size, in bytes, of the context buffer required for SHA-1 hash operations.
+
+  If this interface is not supported, then return zero.
+
+  @retval  0   This interface is not supported.
+
+**/
+UINTN
+EFIAPI
+DeprecatedCryptoServiceSha1GetContextSize (
+  VOID
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Sha1GetContextSize"), 0;
+}
+
+/**
+  Initializes user-supplied memory pointed by Sha1Context as SHA-1 hash context for
+  subsequent use.
+
+  If Sha1Context is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[out]  Sha1Context  Pointer to SHA-1 context being initialized.
+
+  @retval TRUE   SHA-1 context initialization succeeded.
+  @retval FALSE  SHA-1 context initialization failed.
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceSha1Init (
+  OUT  VOID  *Sha1Context
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Sha1Init"), FALSE;
+}
+
+/**
+  Makes a copy of an existing SHA-1 context.
+
+  If Sha1Context is NULL, then return FALSE.
+  If NewSha1Context is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[in]  Sha1Context     Pointer to SHA-1 context being copied.
+  @param[out] NewSha1Context  Pointer to new SHA-1 context.
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceSha1Duplicate (
+  IN   CONST VOID  *Sha1Context,
+  OUT  VOID        *NewSha1Context
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Sha1Duplicate"), FALSE;
+}
+
+/**
+  Digests the input data and updates SHA-1 context.
+
+  This function performs SHA-1 digest on a data buffer of the specified size.
+  It can be called multiple times to compute the digest of long or discontinuous data streams.
+  SHA-1 context should be already correctly initialized by Sha1Init(), and should not be finalized
+  by Sha1Final(). Behavior with invalid context is undefined.
+
+  If Sha1Context is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[in, out]  Sha1Context  Pointer to the SHA-1 context.
+  @param[in]       Data         Pointer to the buffer containing the data to be hashed.
+  @param[in]       DataSize     Size of Data buffer in bytes.
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceSha1Update (
+  IN OUT  VOID        *Sha1Context,
+  IN      CONST VOID  *Data,
+  IN      UINTN       DataSize
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Sha1Update"), FALSE;
+}
+
+/**
+  Completes computation of the SHA-1 digest value.
+
+  This function completes SHA-1 hash computation and retrieves the digest value into
+  the specified memory. After this function has been called, the SHA-1 context cannot
+  be used again.
+  SHA-1 context should be already correctly initialized by Sha1Init(), and should not be
+  finalized by Sha1Final(). Behavior with invalid SHA-1 context is undefined.
+
+  If Sha1Context is NULL, then return FALSE.
+  If HashValue is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+
+  @param[in, out]  Sha1Context  Pointer to the SHA-1 context.
+  @param[out]      HashValue    Pointer to a buffer that receives the SHA-1 digest
+                                value (20 bytes).
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceSha1Final (
+  IN OUT  VOID   *Sha1Context,
+  OUT     UINT8  *HashValue
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Sha1Final"), FALSE;
+}
+
+/**
+  Computes the SHA-1 message digest of a input data buffer.
+
+  This function performs the SHA-1 message digest of a given data buffer, and places
+  the digest value into the specified memory.
+
+  If this interface is not supported, then return FALSE.
+
+  @param[in]   Data        Pointer to the buffer containing the data to be hashed.
+  @param[in]   DataSize    Size of Data buffer in bytes.
+  @param[out]  HashValue   Pointer to a buffer that receives the SHA-1 digest
+                           value (20 bytes).
+
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+DeprecatedCryptoServiceSha1HashAll (
+  IN   CONST VOID  *Data,
+  IN   UINTN       DataSize,
+  OUT  UINT8       *HashValue
+  )
+{
+  return BaseCryptLibServiceDeprecated ("Sha1HashAll"), FALSE;
+}
+#else
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-1 hash operations.
 
@@ -578,6 +857,7 @@ CryptoServiceSha1HashAll (
 {
   return CALL_BASECRYPTLIB (Sha1.Services.HashAll, Sha1HashAll, (Data, DataSize, HashValue), FALSE);
 }
+#endif
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-256 hash operations.
@@ -1180,305 +1460,237 @@ CryptoServiceSm3HashAll (
 //=====================================================================================
 
 /**
-  Allocates and initializes one HMAC_CTX context for subsequent HMAC-MD5 use.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
-  If this interface is not supported, then return NULL.
-
-  @return  Pointer to the HMAC_CTX context that has been initialized.
-           If the allocations fails, HmacMd5New() returns NULL.
   @retval  NULL  This interface is not supported.
 
 **/
 VOID *
 EFIAPI
-CryptoServiceHmacMd5New (
+DeprecatedCryptoServiceHmacMd5New (
   VOID
   )
 {
-  return CALL_BASECRYPTLIB (HmacMd5.Services.New, HmacMd5New, (), NULL);
+  return BaseCryptLibServiceDeprecated ("HmacMd5New"), NULL;
 }
 
 /**
-  Release the specified HMAC_CTX context.
-
-  If this interface is not supported, then do nothing.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]  HmacMd5Ctx  Pointer to the HMAC_CTX context to be released.
 
 **/
 VOID
 EFIAPI
-CryptoServiceHmacMd5Free (
+DeprecatedCryptoServiceHmacMd5Free (
   IN  VOID  *HmacMd5Ctx
   )
 {
-  CALL_VOID_BASECRYPTLIB (HmacMd5.Services.Free, HmacMd5Free, (HmacMd5Ctx));
+  BaseCryptLibServiceDeprecated ("HmacMd5Free");
 }
 
 /**
-  Set user-supplied key for subsequent use. It must be done before any
-  calling to HmacMd5Update().
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[out]  HmacMd5Context  Pointer to HMAC-MD5 context.
   @param[in]   Key             Pointer to the user-supplied key.
   @param[in]   KeySize         Key size in bytes.
 
-  @retval TRUE   Key is set successfully.
-  @retval FALSE  Key is set unsuccessfully.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacMd5SetKey (
+DeprecatedCryptoServiceHmacMd5SetKey (
   OUT  VOID         *HmacMd5Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
   )
 {
-  return CALL_BASECRYPTLIB (HmacMd5.Services.SetKey, HmacMd5SetKey, (HmacMd5Context, Key, KeySize), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacMd5SetKey"), FALSE;
 }
 
 /**
-  Makes a copy of an existing HMAC-MD5 context.
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If NewHmacMd5Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]  HmacMd5Context     Pointer to HMAC-MD5 context being copied.
   @param[out] NewHmacMd5Context  Pointer to new HMAC-MD5 context.
 
-  @retval TRUE   HMAC-MD5 context copy succeeded.
-  @retval FALSE  HMAC-MD5 context copy failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacMd5Duplicate (
+DeprecatedCryptoServiceHmacMd5Duplicate (
   IN   CONST VOID  *HmacMd5Context,
   OUT  VOID        *NewHmacMd5Context
   )
 {
-  return CALL_BASECRYPTLIB (HmacMd5.Services.Duplicate, HmacMd5Duplicate, (HmacMd5Context, NewHmacMd5Context), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacMd5Duplicate"), FALSE;
 }
 
 /**
-  Digests the input data and updates HMAC-MD5 context.
-
-  This function performs HMAC-MD5 digest on a data buffer of the specified size.
-  It can be called multiple times to compute the digest of long or discontinuous data streams.
-  HMAC-MD5 context should be initialized by HmacMd5New(), and should not be finalized by
-  HmacMd5Final(). Behavior with invalid context is undefined.
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  HmacMd5Context  Pointer to the HMAC-MD5 context.
   @param[in]       Data            Pointer to the buffer containing the data to be digested.
   @param[in]       DataSize        Size of Data buffer in bytes.
 
-  @retval TRUE   HMAC-MD5 data digest succeeded.
-  @retval FALSE  HMAC-MD5 data digest failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacMd5Update (
+DeprecatedCryptoServiceHmacMd5Update (
   IN OUT  VOID        *HmacMd5Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   )
 {
-  return CALL_BASECRYPTLIB (HmacMd5.Services.Update, HmacMd5Update, (HmacMd5Context, Data, DataSize), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacMd5Update"), FALSE;
 }
 
 /**
-  Completes computation of the HMAC-MD5 digest value.
-
-  This function completes HMAC-MD5 hash computation and retrieves the digest value into
-  the specified memory. After this function has been called, the HMAC-MD5 context cannot
-  be used again.
-  HMAC-MD5 context should be initialized by HmacMd5New(), and should not be finalized by
-  HmacMd5Final(). Behavior with invalid HMAC-MD5 context is undefined.
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If HmacValue is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  HmacMd5Context  Pointer to the HMAC-MD5 context.
   @param[out]      HmacValue       Pointer to a buffer that receives the HMAC-MD5 digest
                                    value (16 bytes).
 
-  @retval TRUE   HMAC-MD5 digest computation succeeded.
-  @retval FALSE  HMAC-MD5 digest computation failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacMd5Final (
+DeprecatedCryptoServiceHmacMd5Final (
   IN OUT  VOID   *HmacMd5Context,
   OUT     UINT8  *HmacValue
   )
 {
-  return CALL_BASECRYPTLIB (HmacMd5.Services.Final, HmacMd5Final, (HmacMd5Context, HmacValue), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacMd5Final"), FALSE;
 }
 
 /**
-  Allocates and initializes one HMAC_CTX context for subsequent HMAC-SHA1 use.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
-  If this interface is not supported, then return NULL.
-
-  @return  Pointer to the HMAC_CTX context that has been initialized.
-           If the allocations fails, HmacSha1New() returns NULL.
   @return  NULL   This interface is not supported.
 
 **/
 VOID *
 EFIAPI
-CryptoServiceHmacSha1New (
+DeprecatedCryptoServiceHmacSha1New (
   VOID
   )
 {
-  return CALL_BASECRYPTLIB (HmacSha1.Services.New, HmacSha1New, (), NULL);
+  return BaseCryptLibServiceDeprecated ("HmacSha1New"), NULL;
 }
 
 /**
-  Release the specified HMAC_CTX context.
-
-  If this interface is not supported, then do nothing.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]  HmacSha1Ctx  Pointer to the HMAC_CTX context to be released.
 
 **/
 VOID
 EFIAPI
-CryptoServiceHmacSha1Free (
+DeprecatedCryptoServiceHmacSha1Free (
   IN  VOID  *HmacSha1Ctx
   )
 {
-  CALL_VOID_BASECRYPTLIB (HmacSha1.Services.Free, HmacSha1Free, (HmacSha1Ctx));
+  BaseCryptLibServiceDeprecated ("HmacSha1Free");
 }
 
 /**
-  Set user-supplied key for subsequent use. It must be done before any
-  calling to HmacSha1Update().
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[out]  HmacSha1Context  Pointer to HMAC-SHA1 context.
   @param[in]   Key              Pointer to the user-supplied key.
   @param[in]   KeySize          Key size in bytes.
 
-  @retval TRUE   The Key is set successfully.
-  @retval FALSE  The Key is set unsuccessfully.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacSha1SetKey (
+DeprecatedCryptoServiceHmacSha1SetKey (
   OUT  VOID         *HmacSha1Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
   )
 {
-  return CALL_BASECRYPTLIB (HmacSha1.Services.SetKey, HmacSha1SetKey, (HmacSha1Context, Key, KeySize), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacSha1SetKey"), FALSE;
 }
 
 /**
-  Makes a copy of an existing HMAC-SHA1 context.
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If NewHmacSha1Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]  HmacSha1Context     Pointer to HMAC-SHA1 context being copied.
   @param[out] NewHmacSha1Context  Pointer to new HMAC-SHA1 context.
 
-  @retval TRUE   HMAC-SHA1 context copy succeeded.
-  @retval FALSE  HMAC-SHA1 context copy failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacSha1Duplicate (
+DeprecatedCryptoServiceHmacSha1Duplicate (
   IN   CONST VOID  *HmacSha1Context,
   OUT  VOID        *NewHmacSha1Context
   )
 {
-  return CALL_BASECRYPTLIB (HmacSha1.Services.Duplicate, HmacSha1Duplicate, (HmacSha1Context, NewHmacSha1Context), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacSha1Duplicate"), FALSE;
 }
 
 /**
-  Digests the input data and updates HMAC-SHA1 context.
-
-  This function performs HMAC-SHA1 digest on a data buffer of the specified size.
-  It can be called multiple times to compute the digest of long or discontinuous data streams.
-  HMAC-SHA1 context should be initialized by HmacSha1New(), and should not be finalized by
-  HmacSha1Final(). Behavior with invalid context is undefined.
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  HmacSha1Context Pointer to the HMAC-SHA1 context.
   @param[in]       Data            Pointer to the buffer containing the data to be digested.
   @param[in]       DataSize        Size of Data buffer in bytes.
 
-  @retval TRUE   HMAC-SHA1 data digest succeeded.
-  @retval FALSE  HMAC-SHA1 data digest failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacSha1Update (
+DeprecatedCryptoServiceHmacSha1Update (
   IN OUT  VOID        *HmacSha1Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   )
 {
-  return CALL_BASECRYPTLIB (HmacSha1.Services.Update, HmacSha1Update, (HmacSha1Context, Data, DataSize), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacSha1Update"), FALSE;
 }
 
 /**
-  Completes computation of the HMAC-SHA1 digest value.
-
-  This function completes HMAC-SHA1 hash computation and retrieves the digest value into
-  the specified memory. After this function has been called, the HMAC-SHA1 context cannot
-  be used again.
-  HMAC-SHA1 context should be initialized by HmacSha1New(), and should not be finalized
-  by HmacSha1Final(). Behavior with invalid HMAC-SHA1 context is undefined.
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If HmacValue is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  HmacSha1Context  Pointer to the HMAC-SHA1 context.
   @param[out]      HmacValue        Pointer to a buffer that receives the HMAC-SHA1 digest
                                     value (20 bytes).
 
-  @retval TRUE   HMAC-SHA1 digest computation succeeded.
-  @retval FALSE  HMAC-SHA1 digest computation failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceHmacSha1Final (
+DeprecatedCryptoServiceHmacSha1Final (
   IN OUT  VOID   *HmacSha1Context,
   OUT     UINT8  *HmacValue
   )
 {
-  return CALL_BASECRYPTLIB (HmacSha1.Services.Final, HmacSha1Final, (HmacSha1Context, HmacValue), FALSE);
+  return BaseCryptLibServiceDeprecated ("HmacSha1Final"), FALSE;
 }
 
 /**
@@ -1632,152 +1844,94 @@ CryptoServiceHmacSha256Final (
 //=====================================================================================
 
 /**
-  Retrieves the size, in bytes, of the context buffer required for TDES operations.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
-  If this interface is not supported, then return zero.
-
-  @return  The size, in bytes, of the context buffer required for TDES operations.
   @retval  0   This interface is not supported.
 
 **/
 UINTN
 EFIAPI
-CryptoServiceTdesGetContextSize (
+DeprecatedCryptoServiceTdesGetContextSize (
   VOID
   )
 {
-  return CALL_BASECRYPTLIB (Tdes.Services.GetContextSize, TdesGetContextSize, (), 0);
+  return BaseCryptLibServiceDeprecated ("TdesGetContextSize"), 0;
 }
 
 /**
-  Initializes user-supplied memory as TDES context for subsequent use.
-
-  This function initializes user-supplied memory pointed by TdesContext as TDES context.
-  In addition, it sets up all TDES key materials for subsequent encryption and decryption
-  operations.
-  There are 3 key options as follows:
-  KeyLength = 64,  Keying option 1: K1 == K2 == K3 (Backward compatibility with DES)
-  KeyLength = 128, Keying option 2: K1 != K2 and K3 = K1 (Less Security)
-  KeyLength = 192  Keying option 3: K1 != K2 != K3 (Strongest)
-
-  If TdesContext is NULL, then return FALSE.
-  If Key is NULL, then return FALSE.
-  If KeyLength is not valid, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[out]  TdesContext  Pointer to TDES context being initialized.
   @param[in]   Key          Pointer to the user-supplied TDES key.
   @param[in]   KeyLength    Length of TDES key in bits.
 
-  @retval TRUE   TDES context initialization succeeded.
-  @retval FALSE  TDES context initialization failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceTdesInit (
+DeprecatedCryptoServiceTdesInit (
   OUT  VOID         *TdesContext,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeyLength
   )
 {
-  return CALL_BASECRYPTLIB (Tdes.Services.Init, TdesInit, (TdesContext, Key, KeyLength), FALSE);
+  return BaseCryptLibServiceDeprecated ("TdesInit"), FALSE;
 }
 
 /**
-  Performs TDES encryption on a data buffer of the specified size in ECB mode.
-
-  This function performs TDES encryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   TdesContext  Pointer to the TDES context.
   @param[in]   Input        Pointer to the buffer containing the data to be encrypted.
   @param[in]   InputSize    Size of the Input buffer in bytes.
   @param[out]  Output       Pointer to a buffer that receives the TDES encryption output.
 
-  @retval TRUE   TDES encryption succeeded.
-  @retval FALSE  TDES encryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceTdesEcbEncrypt (
+DeprecatedCryptoServiceTdesEcbEncrypt (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Tdes.Services.EcbEncrypt, TdesEcbEncrypt, (TdesContext, Input, InputSize, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("TdesEcbEncrypt"), FALSE;
 }
 
 /**
-  Performs TDES decryption on a data buffer of the specified size in ECB mode.
-
-  This function performs TDES decryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   TdesContext  Pointer to the TDES context.
   @param[in]   Input        Pointer to the buffer containing the data to be decrypted.
   @param[in]   InputSize    Size of the Input buffer in bytes.
   @param[out]  Output       Pointer to a buffer that receives the TDES decryption output.
 
-  @retval TRUE   TDES decryption succeeded.
-  @retval FALSE  TDES decryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceTdesEcbDecrypt (
+DeprecatedCryptoServiceTdesEcbDecrypt (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Tdes.Services.EcbDecrypt, TdesEcbDecrypt, (TdesContext, Input, InputSize, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("TdesEcbDecrypt"), FALSE;
 }
 
 /**
-  Performs TDES encryption on a data buffer of the specified size in CBC mode.
-
-  This function performs TDES encryption on data buffer pointed by Input, of specified
-  size of InputSize, in CBC mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  Initialization vector should be one block size (8 bytes).
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Ivec is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   TdesContext  Pointer to the TDES context.
   @param[in]   Input        Pointer to the buffer containing the data to be encrypted.
@@ -1785,14 +1939,12 @@ CryptoServiceTdesEcbDecrypt (
   @param[in]   Ivec         Pointer to initialization vector.
   @param[out]  Output       Pointer to a buffer that receives the TDES encryption output.
 
-  @retval TRUE   TDES encryption succeeded.
-  @retval FALSE  TDES encryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceTdesCbcEncrypt (
+DeprecatedCryptoServiceTdesCbcEncrypt (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -1800,26 +1952,12 @@ CryptoServiceTdesCbcEncrypt (
   OUT  UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Tdes.Services.CbcEncrypt, TdesCbcEncrypt, (TdesContext, Input, InputSize, Ivec, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("TdesCbcEncrypt"), FALSE;
 }
 
 /**
-  Performs TDES decryption on a data buffer of the specified size in CBC mode.
-
-  This function performs TDES decryption on data buffer pointed by Input, of specified
-  size of InputSize, in CBC mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  Initialization vector should be one block size (8 bytes).
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Ivec is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   TdesContext  Pointer to the TDES context.
   @param[in]   Input        Pointer to the buffer containing the data to be encrypted.
@@ -1827,14 +1965,12 @@ CryptoServiceTdesCbcEncrypt (
   @param[in]   Ivec         Pointer to initialization vector.
   @param[out]  Output       Pointer to a buffer that receives the TDES encryption output.
 
-  @retval TRUE   TDES decryption succeeded.
-  @retval FALSE  TDES decryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceTdesCbcDecrypt (
+DeprecatedCryptoServiceTdesCbcDecrypt (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -1842,7 +1978,7 @@ CryptoServiceTdesCbcDecrypt (
   OUT  UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Tdes.Services.CbcDecrypt, TdesCbcDecrypt, (TdesContext, Input, InputSize, Ivec, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("TdesCbcDecrypt"), FALSE;
 }
 
 /**
@@ -1897,79 +2033,51 @@ CryptoServiceAesInit (
 }
 
 /**
-  Performs AES encryption on a data buffer of the specified size in ECB mode.
-
-  This function performs AES encryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (16 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  AesContext should be already correctly initialized by AesInit(). Behavior with
-  invalid AES context is undefined.
-
-  If AesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (16 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  AES ECB Mode is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   AesContext  Pointer to the AES context.
   @param[in]   Input       Pointer to the buffer containing the data to be encrypted.
   @param[in]   InputSize   Size of the Input buffer in bytes.
   @param[out]  Output      Pointer to a buffer that receives the AES encryption output.
 
-  @retval TRUE   AES encryption succeeded.
-  @retval FALSE  AES encryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceAesEcbEncrypt (
+DeprecatedCryptoServiceAesEcbEncrypt (
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Aes.Services.EcbEncrypt, AesEcbEncrypt, (AesContext, Input, InputSize, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("AesEcbEncrypt"), FALSE;
 }
 
 /**
-  Performs AES decryption on a data buffer of the specified size in ECB mode.
-
-  This function performs AES decryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (16 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  AesContext should be already correctly initialized by AesInit(). Behavior with
-  invalid AES context is undefined.
-
-  If AesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (16 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  AES ECB Mode is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in]   AesContext  Pointer to the AES context.
   @param[in]   Input       Pointer to the buffer containing the data to be decrypted.
   @param[in]   InputSize   Size of the Input buffer in bytes.
   @param[out]  Output      Pointer to a buffer that receives the AES decryption output.
 
-  @retval TRUE   AES decryption succeeded.
-  @retval FALSE  AES decryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceAesEcbDecrypt (
+DeprecatedCryptoServiceAesEcbDecrypt (
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Aes.Services.EcbDecrypt, AesEcbDecrypt, (AesContext, Input, InputSize, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("AesEcbDecrypt"), FALSE;
 }
 
 /**
@@ -2057,150 +2165,107 @@ CryptoServiceAesCbcDecrypt (
 }
 
 /**
-  Retrieves the size, in bytes, of the context buffer required for ARC4 operations.
+  ARC4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
-  If this interface is not supported, then return zero.
-
-  @return  The size, in bytes, of the context buffer required for ARC4 operations.
   @retval  0   This interface is not supported.
 
 **/
 UINTN
 EFIAPI
-CryptoServiceArc4GetContextSize (
+DeprecatedCryptoServiceArc4GetContextSize (
   VOID
   )
 {
-  return CALL_BASECRYPTLIB (Arc4.Services.GetContextSize, Arc4GetContextSize, (), 0);
+  return BaseCryptLibServiceDeprecated ("Arc4GetContextSize"), 0;
 }
 
 /**
-  Initializes user-supplied memory as ARC4 context for subsequent use.
-
-  This function initializes user-supplied memory pointed by Arc4Context as ARC4 context.
-  In addition, it sets up all ARC4 key materials for subsequent encryption and decryption
-  operations.
-
-  If Arc4Context is NULL, then return FALSE.
-  If Key is NULL, then return FALSE.
-  If KeySize does not in the range of [5, 256] bytes, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  ARC4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[out]  Arc4Context  Pointer to ARC4 context being initialized.
   @param[in]   Key          Pointer to the user-supplied ARC4 key.
   @param[in]   KeySize      Size of ARC4 key in bytes.
 
-  @retval TRUE   ARC4 context initialization succeeded.
-  @retval FALSE  ARC4 context initialization failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceArc4Init (
+DeprecatedCryptoServiceArc4Init (
   OUT  VOID         *Arc4Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
   )
 {
-  return CALL_BASECRYPTLIB (Arc4.Services.Init, Arc4Init, (Arc4Context, Key, KeySize), FALSE);
+  return BaseCryptLibServiceDeprecated ("Arc4Init"), FALSE;
 }
 
 /**
-  Performs ARC4 encryption on a data buffer of the specified size.
-
-  This function performs ARC4 encryption on data buffer pointed by Input, of specified
-  size of InputSize.
-  Arc4Context should be already correctly initialized by Arc4Init(). Behavior with
-  invalid ARC4 context is undefined.
-
-  If Arc4Context is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  ARC4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  Arc4Context  Pointer to the ARC4 context.
   @param[in]       Input        Pointer to the buffer containing the data to be encrypted.
   @param[in]       InputSize    Size of the Input buffer in bytes.
   @param[out]      Output       Pointer to a buffer that receives the ARC4 encryption output.
 
-  @retval TRUE   ARC4 encryption succeeded.
-  @retval FALSE  ARC4 encryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceArc4Encrypt (
+DeprecatedCryptoServiceArc4Encrypt (
   IN OUT  VOID         *Arc4Context,
   IN      CONST UINT8  *Input,
   IN      UINTN        InputSize,
   OUT     UINT8        *Output
   )
 {
-  return CALL_BASECRYPTLIB (Arc4.Services.Encrypt, Arc4Encrypt, (Arc4Context, Input, InputSize, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("Arc4Encrypt"), FALSE;
 }
 
 /**
-  Performs ARC4 decryption on a data buffer of the specified size.
-
-  This function performs ARC4 decryption on data buffer pointed by Input, of specified
-  size of InputSize.
-  Arc4Context should be already correctly initialized by Arc4Init(). Behavior with
-  invalid ARC4 context is undefined.
-
-  If Arc4Context is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  ARC4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  Arc4Context  Pointer to the ARC4 context.
   @param[in]       Input        Pointer to the buffer containing the data to be decrypted.
   @param[in]       InputSize    Size of the Input buffer in bytes.
   @param[out]      Output       Pointer to a buffer that receives the ARC4 decryption output.
 
-  @retval TRUE   ARC4 decryption succeeded.
-  @retval FALSE  ARC4 decryption failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceArc4Decrypt (
+DeprecatedCryptoServiceArc4Decrypt (
   IN OUT  VOID   *Arc4Context,
   IN      UINT8  *Input,
   IN      UINTN  InputSize,
   OUT     UINT8  *Output
   )
 {
-  return CALL_BASECRYPTLIB (Arc4.Services.Decrypt, Arc4Decrypt, (Arc4Context, Input, InputSize, Output), FALSE);
+  return BaseCryptLibServiceDeprecated ("Arc4Decrypt"), FALSE;
 }
 
 /**
-  Resets the ARC4 context to the initial state.
-
-  The function resets the ARC4 context to the state it had immediately after the
-  ARC4Init() function call.
-  Contrary to ARC4Init(), Arc4Reset() requires no secret key as input, but ARC4 context
-  should be already correctly initialized by ARC4Init().
-
-  If Arc4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
+  ARC4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
   @param[in, out]  Arc4Context  Pointer to the ARC4 context.
 
-  @retval TRUE   ARC4 reset succeeded.
-  @retval FALSE  ARC4 reset failed.
   @retval FALSE  This interface is not supported.
 
 **/
 BOOLEAN
 EFIAPI
-CryptoServiceArc4Reset (
+DeprecatedCryptoServiceArc4Reset (
   IN OUT  VOID  *Arc4Context
   )
 {
-  return CALL_BASECRYPTLIB (Arc4.Services.Reset, Arc4Reset, (Arc4Context), FALSE);
+  return BaseCryptLibServiceDeprecated ("Arc4Reset"), FALSE;
 }
 
 //=====================================================================================
@@ -4401,20 +4466,20 @@ CryptoServiceTlsGetCertRevocationList (
 const EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {
   /// Version
   CryptoServiceGetCryptoVersion,
-  /// HMAC MD5
-  CryptoServiceHmacMd5New,
-  CryptoServiceHmacMd5Free,
-  CryptoServiceHmacMd5SetKey,
-  CryptoServiceHmacMd5Duplicate,
-  CryptoServiceHmacMd5Update,
-  CryptoServiceHmacMd5Final,
-  /// HMAC SHA1
-  CryptoServiceHmacSha1New,
-  CryptoServiceHmacSha1Free,
-  CryptoServiceHmacSha1SetKey,
-  CryptoServiceHmacSha1Duplicate,
-  CryptoServiceHmacSha1Update,
-  CryptoServiceHmacSha1Final,
+  /// HMAC MD5 - deprecated and unsupported
+  DeprecatedCryptoServiceHmacMd5New,
+  DeprecatedCryptoServiceHmacMd5Free,
+  DeprecatedCryptoServiceHmacMd5SetKey,
+  DeprecatedCryptoServiceHmacMd5Duplicate,
+  DeprecatedCryptoServiceHmacMd5Update,
+  DeprecatedCryptoServiceHmacMd5Final,
+  /// HMAC SHA1 - deprecated and unsupported
+  DeprecatedCryptoServiceHmacSha1New,
+  DeprecatedCryptoServiceHmacSha1Free,
+  DeprecatedCryptoServiceHmacSha1SetKey,
+  DeprecatedCryptoServiceHmacSha1Duplicate,
+  DeprecatedCryptoServiceHmacSha1Update,
+  DeprecatedCryptoServiceHmacSha1Final,
   /// HMAC SHA256
   CryptoServiceHmacSha256New,
   CryptoServiceHmacSha256Free,
@@ -4422,13 +4487,22 @@ const EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {
   CryptoServiceHmacSha256Duplicate,
   CryptoServiceHmacSha256Update,
   CryptoServiceHmacSha256Final,
-  /// Md4
-  CryptoServiceMd4GetContextSize,
-  CryptoServiceMd4Init,
-  CryptoServiceMd4Duplicate,
-  CryptoServiceMd4Update,
-  CryptoServiceMd4Final,
-  CryptoServiceMd4HashAll,
+  /// Md4 - deprecated and unsupported
+  DeprecatedCryptoServiceMd4GetContextSize,
+  DeprecatedCryptoServiceMd4Init,
+  DeprecatedCryptoServiceMd4Duplicate,
+  DeprecatedCryptoServiceMd4Update,
+  DeprecatedCryptoServiceMd4Final,
+  DeprecatedCryptoServiceMd4HashAll,
+#ifdef DISABLE_MD5_DEPRECATED_INTERFACES
+  /// Md5 - deprecated and unsupported
+  DeprecatedCryptoServiceMd5GetContextSize,
+  DeprecatedCryptoServiceMd5Init,
+  DeprecatedCryptoServiceMd5Duplicate,
+  DeprecatedCryptoServiceMd5Update,
+  DeprecatedCryptoServiceMd5Final,
+  DeprecatedCryptoServiceMd5HashAll,
+#else
   /// Md5
   CryptoServiceMd5GetContextSize,
   CryptoServiceMd5Init,
@@ -4436,6 +4510,7 @@ const EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {
   CryptoServiceMd5Update,
   CryptoServiceMd5Final,
   CryptoServiceMd5HashAll,
+#endif
   /// Pkcs
   CryptoServicePkcs1v2Encrypt,
   CryptoServicePkcs5HashPassword,
@@ -4470,6 +4545,15 @@ const EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {
   CryptoServiceRsaPkcs1Verify,
   CryptoServiceRsaGetPrivateKeyFromPem,
   CryptoServiceRsaGetPublicKeyFromX509,
+#ifdef DISABLE_SHA1_DEPRECATED_INTERFACES
+  /// Sha1 - deprecated and unsupported
+  DeprecatedCryptoServiceSha1GetContextSize,
+  DeprecatedCryptoServiceSha1Init,
+  DeprecatedCryptoServiceSha1Duplicate,
+  DeprecatedCryptoServiceSha1Update,
+  DeprecatedCryptoServiceSha1Final,
+  DeprecatedCryptoServiceSha1HashAll,
+#else
   /// Sha1
   CryptoServiceSha1GetContextSize,
   CryptoServiceSha1Init,
@@ -4477,6 +4561,7 @@ const EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {
   CryptoServiceSha1Update,
   CryptoServiceSha1Final,
   CryptoServiceSha1HashAll,
+#endif
   /// Sha256
   CryptoServiceSha256GetContextSize,
   CryptoServiceSha256Init,
@@ -4508,26 +4593,26 @@ const EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {
   CryptoServiceX509Free,
   CryptoServiceX509StackFree,
   CryptoServiceX509GetTBSCert,
-  /// TDES
-  CryptoServiceTdesGetContextSize,
-  CryptoServiceTdesInit,
-  CryptoServiceTdesEcbEncrypt,
-  CryptoServiceTdesEcbDecrypt,
-  CryptoServiceTdesCbcEncrypt,
-  CryptoServiceTdesCbcDecrypt,
-  /// AES
+  /// TDES - deprecated and unsupported
+  DeprecatedCryptoServiceTdesGetContextSize,
+  DeprecatedCryptoServiceTdesInit,
+  DeprecatedCryptoServiceTdesEcbEncrypt,
+  DeprecatedCryptoServiceTdesEcbDecrypt,
+  DeprecatedCryptoServiceTdesCbcEncrypt,
+  DeprecatedCryptoServiceTdesCbcDecrypt,
+  /// AES - ECB mode is deprecated and unsupported
   CryptoServiceAesGetContextSize,
   CryptoServiceAesInit,
-  CryptoServiceAesEcbEncrypt,
-  CryptoServiceAesEcbDecrypt,
+  DeprecatedCryptoServiceAesEcbEncrypt,
+  DeprecatedCryptoServiceAesEcbDecrypt,
   CryptoServiceAesCbcEncrypt,
   CryptoServiceAesCbcDecrypt,
-  /// Arc4
-  CryptoServiceArc4GetContextSize,
-  CryptoServiceArc4Init,
-  CryptoServiceArc4Encrypt,
-  CryptoServiceArc4Decrypt,
-  CryptoServiceArc4Reset,
+  /// Arc4 - deprecated and unsupported
+  DeprecatedCryptoServiceArc4GetContextSize,
+  DeprecatedCryptoServiceArc4Init,
+  DeprecatedCryptoServiceArc4Encrypt,
+  DeprecatedCryptoServiceArc4Decrypt,
+  DeprecatedCryptoServiceArc4Reset,
   /// SM3
   CryptoServiceSm3GetContextSize,
   CryptoServiceSm3Init,

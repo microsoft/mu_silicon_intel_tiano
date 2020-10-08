@@ -1,6 +1,8 @@
 # @file
 #
 # Copyright (c) Microsoft Corporation.
+# Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
+# Copyright (c) 2020, ARM Limited. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 import os
@@ -39,7 +41,10 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("MdePkg",
+        return ("ArmVirtPkg",
+                "DynamicTablesPkg",
+                "EmulatorPkg",
+                "MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
@@ -49,15 +54,18 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "ShellPkg",
                 "FatPkg",
                 "CryptoPkg",
-                "UnitTestFrameworkPkg"
+                "UnitTestFrameworkPkg",
+                "OvmfPkg"
                 )
 
     def GetArchitecturesSupported(self):
         ''' return iterable of edk2 architectures supported by this build '''
-        return ("IA32",
+        return (
+                "IA32",
                 "X64",
                 "ARM",
-                "AARCH64")
+                "AARCH64",
+                "RISCV64")
 
     def GetTargetsSupported(self):
         ''' return iterable of edk2 target tags supported by this build '''
@@ -122,14 +130,13 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
 
         self.ActualToolChainTag = shell_environment.GetBuildVars().GetValue("TOOL_CHAIN_TAG", "")
 
-        if GetHostInfo().os.upper() == "WINDOWS":
-            scopes += ('host-test-win',)
-
         if GetHostInfo().os.upper() == "LINUX" and self.ActualToolChainTag.upper().startswith("GCC"):
             if "AARCH64" in self.ActualArchitectures:
                 scopes += ("gcc_aarch64_linux",)
             if "ARM" in self.ActualArchitectures:
                 scopes += ("gcc_arm_linux",)
+            if "RISCV64" in self.ActualArchitectures:
+                scopes += ("gcc_riscv64_unknown",)
 
         return scopes
 
@@ -144,6 +151,12 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             "CryptoPkg/Library/OpensslLib/openssl", False))
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
+        rs.append(RequiredSubmodule(
+            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma", False))
+        rs.append(RequiredSubmodule(
+            "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
+        rs.append(RequiredSubmodule(
+            "BaseTools/Source/C/BrotliCompress/brotli", False))
         return rs
 
     def GetName(self):

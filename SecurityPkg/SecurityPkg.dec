@@ -5,9 +5,9 @@
 #  It also provides the definitions(including PPIs/PROTOCOLs/GUIDs and library classes)
 #  and libraries instances, which are used for those features.
 #
-# Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015 Hewlett Packard Enterprise Development LP <BR>
-# Copyright (c) 2017, Microsoft Corporation.  All rights reserved. <BR>
+# Copyright (c) Microsoft Corporation.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -76,6 +76,17 @@
   #
   TcgStorageOpalLib|Include/Library/TcgStorageOpalLib.h
 
+  ## @libraryclass  Provides interfaces to access RPMC device.
+  #
+  RpmcLib|Include/Library/RpmcLib.h
+
+  ## @libraryclass  Provides interfaces to access variable root key.
+  #
+  VariableKeyLib|Include/Library/VariableKeyLib.h
+
+  ## @libraryclass  Provides interfaces about firmware TPM measurement.
+  #
+  TcgEventLogRecordLib|Include/Library/TcgEventLogRecordLib.h
 [Guids]
   ## Security package token space guid.
   # Include/Guid/SecurityPkgTokenSpace.h
@@ -195,6 +206,9 @@
   ## Include/Ppi/FirmwareVolumeInfoStoredHashFv.h
   gEdkiiPeiFirmwareVolumeInfoStoredHashFvPpiGuid = {0x7f5e4e31, 0x81b1, 0x47e5, { 0x9e, 0x21, 0x1e, 0x4b, 0x5b, 0xc2, 0xf6, 0x1d } }
 
+  ## Include/Ppi/Tcg.h
+  gEdkiiTcgPpiGuid = {0x57a13b87, 0x133d, 0x4bf3, { 0xbf, 0xf1, 0x1b, 0xca, 0xc7, 0x17, 0x6c, 0xf1 } }
+
 #
 # [Error.gEfiSecurityPkgTokenSpaceGuid]
 #   0x80000001 | Invalid value provided.
@@ -263,6 +277,12 @@
   # @Prompt Status Code for TPM device definitions
   # @ValidList  0x80000003 | 0x010D0000
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice|0x010D0000|UINT32|0x00000007
+
+  ## Defines the IO port used to trigger a software System Management Interrupt (SMI).<BR><BR>
+  #  Used as the SMI Command IO port by security functionality that triggers a software SMI such
+  #  as Physical Presence Interface (PPI).<BR>
+  # @Prompt SMI Command IO port.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSmiCommandIoPort|0xB2|UINT16|0x00000009
 
   ## Progress Code for FV verification result.<BR><BR>
   #  (EFI_SOFTWARE_PEI_MODULE | EFI_SUBCLASS_SPECIFIC | XXX)
@@ -421,7 +441,18 @@
 
   ## This PCD defines initial setting of TCG2 Persistent Firmware Management Flags
   # PCD can be configured for different settings in different scenarios
-  # Default setting is TCG2_BIOS_TPM_MANAGEMENT_FLAG_DEFAULT | TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_DEFAULT
+  # This PCD follows UEFI TCG2 library definition bit of the BIOS TPM/Storage Management Flags<BR>
+  #    BIT0  -  Reserved <BR>
+  #    BIT1  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CLEAR <BR>
+  #    BIT2  -  Reserved <BR>
+  #    BIT3  -  TCG2_LIB_PP_FLAG_RESET_TRACK <BR>
+  #    BIT4  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_TURN_ON <BR>
+  #    BIT5  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_TURN_OFF <BR>
+  #    BIT6  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_EPS <BR>
+  #    BIT7  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_PCRS <BR>
+  #    BIT16 -  TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_PP_REQUIRED_FOR_ENABLE_BLOCK_SID <BR>
+  #    BIT17 -  TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_PP_REQUIRED_FOR_DISABLE_BLOCK_SID <BR>
+  #    BIT18 -  TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_ENABLE_BLOCK_SID <BR>
   # @Prompt Initial setting of TCG2 Persistent Firmware Management Flags
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags|0x700E2|UINT32|0x0001001B
 

@@ -2,6 +2,7 @@
   This Protocol provides Crypto services to DXE modules
 
   Copyright (C) Microsoft Corporation. All rights reserved.
+  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -20,7 +21,7 @@
 /// the EDK II Crypto Protocol is extended, this version define must be
 /// increased.
 ///
-#define EDKII_CRYPTO_VERSION 6
+#define EDKII_CRYPTO_VERSION 7
 
 ///
 /// EDK II Crypto Protocol forward declaration
@@ -43,273 +44,95 @@ UINTN
 //    MAC (Message Authentication Code) Primitive
 //=====================================================================================
 /**
-  Allocates and initializes one HMAC_CTX context for subsequent HMAC-MD5 use.
-
-  If this interface is not supported, then return NULL.
-
-  @return  Pointer to the HMAC_CTX context that has been initialized.
-           If the allocations fails, HmacMd5New() returns NULL.
-  @retval  NULL  This interface is not supported.
+  HMAC MD5 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
 **/
 typedef
 VOID*
-(EFIAPI *EDKII_CRYPTO_HMAC_MD5_NEW) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_MD5_NEW) (
   VOID
   );
 
-/**
-  Release the specified HMAC_CTX context.
-
-  If this interface is not supported, then do nothing.
-
-  @param[in]  HmacMd5Ctx  Pointer to the HMAC_CTX context to be released.
-
-**/
 typedef
 VOID
-(EFIAPI *EDKII_CRYPTO_HMAC_MD5_FREE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_MD5_FREE) (
   IN  VOID  *HmacMd5Ctx
   );
 
-/**
-  Set user-supplied key for subsequent use. It must be done before any
-  calling to HmacMd5Update().
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[out]  HmacMd5Context  Pointer to HMAC-MD5 context.
-  @param[in]   Key             Pointer to the user-supplied key.
-  @param[in]   KeySize         Key size in bytes.
-
-  @retval TRUE   HMAC-MD5 context initialization succeeded.
-  @retval FALSE  HMAC-MD5 context initialization failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_MD5_SET_KEY) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_MD5_SET_KEY) (
   OUT  VOID         *HmacMd5Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
   );
 
-/**
-  Makes a copy of an existing HMAC-MD5 context.
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If NewHmacMd5Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]  HmacMd5Context     Pointer to HMAC-MD5 context being copied.
-  @param[out] NewHmacMd5Context  Pointer to new HMAC-MD5 context.
-
-  @retval TRUE   HMAC-MD5 context copy succeeded.
-  @retval FALSE  HMAC-MD5 context copy failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_MD5_DUPLICATE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_MD5_DUPLICATE) (
   IN   CONST VOID  *HmacMd5Context,
   OUT  VOID        *NewHmacMd5Context
   );
 
-/**
-  Digests the input data and updates HMAC-MD5 context.
-
-  This function performs HMAC-MD5 digest on a data buffer of the specified size.
-  It can be called multiple times to compute the digest of long or discontinuous data streams.
-  HMAC-MD5 context should be initialized by HmacMd5New(), and should not be finalized by
-  HmacMd5Final(). Behavior with invalid context is undefined.
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  HmacMd5Context  Pointer to the HMAC-MD5 context.
-  @param[in]       Data            Pointer to the buffer containing the data to be digested.
-  @param[in]       DataSize        Size of Data buffer in bytes.
-
-  @retval TRUE   HMAC-MD5 data digest succeeded.
-  @retval FALSE  HMAC-MD5 data digest failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_MD5_UPDATE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_MD5_UPDATE) (
   IN OUT  VOID        *HmacMd5Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   );
 
-
-/**
-  Completes computation of the HMAC-MD5 digest value.
-
-  This function completes HMAC-MD5 hash computation and retrieves the digest value into
-  the specified memory. After this function has been called, the HMAC-MD5 context cannot
-  be used again.
-  HMAC-MD5 context should be initialized by HmacMd5New(), and should not be finalized by
-  HmacMd5Final(). Behavior with invalid HMAC-MD5 context is undefined.
-
-  If HmacMd5Context is NULL, then return FALSE.
-  If HmacValue is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  HmacMd5Context  Pointer to the HMAC-MD5 context.
-  @param[out]      HmacValue       Pointer to a buffer that receives the HMAC-MD5 digest
-                                   value (16 bytes).
-
-  @retval TRUE   HMAC-MD5 digest computation succeeded.
-  @retval FALSE  HMAC-MD5 digest computation failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_MD5_FINAL) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_MD5_FINAL) (
   IN OUT  VOID   *HmacMd5Context,
   OUT     UINT8  *HmacValue
   );
 
-
 /**
-  Allocates and initializes one HMAC_CTX context for subsequent HMAC-SHA1 use.
-
-  If this interface is not supported, then return NULL.
-
-  @return  Pointer to the HMAC_CTX context that has been initialized.
-           If the allocations fails, HmacSha1New() returns NULL.
-  @return  NULL   This interface is not supported.
+  HMAC SHA1 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
 **/
 typedef
 VOID*
-(EFIAPI *EDKII_CRYPTO_HMAC_SHA1_NEW) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_NEW) (
   VOID
   );
 
-/**
-  Release the specified HMAC_CTX context.
-
-  If this interface is not supported, then do nothing.
-
-  @param[in]  HmacSha1Ctx  Pointer to the HMAC_CTX context to be released.
-
-**/
 typedef
 VOID
-(EFIAPI *EDKII_CRYPTO_HMAC_SHA1_FREE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_FREE) (
   IN  VOID  *HmacSha1Ctx
   );
 
-
-/**
-  Set user-supplied key for subsequent use. It must be done before any
-  calling to HmacSha1Update().
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[out]  HmacSha1Context  Pointer to HMAC-SHA1 context.
-  @param[in]   Key              Pointer to the user-supplied key.
-  @param[in]   KeySize          Key size in bytes.
-
-  @retval TRUE   The Key is set successfully.
-  @retval FALSE  The Key is set unsuccessfully.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_SHA1_SET_KEY) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_SET_KEY) (
   OUT  VOID         *HmacSha1Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
   );
 
-
-/**
-  Makes a copy of an existing HMAC-SHA1 context.
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If NewHmacSha1Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]  HmacSha1Context     Pointer to HMAC-SHA1 context being copied.
-  @param[out] NewHmacSha1Context  Pointer to new HMAC-SHA1 context.
-
-  @retval TRUE   HMAC-SHA1 context copy succeeded.
-  @retval FALSE  HMAC-SHA1 context copy failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_SHA1_DUPLICATE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_DUPLICATE) (
   IN   CONST VOID  *HmacSha1Context,
   OUT  VOID        *NewHmacSha1Context
   );
 
-
-/**
-  Digests the input data and updates HMAC-SHA1 context.
-
-  This function performs HMAC-SHA1 digest on a data buffer of the specified size.
-  It can be called multiple times to compute the digest of long or discontinuous data streams.
-  HMAC-SHA1 context should be initialized by HmacSha1New(), and should not be finalized by
-  HmacSha1Final(). Behavior with invalid context is undefined.
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  HmacSha1Context Pointer to the HMAC-SHA1 context.
-  @param[in]       Data            Pointer to the buffer containing the data to be digested.
-  @param[in]       DataSize        Size of Data buffer in bytes.
-
-  @retval TRUE   HMAC-SHA1 data digest succeeded.
-  @retval FALSE  HMAC-SHA1 data digest failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_SHA1_UPDATE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_UPDATE) (
   IN OUT  VOID        *HmacSha1Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   );
 
-
-/**
-  Completes computation of the HMAC-SHA1 digest value.
-
-  This function completes HMAC-SHA1 hash computation and retrieves the digest value into
-  the specified memory. After this function has been called, the HMAC-SHA1 context cannot
-  be used again.
-  HMAC-SHA1 context should be initialized by HmacSha1New(), and should not be finalized
-  by HmacSha1Final(). Behavior with invalid HMAC-SHA1 context is undefined.
-
-  If HmacSha1Context is NULL, then return FALSE.
-  If HmacValue is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  HmacSha1Context  Pointer to the HMAC-SHA1 context.
-  @param[out]      HmacValue        Pointer to a buffer that receives the HMAC-SHA1 digest
-                                    value (20 bytes).
-
-  @retval TRUE   HMAC-SHA1 digest computation succeeded.
-  @retval FALSE  HMAC-SHA1 digest computation failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_HMAC_SHA1_FINAL) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_FINAL) (
   IN OUT  VOID   *HmacSha1Context,
   OUT     UINT8  *HmacValue
   );
@@ -451,145 +274,52 @@ BOOLEAN
 //=====================================================================================
 
 /**
-  Retrieves the size, in bytes, of the context buffer required for MD4 hash operations.
-
-  If this interface is not supported, then return zero.
-
-  @return  The size, in bytes, of the context buffer required for MD4 hash operations.
-  @retval  0   This interface is not supported.
+  MD4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
 **/
 typedef
 UINTN
-(EFIAPI *EDKII_CRYPTO_MD4_GET_CONTEXT_SIZE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_MD4_GET_CONTEXT_SIZE) (
   VOID
   );
 
 
-/**
-  Initializes user-supplied memory pointed by Md4Context as MD4 hash context for
-  subsequent use.
-
-  If Md4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[out]  Md4Context  Pointer to MD4 context being initialized.
-
-  @retval TRUE   MD4 context initialization succeeded.
-  @retval FALSE  MD4 context initialization failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_MD4_INIT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_MD4_INIT) (
   OUT  VOID  *Md4Context
   );
 
 
-/**
-  Makes a copy of an existing MD4 context.
-
-  If Md4Context is NULL, then return FALSE.
-  If NewMd4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]  Md4Context     Pointer to MD4 context being copied.
-  @param[out] NewMd4Context  Pointer to new MD4 context.
-
-  @retval TRUE   MD4 context copy succeeded.
-  @retval FALSE  MD4 context copy failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_MD4_DUPLICATE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_MD4_DUPLICATE) (
   IN   CONST VOID  *Md4Context,
   OUT  VOID        *NewMd4Context
   );
 
 
-/**
-  Digests the input data and updates MD4 context.
-
-  This function performs MD4 digest on a data buffer of the specified size.
-  It can be called multiple times to compute the digest of long or discontinuous data streams.
-  MD4 context should be already correctly initialized by Md4Init(), and should not be finalized
-  by Md4Final(). Behavior with invalid context is undefined.
-
-  If Md4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  Md4Context  Pointer to the MD4 context.
-  @param[in]       Data        Pointer to the buffer containing the data to be hashed.
-  @param[in]       DataSize    Size of Data buffer in bytes.
-
-  @retval TRUE   MD4 data digest succeeded.
-  @retval FALSE  MD4 data digest failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_MD4_UPDATE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_MD4_UPDATE) (
   IN OUT  VOID        *Md4Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   );
 
 
-/**
-  Completes computation of the MD4 digest value.
-
-  This function completes MD4 hash computation and retrieves the digest value into
-  the specified memory. After this function has been called, the MD4 context cannot
-  be used again.
-  MD4 context should be already correctly initialized by Md4Init(), and should not be
-  finalized by Md4Final(). Behavior with invalid MD4 context is undefined.
-
-  If Md4Context is NULL, then return FALSE.
-  If HashValue is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  Md4Context  Pointer to the MD4 context.
-  @param[out]      HashValue   Pointer to a buffer that receives the MD4 digest
-                               value (16 bytes).
-
-  @retval TRUE   MD4 digest computation succeeded.
-  @retval FALSE  MD4 digest computation failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_MD4_FINAL) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_MD4_FINAL) (
   IN OUT  VOID   *Md4Context,
   OUT     UINT8  *HashValue
   );
 
 
-/**
-  Computes the MD4 message digest of a input data buffer.
-
-  This function performs the MD4 message digest of a given data buffer, and places
-  the digest value into the specified memory.
-
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   Data        Pointer to the buffer containing the data to be hashed.
-  @param[in]   DataSize    Size of Data buffer in bytes.
-  @param[out]  HashValue   Pointer to a buffer that receives the MD4 digest
-                           value (16 bytes).
-
-  @retval TRUE   MD4 digest computation succeeded.
-  @retval FALSE  MD4 digest computation failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_MD4_HASH_ALL) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_MD4_HASH_ALL) (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
@@ -2489,155 +2219,45 @@ BOOLEAN
 //=====================================================================================
 
 /**
-  Retrieves the size, in bytes, of the context buffer required for TDES operations.
-
-  If this interface is not supported, then return zero.
-
-  @return  The size, in bytes, of the context buffer required for TDES operations.
-  @retval  0   This interface is not supported.
+  TDES is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
 **/
 typedef
 UINTN
-(EFIAPI *EDKII_CRYPTO_TDES_GET_CONTEXT_SIZE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_TDES_GET_CONTEXT_SIZE) (
   VOID
   );
 
-/**
-  Initializes user-supplied memory as TDES context for subsequent use.
-
-  This function initializes user-supplied memory pointed by TdesContext as TDES context.
-  In addition, it sets up all TDES key materials for subsequent encryption and decryption
-  operations.
-  There are 3 key options as follows:
-  KeyLength = 64,  Keying option 1: K1 == K2 == K3 (Backward compatibility with DES)
-  KeyLength = 128, Keying option 2: K1 != K2 and K3 = K1 (Less Security)
-  KeyLength = 192  Keying option 3: K1 != K2 != K3 (Strongest)
-
-  If TdesContext is NULL, then return FALSE.
-  If Key is NULL, then return FALSE.
-  If KeyLength is not valid, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[out]  TdesContext  Pointer to TDES context being initialized.
-  @param[in]   Key          Pointer to the user-supplied TDES key.
-  @param[in]   KeyLength    Length of TDES key in bits.
-
-  @retval TRUE   TDES context initialization succeeded.
-  @retval FALSE  TDES context initialization failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_TDES_INIT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_TDES_INIT) (
   OUT  VOID         *TdesContext,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeyLength
   );
 
-/**
-  Performs TDES encryption on a data buffer of the specified size in ECB mode.
-
-  This function performs TDES encryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   TdesContext  Pointer to the TDES context.
-  @param[in]   Input        Pointer to the buffer containing the data to be encrypted.
-  @param[in]   InputSize    Size of the Input buffer in bytes.
-  @param[out]  Output       Pointer to a buffer that receives the TDES encryption output.
-
-  @retval TRUE   TDES encryption succeeded.
-  @retval FALSE  TDES encryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_TDES_ECB_ENCRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_TDES_ECB_ENCRYPT) (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   );
 
-/**
-  Performs TDES decryption on a data buffer of the specified size in ECB mode.
-
-  This function performs TDES decryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   TdesContext  Pointer to the TDES context.
-  @param[in]   Input        Pointer to the buffer containing the data to be decrypted.
-  @param[in]   InputSize    Size of the Input buffer in bytes.
-  @param[out]  Output       Pointer to a buffer that receives the TDES decryption output.
-
-  @retval TRUE   TDES decryption succeeded.
-  @retval FALSE  TDES decryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_TDES_ECB_DECRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_TDES_ECB_DECRYPT) (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   );
 
-/**
-  Performs TDES encryption on a data buffer of the specified size in CBC mode.
-
-  This function performs TDES encryption on data buffer pointed by Input, of specified
-  size of InputSize, in CBC mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  Initialization vector should be one block size (8 bytes).
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Ivec is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   TdesContext  Pointer to the TDES context.
-  @param[in]   Input        Pointer to the buffer containing the data to be encrypted.
-  @param[in]   InputSize    Size of the Input buffer in bytes.
-  @param[in]   Ivec         Pointer to initialization vector.
-  @param[out]  Output       Pointer to a buffer that receives the TDES encryption output.
-
-  @retval TRUE   TDES encryption succeeded.
-  @retval FALSE  TDES encryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_TDES_CBC_ENCRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_TDES_CBC_ENCRYPT) (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -2645,38 +2265,9 @@ BOOLEAN
   OUT  UINT8        *Output
   );
 
-/**
-  Performs TDES decryption on a data buffer of the specified size in CBC mode.
-
-  This function performs TDES decryption on data buffer pointed by Input, of specified
-  size of InputSize, in CBC mode.
-  InputSize must be multiple of block size (8 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  Initialization vector should be one block size (8 bytes).
-  TdesContext should be already correctly initialized by TdesInit(). Behavior with
-  invalid TDES context is undefined.
-
-  If TdesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (8 bytes), then return FALSE.
-  If Ivec is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   TdesContext  Pointer to the TDES context.
-  @param[in]   Input        Pointer to the buffer containing the data to be encrypted.
-  @param[in]   InputSize    Size of the Input buffer in bytes.
-  @param[in]   Ivec         Pointer to initialization vector.
-  @param[out]  Output       Pointer to a buffer that receives the TDES encryption output.
-
-  @retval TRUE   TDES decryption succeeded.
-  @retval FALSE  TDES decryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_TDES_CBC_DECRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_TDES_CBC_DECRYPT) (
   IN   VOID         *TdesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -2730,69 +2321,22 @@ BOOLEAN
   );
 
 /**
-  Performs AES encryption on a data buffer of the specified size in ECB mode.
-
-  This function performs AES encryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (16 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  AesContext should be already correctly initialized by AesInit(). Behavior with
-  invalid AES context is undefined.
-
-  If AesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (16 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   AesContext  Pointer to the AES context.
-  @param[in]   Input       Pointer to the buffer containing the data to be encrypted.
-  @param[in]   InputSize   Size of the Input buffer in bytes.
-  @param[out]  Output      Pointer to a buffer that receives the AES encryption output.
-
-  @retval TRUE   AES encryption succeeded.
-  @retval FALSE  AES encryption failed.
-  @retval FALSE  This interface is not supported.
+  AES ECB Mode is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
 **/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_AES_ECB_ENCRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_AES_ECB_ENCRYPT) (
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   OUT  UINT8        *Output
   );
 
-/**
-  Performs AES decryption on a data buffer of the specified size in ECB mode.
-
-  This function performs AES decryption on data buffer pointed by Input, of specified
-  size of InputSize, in ECB mode.
-  InputSize must be multiple of block size (16 bytes). This function does not perform
-  padding. Caller must perform padding, if necessary, to ensure valid input data size.
-  AesContext should be already correctly initialized by AesInit(). Behavior with
-  invalid AES context is undefined.
-
-  If AesContext is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If InputSize is not multiple of block size (16 bytes), then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in]   AesContext  Pointer to the AES context.
-  @param[in]   Input       Pointer to the buffer containing the data to be decrypted.
-  @param[in]   InputSize   Size of the Input buffer in bytes.
-  @param[out]  Output      Pointer to a buffer that receives the AES decryption output.
-
-  @retval TRUE   AES decryption succeeded.
-  @retval FALSE  AES decryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_AES_ECB_DECRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_AES_ECB_DECRYPT) (
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -2878,134 +2422,45 @@ BOOLEAN
   );
 
 /**
-  Retrieves the size, in bytes, of the context buffer required for ARC4 operations.
-
-  If this interface is not supported, then return zero.
-
-  @return  The size, in bytes, of the context buffer required for ARC4 operations.
-  @retval  0   This interface is not supported.
+  ARC4 is deprecated and unsupported any longer.
+  Keep the function field for binary compability.
 
 **/
 typedef
 UINTN
-(EFIAPI *EDKII_CRYPTO_ARC4_GET_CONTEXT_SIZE) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_ARC4_GET_CONTEXT_SIZE) (
   VOID
   );
 
-/**
-  Initializes user-supplied memory as ARC4 context for subsequent use.
-
-  This function initializes user-supplied memory pointed by Arc4Context as ARC4 context.
-  In addition, it sets up all ARC4 key materials for subsequent encryption and decryption
-  operations.
-
-  If Arc4Context is NULL, then return FALSE.
-  If Key is NULL, then return FALSE.
-  If KeySize does not in the range of [5, 256] bytes, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[out]  Arc4Context  Pointer to ARC4 context being initialized.
-  @param[in]   Key          Pointer to the user-supplied ARC4 key.
-  @param[in]   KeySize      Size of ARC4 key in bytes.
-
-  @retval TRUE   ARC4 context initialization succeeded.
-  @retval FALSE  ARC4 context initialization failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_ARC4_INIT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_ARC4_INIT) (
   OUT  VOID         *Arc4Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
   );
 
-/**
-  Performs ARC4 encryption on a data buffer of the specified size.
-
-  This function performs ARC4 encryption on data buffer pointed by Input, of specified
-  size of InputSize.
-  Arc4Context should be already correctly initialized by Arc4Init(). Behavior with
-  invalid ARC4 context is undefined.
-
-  If Arc4Context is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  Arc4Context  Pointer to the ARC4 context.
-  @param[in]       Input        Pointer to the buffer containing the data to be encrypted.
-  @param[in]       InputSize    Size of the Input buffer in bytes.
-  @param[out]      Output       Pointer to a buffer that receives the ARC4 encryption output.
-
-  @retval TRUE   ARC4 encryption succeeded.
-  @retval FALSE  ARC4 encryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_ARC4_ENCRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_ARC4_ENCRYPT) (
   IN OUT  VOID         *Arc4Context,
   IN      CONST UINT8  *Input,
   IN      UINTN        InputSize,
   OUT     UINT8        *Output
   );
 
-/**
-  Performs ARC4 decryption on a data buffer of the specified size.
-
-  This function performs ARC4 decryption on data buffer pointed by Input, of specified
-  size of InputSize.
-  Arc4Context should be already correctly initialized by Arc4Init(). Behavior with
-  invalid ARC4 context is undefined.
-
-  If Arc4Context is NULL, then return FALSE.
-  If Input is NULL, then return FALSE.
-  If Output is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  Arc4Context  Pointer to the ARC4 context.
-  @param[in]       Input        Pointer to the buffer containing the data to be decrypted.
-  @param[in]       InputSize    Size of the Input buffer in bytes.
-  @param[out]      Output       Pointer to a buffer that receives the ARC4 decryption output.
-
-  @retval TRUE   ARC4 decryption succeeded.
-  @retval FALSE  ARC4 decryption failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_ARC4_DECRYPT) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_ARC4_DECRYPT) (
   IN OUT  VOID   *Arc4Context,
   IN      UINT8  *Input,
   IN      UINTN  InputSize,
   OUT     UINT8  *Output
   );
 
-/**
-  Resets the ARC4 context to the initial state.
-
-  The function resets the ARC4 context to the state it had immediately after the
-  ARC4Init() function call.
-  Contrary to ARC4Init(), Arc4Reset() requires no secret key as input, but ARC4 context
-  should be already correctly initialized by ARC4Init().
-
-  If Arc4Context is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-
-  @param[in, out]  Arc4Context  Pointer to the ARC4 context.
-
-  @retval TRUE   ARC4 reset succeeded.
-  @retval FALSE  ARC4 reset failed.
-  @retval FALSE  This interface is not supported.
-
-**/
 typedef
 BOOLEAN
-(EFIAPI *EDKII_CRYPTO_ARC4_RESET) (
+(EFIAPI *DEPRECATED_EDKII_CRYPTO_ARC4_RESET) (
   IN OUT  VOID  *Arc4Context
   );
 
@@ -3986,20 +3441,20 @@ EFI_STATUS
 struct _EDKII_CRYPTO_PROTOCOL {
   /// Version
   EDKII_CRYPTO_GET_VERSION                        GetVersion;
-  /// HMAC MD5
-  EDKII_CRYPTO_HMAC_MD5_NEW                       HmacMd5New;
-  EDKII_CRYPTO_HMAC_MD5_FREE                      HmacMd5Free;
-  EDKII_CRYPTO_HMAC_MD5_SET_KEY                   HmacMd5SetKey;
-  EDKII_CRYPTO_HMAC_MD5_DUPLICATE                 HmacMd5Duplicate;
-  EDKII_CRYPTO_HMAC_MD5_UPDATE                    HmacMd5Update;
-  EDKII_CRYPTO_HMAC_MD5_FINAL                     HmacMd5Final;
-  /// HMAC SHA1
-  EDKII_CRYPTO_HMAC_SHA1_NEW                      HmacSha1New;
-  EDKII_CRYPTO_HMAC_SHA1_FREE                     HmacSha1Free;
-  EDKII_CRYPTO_HMAC_SHA1_SET_KEY                  HmacSha1SetKey;
-  EDKII_CRYPTO_HMAC_SHA1_DUPLICATE                HmacSha1Duplicate;
-  EDKII_CRYPTO_HMAC_SHA1_UPDATE                   HmacSha1Update;
-  EDKII_CRYPTO_HMAC_SHA1_FINAL                    HmacSha1Final;
+  /// HMAC MD5 - deprecated and unsupported
+  DEPRECATED_EDKII_CRYPTO_HMAC_MD5_NEW            DeprecatedHmacMd5New;
+  DEPRECATED_EDKII_CRYPTO_HMAC_MD5_FREE           DeprecatedHmacMd5Free;
+  DEPRECATED_EDKII_CRYPTO_HMAC_MD5_SET_KEY        DeprecatedHmacMd5SetKey;
+  DEPRECATED_EDKII_CRYPTO_HMAC_MD5_DUPLICATE      DeprecatedHmacMd5Duplicate;
+  DEPRECATED_EDKII_CRYPTO_HMAC_MD5_UPDATE         DeprecatedHmacMd5Update;
+  DEPRECATED_EDKII_CRYPTO_HMAC_MD5_FINAL          DeprecatedHmacMd5Final;
+  /// HMAC SHA1 - deprecated and unsupported
+  DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_NEW           DeprecatedHmacSha1New;
+  DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_FREE          DeprecatedHmacSha1Free;
+  DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_SET_KEY       DeprecatedHmacSha1SetKey;
+  DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_DUPLICATE     DeprecatedHmacSha1Duplicate;
+  DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_UPDATE        DeprecatedHmacSha1Update;
+  DEPRECATED_EDKII_CRYPTO_HMAC_SHA1_FINAL         DeprecatedHmacSha1Final;
   /// HMAC SHA256
   EDKII_CRYPTO_HMAC_SHA256_NEW                    HmacSha256New;
   EDKII_CRYPTO_HMAC_SHA256_FREE                   HmacSha256Free;
@@ -4007,13 +3462,13 @@ struct _EDKII_CRYPTO_PROTOCOL {
   EDKII_CRYPTO_HMAC_SHA256_DUPLICATE              HmacSha256Duplicate;
   EDKII_CRYPTO_HMAC_SHA256_UPDATE                 HmacSha256Update;
   EDKII_CRYPTO_HMAC_SHA256_FINAL                  HmacSha256Final;
-  /// Md4
-  EDKII_CRYPTO_MD4_GET_CONTEXT_SIZE               Md4GetContextSize;
-  EDKII_CRYPTO_MD4_INIT                           Md4Init;
-  EDKII_CRYPTO_MD4_DUPLICATE                      Md4Duplicate;
-  EDKII_CRYPTO_MD4_UPDATE                         Md4Update;
-  EDKII_CRYPTO_MD4_FINAL                          Md4Final;
-  EDKII_CRYPTO_MD4_HASH_ALL                       Md4HashAll;
+  /// Md4 - deprecated and unsupported
+  DEPRECATED_EDKII_CRYPTO_MD4_GET_CONTEXT_SIZE    DeprecatedMd4GetContextSize;
+  DEPRECATED_EDKII_CRYPTO_MD4_INIT                DeprecatedMd4Init;
+  DEPRECATED_EDKII_CRYPTO_MD4_DUPLICATE           DeprecatedMd4Duplicate;
+  DEPRECATED_EDKII_CRYPTO_MD4_UPDATE              DeprecatedMd4Update;
+  DEPRECATED_EDKII_CRYPTO_MD4_FINAL               DeprecatedMd4Final;
+  DEPRECATED_EDKII_CRYPTO_MD4_HASH_ALL            DeprecatedMd4HashAll;
   /// Md5
   EDKII_CRYPTO_MD5_GET_CONTEXT_SIZE               Md5GetContextSize;
   EDKII_CRYPTO_MD5_INIT                           Md5Init;
@@ -4093,26 +3548,26 @@ struct _EDKII_CRYPTO_PROTOCOL {
   EDKII_CRYPTO_X509_FREE                          X509Free;
   EDKII_CRYPTO_X509_STACK_FREE                    X509StackFree;
   EDKII_CRYPTO_X509_GET_TBS_CERT                  X509GetTBSCert;
-  /// TDES
-  EDKII_CRYPTO_TDES_GET_CONTEXT_SIZE              TdesGetContextSize;
-  EDKII_CRYPTO_TDES_INIT                          TdesInit;
-  EDKII_CRYPTO_TDES_ECB_ENCRYPT                   TdesEcbEncrypt;
-  EDKII_CRYPTO_TDES_ECB_DECRYPT                   TdesEcbDecrypt;
-  EDKII_CRYPTO_TDES_CBC_ENCRYPT                   TdesCbcEncrypt;
-  EDKII_CRYPTO_TDES_CBC_DECRYPT                   TdesCbcDecrypt;
-  /// AES
+  /// TDES - deprecated and unsupported
+  DEPRECATED_EDKII_CRYPTO_TDES_GET_CONTEXT_SIZE   DeprecatedTdesGetContextSize;
+  DEPRECATED_EDKII_CRYPTO_TDES_INIT               DeprecatedTdesInit;
+  DEPRECATED_EDKII_CRYPTO_TDES_ECB_ENCRYPT        DeprecatedTdesEcbEncrypt;
+  DEPRECATED_EDKII_CRYPTO_TDES_ECB_DECRYPT        DeprecatedTdesEcbDecrypt;
+  DEPRECATED_EDKII_CRYPTO_TDES_CBC_ENCRYPT        DeprecatedTdesCbcEncrypt;
+  DEPRECATED_EDKII_CRYPTO_TDES_CBC_DECRYPT        DeprecatedTdesCbcDecrypt;
+  /// AES - ECB Mode is deprecated and unsupported
   EDKII_CRYPTO_AES_GET_CONTEXT_SIZE               AesGetContextSize;
   EDKII_CRYPTO_AES_INIT                           AesInit;
-  EDKII_CRYPTO_AES_ECB_ENCRYPT                    AesEcbEncrypt;
-  EDKII_CRYPTO_AES_ECB_DECRYPT                    AesEcbDecrypt;
+  DEPRECATED_EDKII_CRYPTO_AES_ECB_ENCRYPT         DeprecatedAesEcbEncrypt;
+  DEPRECATED_EDKII_CRYPTO_AES_ECB_DECRYPT         DeprecatedAesEcbDecrypt;
   EDKII_CRYPTO_AES_CBC_ENCRYPT                    AesCbcEncrypt;
   EDKII_CRYPTO_AES_CBC_DECRYPT                    AesCbcDecrypt;
-  /// Arc4
-  EDKII_CRYPTO_ARC4_GET_CONTEXT_SIZE              Arc4GetContextSize;
-  EDKII_CRYPTO_ARC4_INIT                          Arc4Init;
-  EDKII_CRYPTO_ARC4_ENCRYPT                       Arc4Encrypt;
-  EDKII_CRYPTO_ARC4_DECRYPT                       Arc4Decrypt;
-  EDKII_CRYPTO_ARC4_RESET                         Arc4Reset;
+  /// Arc4 - deprecated and unsupported
+  DEPRECATED_EDKII_CRYPTO_ARC4_GET_CONTEXT_SIZE   DeprecatedArc4GetContextSize;
+  DEPRECATED_EDKII_CRYPTO_ARC4_INIT               DeprecatedArc4Init;
+  DEPRECATED_EDKII_CRYPTO_ARC4_ENCRYPT            DeprecatedArc4Encrypt;
+  DEPRECATED_EDKII_CRYPTO_ARC4_DECRYPT            DeprecatedArc4Decrypt;
+  DEPRECATED_EDKII_CRYPTO_ARC4_RESET              DeprecatedArc4Reset;
   /// SM3
   EDKII_CRYPTO_SM3_GET_CONTEXT_SIZE               Sm3GetContextSize;
   EDKII_CRYPTO_SM3_INIT                           Sm3Init;

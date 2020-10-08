@@ -49,7 +49,7 @@
 #define PRINT_STRUCT_VALUE(pStruct, type, element) \
   do { \
     ShellPrintEx(-1,-1,L"%a",#element); \
-    ShellPrintEx(-1,-1,L": %d\n", (pStruct->type->element)); \
+    ShellPrintEx(-1,-1,L": %u\n", (pStruct->type->element)); \
   } while (0);
 
 #define PRINT_STRUCT_VALUE_H(pStruct, type, element) \
@@ -634,8 +634,8 @@ SmbiosPrintStructure (
       NumOfItem = (Struct->Type14->Hdr.Length - 5) / 3;
       PRINT_PENDING_STRING (Struct, Type14, GroupName);
       for (Index = 0; Index < NumOfItem; Index++) {
-        ShellPrintEx(-1,-1,L"ItemType %d: %d\n", Index + 1, Struct->Type14->Group[Index].ItemType);
-        ShellPrintEx(-1,-1,L"ItemHandle %d: %d\n", Index + 1, Struct->Type14->Group[Index].ItemHandle);
+        ShellPrintEx(-1,-1,L"ItemType %u: %u\n", Index + 1, Struct->Type14->Group[Index].ItemType);
+        ShellPrintEx(-1,-1,L"ItemHandle %u: %u\n", Index + 1, Struct->Type14->Group[Index].ItemHandle);
       }
     }
     break;
@@ -746,8 +746,8 @@ SmbiosPrintStructure (
   case 17:
     PRINT_STRUCT_VALUE_H (Struct, Type17, MemoryArrayHandle);
     PRINT_STRUCT_VALUE_H (Struct, Type17, MemoryErrorInformationHandle);
-    PRINT_STRUCT_VALUE (Struct, Type17, TotalWidth);
-    PRINT_STRUCT_VALUE (Struct, Type17, DataWidth);
+    PRINT_STRUCT_VALUE_H (Struct, Type17, TotalWidth);
+    PRINT_STRUCT_VALUE_H (Struct, Type17, DataWidth);
     PRINT_STRUCT_VALUE (Struct, Type17, Size);
     DisplayMemoryDeviceFormFactor (Struct->Type17->FormFactor, Option);
     PRINT_STRUCT_VALUE_H (Struct, Type17, DeviceSet);
@@ -765,7 +765,7 @@ SmbiosPrintStructure (
     }
     if (AE_SMBIOS_VERSION (0x2, 0x7) && (Struct->Hdr->Length > 0x1C)) {
       PRINT_STRUCT_VALUE (Struct, Type17, ExtendedSize);
-      PRINT_STRUCT_VALUE (Struct, Type17, ConfiguredMemoryClockSpeed);
+      PRINT_STRUCT_VALUE_H (Struct, Type17, ConfiguredMemoryClockSpeed);
     }
     if (AE_SMBIOS_VERSION (0x2, 0x8) && (Struct->Hdr->Length > 0x22)) {
       PRINT_STRUCT_VALUE (Struct, Type17, MinimumVoltage);
@@ -783,16 +783,16 @@ SmbiosPrintStructure (
         PRINT_STRUCT_VALUE_H (Struct, Type17, MemorySubsystemControllerProductID);
       }
       if (Struct->Hdr->Length > 0x34) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, NonVolatileSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, NonVolatileSize);
       }
       if (Struct->Hdr->Length > 0x3C) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, VolatileSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, VolatileSize);
       }
       if (Struct->Hdr->Length > 0x44) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, CacheSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, CacheSize);
       }
       if (Struct->Hdr->Length > 0x4C) {
-        PRINT_STRUCT_VALUE_H (Struct, Type17, LogicalSize);
+        PRINT_STRUCT_VALUE_LH (Struct, Type17, LogicalSize);
       }
     }
     break;

@@ -24,6 +24,8 @@
 [Includes]
   Include
 
+[Includes.Common.Private]
+  Library/BrotliCustomDecompressLib/brotli/c/include
 
 [LibraryClasses]
   ##  @libraryclass  Defines a set of methods to reset whole system.
@@ -387,6 +389,9 @@
   ## GUID indicates the capsule is to store Capsule On Disk file names.
   gEdkiiCapsuleOnDiskNameGuid = { 0x98c80a4f, 0xe16b, 0x4d11, { 0x93, 0x9a, 0xab, 0xe5, 0x61, 0x26, 0x3, 0x30 } }
 
+  ## Include/Guid/MigratedFvInfo.h
+  gEdkiiMigratedFvInfoGuid = { 0xc1ab12f7, 0x74aa, 0x408d, { 0xa2, 0xf4, 0xc6, 0xce, 0xfd, 0x17, 0x98, 0x71 } }
+
 [Ppis]
   ## Include/Ppi/AtaController.h
   gPeiAtaControllerPpiGuid       = { 0xa45e60d1, 0xc719, 0x44aa, { 0xb0, 0x7a, 0xaa, 0x77, 0x7f, 0x85, 0x90, 0x6d }}
@@ -526,7 +531,6 @@
   gEfiLockBoxProtocolGuid        = { 0xbd445d79, 0xb7ad, 0x4f04, { 0x9a, 0xd8, 0x29, 0xbd, 0x20, 0x40, 0xeb, 0x3c }}
 
   ## Include/Protocol/FormBrowserEx.h
-  gEfiFormBrowserExProtocolGuid = { 0x1f73b18d, 0x4630, 0x43c1, { 0xa1, 0xde, 0x6f, 0x80, 0x85, 0x5d, 0x7d, 0xa4 } }
   gEdkiiFormBrowserExProtocolGuid = { 0x1f73b18d, 0x4630, 0x43c1, { 0xa1, 0xde, 0x6f, 0x80, 0x85, 0x5d, 0x7d, 0xa4 } }
 
   ## Include/Protocol/EbcVmTest.h
@@ -758,19 +762,6 @@
   #   FALSE - PciBus driver doesn't probe non-standard granularity for PCI to PCI bridge I/O window.<BR>
   # @Prompt Enable PCI bridge IO alignment probe.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciBridgeIoAlignmentProbe|FALSE|BOOLEAN|0x0001004e
-
-  ## Indicates if StatusCode is reported via Serial port.<BR><BR>
-  #   TRUE  - Reports StatusCode via Serial port.<BR>
-  #   FALSE - Does not report StatusCode via Serial port.<BR>
-  # @Prompt Enable StatusCode via Serial port.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseSerial|TRUE|BOOLEAN|0x00010022
-
-  ## Indicates if StatusCode is stored in memory.
-  #  The memory is boot time memory in PEI Phase and is runtime memory in DXE Phase.<BR><BR>
-  #   TRUE  - Stores StatusCode in memory.<BR>
-  #   FALSE - Does not store StatusCode in memory.<BR>
-  # @Prompt Enable StatusCode via memory.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseMemory|FALSE|BOOLEAN|0x00010023
 
   ## Indicates if PEI phase StatusCode will be replayed in DXE phase.<BR><BR>
   #   TRUE  - Replays PEI phase StatusCode in DXE phased.<BR>
@@ -1232,6 +1223,15 @@
   # @Prompt Shadow Peim and PeiCore on boot
   gEfiMdeModulePkgTokenSpaceGuid.PcdShadowPeimOnBoot|TRUE|BOOLEAN|0x30001029
 
+  ## Enable the feature that evacuate temporary memory to permanent memory or not<BR><BR>
+  #  Set FALSE as default, if the developer need this feature to avoid this vulnerability, please
+  #  enable it to shadow all PEIMs no matter the behavior controled by PcdShadowPeimOnBoot or
+  #  PcdShadowPeimOnS3Boot<BR>
+  #  TRUE - Evacuate temporary memory, the actions include copy memory, convert PPI pointers and so on.<BR>
+  #  FALSE - Do nothing, for example, no copy memory, no convert PPI pointers and so on.<BR>
+  # @Prompt Evacuate temporary memory to permanent memory
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateTemporaryRamFirmwareVolumes|FALSE|BOOLEAN|0x3000102A
+
   ## The mask is used to control memory profile behavior.<BR><BR>
   #  BIT0 - Enable UEFI memory profile.<BR>
   #  BIT1 - Enable SMRAM profile.<BR>
@@ -1548,6 +1548,9 @@
   ## Specify the console output row of text setup.
   # @Prompt Console Output Row of Text Setup
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutRow|25|UINT32|0x4000000e
+
+[PcdsFixedAtBuild.AARCH64, PcdsPatchableInModule.AARCH64]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiExposedTableVersions|0x20|UINT32|0x0001004c
 
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## UART clock frequency is for the baud rate configuration.
@@ -1866,30 +1869,6 @@
   # @Prompt Flag to request system reboot after processing capsule.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSystemRebootAfterCapsuleProcessFlag|0x0001|UINT16|0x0000006d
 
-  ## Publish PropertiesTable or not.
-  #
-  # If this PCD is TRUE, DxeCore publishs PropertiesTable.
-  # DxeCore evaluates if all runtime drivers has 4K aligned PE sections. If all
-  # PE sections in runtime drivers are 4K aligned, DxeCore sets BIT0 in
-  # PropertiesTable. Or DxeCore clears BIT0 in PropertiesTable.
-  # If this PCD is FALSE, DxeCore does not publish PropertiesTable.
-  #
-  # If PropertiesTable has BIT0 set, DxeCore uses below policy in UEFI memory map:
-  #   1) Use EfiRuntimeServicesCode for runtime driver PE image code section and
-  #      use EfiRuntimeServicesData for runtime driver PE image header and other section.
-  #   2) Set EfiRuntimeServicesCode to be EFI_MEMORY_RO.
-  #   3) Set EfiRuntimeServicesData to be EFI_MEMORY_XP.
-  #   4) Set EfiMemoryMappedIO and EfiMemoryMappedIOPortSpace to be EFI_MEMORY_XP.
-  #
-  # NOTE: Platform need gurantee this PCD is set correctly. Platform should set
-  # this PCD to be TURE if and only if all runtime driver has seperated Code/Data
-  # section. If PE code/data sections are merged, the result is unpredictable.
-  #
-  # UEFI 2.6 specification does not recommend to use this BIT0 attribute.
-  #
-  # @Prompt Publish UEFI PropertiesTable.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable|FALSE|BOOLEAN|0x0000006e
-
   ## Default OEM ID for ACPI table creation, its length must be 0x6 bytes to follow ACPI specification.
   # @Prompt Default OEM ID for ACPI table creation.
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId|"INTEL "|VOID*|0x30001034
@@ -2021,6 +2000,19 @@
   # @Prompt TCG Platform Firmware Profile revision.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision|0|UINT32|0x00010077
 
+  ## Indicates if StatusCode is reported via Serial port.<BR><BR>
+  #   TRUE  - Reports StatusCode via Serial port.<BR>
+  #   FALSE - Does not report StatusCode via Serial port.<BR>
+  # @Prompt Enable StatusCode via Serial port.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseSerial|TRUE|BOOLEAN|0x00010022
+
+  ## Indicates if StatusCode is stored in memory.
+  #  The memory is boot time memory in PEI Phase and is runtime memory in DXE Phase.<BR><BR>
+  #   TRUE  - Stores StatusCode in memory.<BR>
+  #   FALSE - Does not store StatusCode in memory.<BR>
+  # @Prompt Enable StatusCode via memory.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseMemory|FALSE|BOOLEAN|0x00010023
+
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
   #  Loading Module at Fixed Address feature is enabled.
@@ -2070,6 +2062,15 @@
   ## This dynamic PCD holds the information if there is any test key used by the platform.
   # @Prompt If there is any test key used by the platform.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed|FALSE|BOOLEAN|0x00030003
+
+  ## This dynamic PCD holds the base address of the Guest-Hypervisor Communication Block (GHCB) pool allocation.
+  # @Prompt GHCB Pool Base Address
+  gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbBase|0|UINT64|0x00030007
+
+  ## This dynamic PCD holds the total size of the Guest-Hypervisor Communication Block (GHCB) pool allocation.
+  #  The amount of memory allocated for GHCBs is dependent on the number of APs.
+  # @Prompt GHCB Pool Size
+  gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbSize|0|UINT64|0x00030008
 
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.

@@ -1,7 +1,7 @@
 /** @file
   MADT Table Generator
 
-  Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2017 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
@@ -332,24 +332,24 @@ AddGICMsiFrameInfoList (
 /** Update the GIC Redistributor Information.
 
   @param [in]  Gicr                 Pointer to GIC Redistributor structure.
-  @param [in]  GicRedisributorInfo  Pointer to the GIC Redistributor Info.
+  @param [in]  GicRedistributorInfo  Pointer to the GIC Redistributor Info.
 **/
 STATIC
 VOID
 AddGICRedistributor (
   IN  EFI_ACPI_6_3_GICR_STRUCTURE   * CONST Gicr,
-  IN  CONST CM_ARM_GIC_REDIST_INFO  * CONST GicRedisributorInfo
+  IN  CONST CM_ARM_GIC_REDIST_INFO  * CONST GicRedistributorInfo
   )
 {
   ASSERT (Gicr != NULL);
-  ASSERT (GicRedisributorInfo != NULL);
+  ASSERT (GicRedistributorInfo != NULL);
 
   Gicr->Type = EFI_ACPI_6_3_GICR;
   Gicr->Length = sizeof (EFI_ACPI_6_3_GICR_STRUCTURE);
   Gicr->Reserved = EFI_ACPI_RESERVED_WORD;
   Gicr->DiscoveryRangeBaseAddress =
-    GicRedisributorInfo->DiscoveryRangeBaseAddress;
-  Gicr->DiscoveryRangeLength = GicRedisributorInfo->DiscoveryRangeLength;
+    GicRedistributorInfo->DiscoveryRangeBaseAddress;
+  Gicr->DiscoveryRangeLength = GicRedistributorInfo->DiscoveryRangeLength;
 }
 
 /** Add the GIC Redistributor Information to the MADT Table.
@@ -795,8 +795,8 @@ ACPI_TABLE_GENERATOR MadtGenerator = {
 EFI_STATUS
 EFIAPI
 AcpiMadtLibConstructor (
-  IN CONST EFI_HANDLE                ImageHandle,
-  IN       EFI_SYSTEM_TABLE  * CONST SystemTable
+  IN  EFI_HANDLE           ImageHandle,
+  IN  EFI_SYSTEM_TABLE  *  SystemTable
   )
 {
   EFI_STATUS  Status;
@@ -818,8 +818,8 @@ AcpiMadtLibConstructor (
 EFI_STATUS
 EFIAPI
 AcpiMadtLibDestructor (
-  IN CONST EFI_HANDLE                ImageHandle,
-  IN       EFI_SYSTEM_TABLE  * CONST SystemTable
+  IN  EFI_HANDLE           ImageHandle,
+  IN  EFI_SYSTEM_TABLE  *  SystemTable
   )
 {
   EFI_STATUS  Status;
