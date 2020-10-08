@@ -8,6 +8,9 @@ tags/
 *.bak
 BuildConfig.conf
 
+# Repo-specific
+/Conf/
+
 # Ignore cloned dependencies
 /Common/MU_TIANO
 /MU_BASECORE
