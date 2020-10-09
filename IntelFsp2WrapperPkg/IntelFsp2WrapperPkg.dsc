@@ -53,10 +53,7 @@
   FspWrapperHobProcessLib|IntelFsp2WrapperPkg/Library/PeiFspWrapperHobProcessLibSample/PeiFspWrapperHobProcessLibSample.inf
 
   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-## MU_CHANGE [BEGIN]
-!if $(TARGET) == DEBUG
-  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+
 ##MSCHANGE Begin
 [LibraryClasses.common]
   BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
