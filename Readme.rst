@@ -49,7 +49,7 @@ Bug Fixes-dev
 2008_CIBuild Changes
 --------------------
 
-- Incomplete
+- None
 
 2008_Rebase Changes
 -------------------
@@ -57,7 +57,7 @@ Bug Fixes-dev
 | Starting commit: 86e15c1188
 | Destination commit: 00519925b5
 
-- Incomplete
+- None
 
 Repo Maintenance
 ================
