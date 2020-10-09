@@ -19,6 +19,7 @@
             "UefiCpuPkg/UefiCpuPkg.dec",
             "IntelFsp2Pkg/IntelFsp2Pkg.dec",
             "IntelFsp2WrapperPkg/IntelFsp2WrapperPkg.dec",
+            "SecurityPkg/SecurityPkg.dec"
         ],
         "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
             "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec" # MS_CHANGE

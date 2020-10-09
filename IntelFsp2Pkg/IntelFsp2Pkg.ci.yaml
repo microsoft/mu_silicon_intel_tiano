@@ -17,6 +17,7 @@
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
             "IntelFsp2Pkg/IntelFsp2Pkg.dec",
+            "UefiCpuPkg/UefiCpuPkg.dec"
         ],
         "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
             "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec" #MS_CHANGE
