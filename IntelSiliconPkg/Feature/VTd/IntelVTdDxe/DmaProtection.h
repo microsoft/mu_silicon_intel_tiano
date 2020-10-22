@@ -77,6 +77,7 @@ typedef struct {
   BOOLEAN                          HasDirtyContext;
   BOOLEAN                          HasDirtyPages;
   PCI_DEVICE_INFORMATION           PciDeviceInfo;
+  BOOLEAN                          Is5LevelPaging;
 } VTD_UNIT_INFORMATION;
 
 //
@@ -375,31 +376,37 @@ ParseDmarAcpiTableRmrr (
 /**
   Dump DMAR context entry table.
 
-  @param[in]  RootEntry DMAR root entry.
+  @param[in]  RootEntry       DMAR root entry.
+  @param[in]  Is5LevelPaging  If it is the 5 level paging.
 **/
 VOID
 DumpDmarContextEntryTable (
-  IN VTD_ROOT_ENTRY *RootEntry
+  IN VTD_ROOT_ENTRY *RootEntry,
+  IN BOOLEAN Is5LevelPaging
   );
 
 /**
   Dump DMAR extended context entry table.
 
-  @param[in]  ExtRootEntry DMAR extended root entry.
+  @param[in]  ExtRootEntry    DMAR extended root entry.
+  @param[in]  Is5LevelPaging  If it is the 5 level paging.
 **/
 VOID
 DumpDmarExtContextEntryTable (
-  IN VTD_EXT_ROOT_ENTRY *ExtRootEntry
+  IN VTD_EXT_ROOT_ENTRY *ExtRootEntry,
+  IN BOOLEAN Is5LevelPaging
   );
 
 /**
   Dump DMAR second level paging entry.
 
-  @param[in]  SecondLevelPagingEntry The second level paging entry.
+  @param[in]  SecondLevelPagingEntry  The second level paging entry.
+  @param[in]  Is5LevelPaging          If it is the 5 level paging.
 **/
 VOID
 DumpSecondLevelPagingEntry (
-  IN VOID *SecondLevelPagingEntry
+  IN VOID *SecondLevelPagingEntry,
+  IN BOOLEAN Is5LevelPaging
   );
 
 /**
