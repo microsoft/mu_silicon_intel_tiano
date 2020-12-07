@@ -123,6 +123,70 @@ DumpDmarDeviceScopeEntry (
 }
 
 /**
+  Dump DMAR SATC table.
+
+  @param[in]  Satc  DMAR SATC table
+**/
+VOID
+DumpDmarSatc (
+  IN EFI_ACPI_DMAR_SATC_HEADER *Satc
+  )
+{
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDeviceScopeEntry;
+  INTN                                    SatcLen;
+
+  if (Satc == NULL) {
+    return;
+  }
+
+  DEBUG ((DEBUG_INFO,
+    "  ***************************************************************************\n"
+    ));
+  DEBUG ((DEBUG_INFO,
+    "  *       ACPI Soc Integrated Address Translation Cache reporting Structure *\n"
+    ));
+  DEBUG ((DEBUG_INFO,
+    "  ***************************************************************************\n"
+    ));
+  DEBUG ((DEBUG_INFO,
+    (sizeof(UINTN) == sizeof(UINT64)) ?
+    "  SATC address ........................................... 0x%016lx\n" :
+    "  SATC address ........................................... 0x%08x\n",
+    Satc
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Type ................................................. 0x%04x\n",
+    Satc->Header.Type
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Length ............................................... 0x%04x\n",
+    Satc->Header.Length
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Flags ................................................ 0x%02x\n",
+    Satc->Flags
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Segment Number ....................................... 0x%04x\n",
+    Satc->SegmentNumber
+    ));
+
+  SatcLen  = Satc->Header.Length - sizeof(EFI_ACPI_DMAR_SATC_HEADER);
+  DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Satc + 1);
+  while (SatcLen > 0) {
+    DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
+    SatcLen -= DmarDeviceScopeEntry->Length;
+    DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
+  }
+
+  DEBUG ((DEBUG_INFO,
+    "  ***************************************************************************\n\n"
+    ));
+
+  return;
+}
+
+/**
   Dump DMAR ANDD table.
 
   @param[in]  Andd  DMAR ANDD table
@@ -515,6 +579,9 @@ DumpAcpiDMAR (
       break;
     case EFI_ACPI_DMAR_TYPE_ANDD:
       DumpDmarAndd ((EFI_ACPI_DMAR_ANDD_HEADER *)DmarHeader);
+      break;
+    case EFI_ACPI_DMAR_TYPE_SATC:
+      DumpDmarSatc ((EFI_ACPI_DMAR_SATC_HEADER *)DmarHeader);
       break;
     default:
       break;
