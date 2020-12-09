@@ -377,6 +377,9 @@ IsValidFitTable (
                                    with microcode patches data in it.
 
   @retval EFI_SUCCESS              The microcode has been shadowed to memory.
+  @retval EFI_INVALID_PARAMETER    BufferSize or Buffer is NULL.
+  @retval EFI_INVALID_PARAMETER    CpuIdCount not equal to 0 and MicrocodeCpuId is NULL.
+  @retval EFI_NOT_FOUND            No valid microcode found.
   @retval EFI_OUT_OF_RESOURCES     The operation fails due to lack of resources.
 
 **/
@@ -390,6 +393,7 @@ ShadowMicrocode (
   OUT VOID                                  **Buffer
   )
 {
+  EFI_STATUS                        Status;
   UINT64                            FitPointer;
   FIRMWARE_INTERFACE_TABLE_ENTRY    *FitEntry;
   UINT32                            EntryNum;
@@ -460,10 +464,13 @@ ShadowMicrocode (
       ));
 
     ShadowMicrocodePatchWorker (PatchInfoBuffer, PatchCount, TotalLoadSize, BufferSize, Buffer);
+    Status = EFI_SUCCESS;
+  } else {
+    Status = EFI_NOT_FOUND;
   }
 
   FreePool (PatchInfoBuffer);
-  return EFI_SUCCESS;
+  return Status;
 }
 
 
