@@ -133,8 +133,7 @@ CreateContextEntry (
       mVtdUnitInformation[VtdIndex].Is5LevelPaging = TRUE;
       if ((mAcpiDmarTable->HostAddressWidth <= 48) &&
           ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) != 0)) {
-          mVtdUnitInformation[VtdIndex].Is5LevelPaging = FALSE;
-        }
+        mVtdUnitInformation[VtdIndex].Is5LevelPaging = FALSE;
       }
     } else if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) == 0) {
       DEBUG((DEBUG_ERROR, "!!!! Page-table type is not supported on VTD %d !!!!\n", VtdIndex));
