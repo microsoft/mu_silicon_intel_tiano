@@ -1,0 +1,31 @@
+##
+# Library interface to retrieve structured records from Intel's FIT
+# Reference:
+# https://edc.intel.com/content/www/us/en/design/products-and-solutions/software-and-services/firmware-and-bios/firmware-interface-table/1.2/
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = BaseFitQueryLib
+  FILE_GUID           = 8C568300-F07B-4E07-BF60-A47CB2D37E92
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = BASE
+  LIBRARY_CLASS       = FitQueryLib
+
+
+[Sources]
+  BaseFitQueryLib.c
+
+
+[LibraryClasses]
+  DebugLib
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  IntelSiliconPkg/IntelSiliconPkg.dec
