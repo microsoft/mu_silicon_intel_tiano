@@ -110,6 +110,7 @@
   IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLib/PeiSmmAccessLib.inf
   IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
   IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
+  IntelSiliconPkg/Library/BaseFitQueryLib/BaseFitQueryLib.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
