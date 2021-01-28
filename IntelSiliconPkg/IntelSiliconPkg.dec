@@ -46,6 +46,12 @@
   #
   ReportCpuHobLib|Include/Library/ReportCpuHobLib.h
 
+  # MU_CHANGE [BEGIN]
+  ##  @libraryclass  Library interface to retrieve structured records from Intel's FIT
+  #
+  FitQueryLib|Include/Library/FitQueryLib.h
+  # MU_CHANGE [END]
+
 [Guids]
   ## GUID for Package token space
   # {A9F8D54E-1107-4F0A-ADD0-4587E7A4A735}
