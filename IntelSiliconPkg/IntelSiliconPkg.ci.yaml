@@ -3,10 +3,10 @@
         "DscPath": "IntelSiliconPkg.dsc"
     },
     "HostUnitTestCompilerPlugin": {
-        # remove for now.  "DscPath": "IntelSiliconPkgTest.dsc"
+        "DscPath": "Test/IntelSiliconPkgHostTest.dsc"
     },
     "HostUnitTestDscCompleteCheck": {
-        #"DscPath": "IntelSiliconPkgTest.dsc",
+        "DscPath": "Test/IntelSiliconPkgHostTest.dsc",
         "IgnoreInf": []
     },
     "CharEncodingCheck": {
