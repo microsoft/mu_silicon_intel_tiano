@@ -23,7 +23,7 @@ jobs:
     matrix:
       TARGET_INTEL_SILICON:
         Build.Pkgs: 'IntelSiliconPkg'
-        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_INTEL_FSP2:
         Build.Pkgs: 'IntelFsp2Pkg,IntelFsp2WrapperPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
