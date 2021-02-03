@@ -402,6 +402,7 @@ ShadowMicrocode (
   UINTN                             MaxPatchNumber;
   CPU_MICROCODE_HEADER              *MicrocodeEntryPoint;
   UINTN                             PatchCount;
+  UINTN                             DataSize;
   UINTN                             TotalSize;
   UINTN                             TotalLoadSize;
 
@@ -446,7 +447,34 @@ ShadowMicrocode (
   for (Index = 0; Index < EntryNum; Index++) {
     if (FitEntry[Index].Type == FIT_TYPE_01_MICROCODE) {
       MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *) (UINTN) FitEntry[Index].Address;
-      TotalSize = (MicrocodeEntryPoint->DataSize == 0) ? 2048 : MicrocodeEntryPoint->TotalSize;
+
+      if (*(UINT32 *) MicrocodeEntryPoint == 0xFFFFFFFF) {
+        //
+        // An empty slot for reserved microcode update, skip to check next entry.
+        //
+        continue;
+      }
+
+      if (MicrocodeEntryPoint->HeaderVersion != 0x1) {
+        //
+        // Not a valid microcode header, skip to check next entry.
+        //
+        continue;
+      }
+
+      DataSize  = MicrocodeEntryPoint->DataSize;
+      TotalSize = (DataSize == 0) ? 2048 : MicrocodeEntryPoint->TotalSize;
+      if ( (UINTN)MicrocodeEntryPoint > (MAX_ADDRESS - TotalSize) ||
+           (DataSize & 0x3) != 0 ||
+           (TotalSize & (SIZE_1KB - 1)) != 0 ||
+           TotalSize < DataSize
+        ) {
+        //
+        // Not a valid microcode header, skip to check next entry.
+        //
+        continue;
+      }
+
       if (IsMicrocodePatchNeedLoad (CpuIdCount, MicrocodeCpuId, MicrocodeEntryPoint)) {
         PatchInfoBuffer[PatchCount].Address     = (UINTN) MicrocodeEntryPoint;
         PatchInfoBuffer[PatchCount].Size        = TotalSize;
