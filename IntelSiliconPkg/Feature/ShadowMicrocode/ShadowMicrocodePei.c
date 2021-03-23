@@ -132,6 +132,10 @@ IsMicrocodePatchNeedLoad (
   CPU_MICROCODE_EXTENDED_TABLE           *ExtendedTable;
   UINTN                                  Index;
 
+  if (FeaturePcdGet (PcdShadowAllMicrocode)) {
+    return TRUE;
+  }
+
   //
   // Check the 'ProcessorSignature' and 'ProcessorFlags' in microcode patch header.
   //
@@ -373,6 +377,9 @@ IsValidFitTable (
                                    with microcode patches data in it.
 
   @retval EFI_SUCCESS              The microcode has been shadowed to memory.
+  @retval EFI_INVALID_PARAMETER    BufferSize or Buffer is NULL.
+  @retval EFI_INVALID_PARAMETER    CpuIdCount not equal to 0 and MicrocodeCpuId is NULL.
+  @retval EFI_NOT_FOUND            No valid microcode found.
   @retval EFI_OUT_OF_RESOURCES     The operation fails due to lack of resources.
 
 **/
@@ -386,6 +393,7 @@ ShadowMicrocode (
   OUT VOID                                  **Buffer
   )
 {
+  EFI_STATUS                        Status;
   UINT64                            FitPointer;
   FIRMWARE_INTERFACE_TABLE_ENTRY    *FitEntry;
   UINT32                            EntryNum;
@@ -394,6 +402,7 @@ ShadowMicrocode (
   UINTN                             MaxPatchNumber;
   CPU_MICROCODE_HEADER              *MicrocodeEntryPoint;
   UINTN                             PatchCount;
+  UINTN                             DataSize;
   UINTN                             TotalSize;
   UINTN                             TotalLoadSize;
 
@@ -438,7 +447,34 @@ ShadowMicrocode (
   for (Index = 0; Index < EntryNum; Index++) {
     if (FitEntry[Index].Type == FIT_TYPE_01_MICROCODE) {
       MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *) (UINTN) FitEntry[Index].Address;
-      TotalSize = (MicrocodeEntryPoint->DataSize == 0) ? 2048 : MicrocodeEntryPoint->TotalSize;
+
+      if (*(UINT32 *) MicrocodeEntryPoint == 0xFFFFFFFF) {
+        //
+        // An empty slot for reserved microcode update, skip to check next entry.
+        //
+        continue;
+      }
+
+      if (MicrocodeEntryPoint->HeaderVersion != 0x1) {
+        //
+        // Not a valid microcode header, skip to check next entry.
+        //
+        continue;
+      }
+
+      DataSize  = MicrocodeEntryPoint->DataSize;
+      TotalSize = (DataSize == 0) ? 2048 : MicrocodeEntryPoint->TotalSize;
+      if ( (UINTN)MicrocodeEntryPoint > (MAX_ADDRESS - TotalSize) ||
+           (DataSize & 0x3) != 0 ||
+           (TotalSize & (SIZE_1KB - 1)) != 0 ||
+           TotalSize < DataSize
+        ) {
+        //
+        // Not a valid microcode header, skip to check next entry.
+        //
+        continue;
+      }
+
       if (IsMicrocodePatchNeedLoad (CpuIdCount, MicrocodeCpuId, MicrocodeEntryPoint)) {
         PatchInfoBuffer[PatchCount].Address     = (UINTN) MicrocodeEntryPoint;
         PatchInfoBuffer[PatchCount].Size        = TotalSize;
@@ -456,10 +492,13 @@ ShadowMicrocode (
       ));
 
     ShadowMicrocodePatchWorker (PatchInfoBuffer, PatchCount, TotalLoadSize, BufferSize, Buffer);
+    Status = EFI_SUCCESS;
+  } else {
+    Status = EFI_NOT_FOUND;
   }
 
   FreePool (PatchInfoBuffer);
-  return EFI_SUCCESS;
+  return Status;
 }
 
 

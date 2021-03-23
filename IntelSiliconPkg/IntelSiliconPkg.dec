@@ -77,6 +77,13 @@
   # Include/Protocol/PlatformDeviceSecurityPolicy.h
   gEdkiiDeviceSecurityPolicyProtocolGuid = {0x7ea41a99, 0x5e32, 0x4c97, {0x88, 0xc4, 0xd6, 0xe7, 0x46, 0x84, 0x9, 0xd4}}
 
+[PcdsFeatureFlag]
+  ## Indicates if all microcode update patches shall be shadowed to memory.
+  #   TRUE  - All microcode patches will be shadowed.<BR>
+  #   FALSE - Only the microcode for current present processors will be shadowed.<BR>
+  # @Prompt Shadow all microcode update patches.
+  gIntelSiliconPkgTokenSpaceGuid.PcdShadowAllMicrocode|FALSE|BOOLEAN|0x00000006
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Error code for VTd error.<BR><BR>
   #  EDKII_ERROR_CODE_VTD_ERROR = (EFI_IO_BUS_UNSPECIFIED | (EFI_OEM_SPECIFIC | 0x00000000)) = 0x02008000<BR>

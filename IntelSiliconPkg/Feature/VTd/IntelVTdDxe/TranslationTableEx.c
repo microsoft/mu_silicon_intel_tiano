@@ -78,11 +78,27 @@ CreateExtContextEntry (
 
     DEBUG ((DEBUG_INFO,"DOMAIN: S%04x, B%02x D%02x F%02x\n", mVtdUnitInformation[VtdIndex].Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
 
-    if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) == 0) {
-      DEBUG((DEBUG_ERROR, "!!!! 4-level page-table is not supported on VTD %d !!!!\n", VtdIndex));
+    mVtdUnitInformation[VtdIndex].Is5LevelPaging = FALSE;
+    if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT3) != 0) {
+      mVtdUnitInformation[VtdIndex].Is5LevelPaging = TRUE;
+      if ((mAcpiDmarTable->HostAddressWidth <= 48) &&
+          ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) != 0)) {
+        mVtdUnitInformation[VtdIndex].Is5LevelPaging = FALSE;
+      }
+    } else if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) == 0) {
+      DEBUG((DEBUG_ERROR, "!!!! Page-table type is not supported on VTD %d !!!!\n", VtdIndex));
       return EFI_UNSUPPORTED;
     }
-    ExtContextEntry->Bits.AddressWidth = 0x2;
+
+    if (mVtdUnitInformation[VtdIndex].Is5LevelPaging) {
+      ExtContextEntry->Bits.AddressWidth = 0x3;
+      DEBUG((DEBUG_INFO, "Using 5-level page-table on VTD %d\n", VtdIndex));
+    } else {
+      ExtContextEntry->Bits.AddressWidth = 0x2;
+      DEBUG((DEBUG_INFO, "Using 4-level page-table on VTD %d\n", VtdIndex));
+    }
+
+
   }
 
   FlushPageTableMemory (VtdIndex, (UINTN)mVtdUnitInformation[VtdIndex].ExtRootEntryTable, EFI_PAGES_TO_SIZE(EntryTablePages));
@@ -93,11 +109,13 @@ CreateExtContextEntry (
 /**
   Dump DMAR extended context entry table.
 
-  @param[in]  ExtRootEntry DMAR extended root entry.
+  @param[in]  ExtRootEntry    DMAR extended root entry.
+  @param[in]  Is5LevelPaging  If it is the 5 level paging.
 **/
 VOID
 DumpDmarExtContextEntryTable (
-  IN VTD_EXT_ROOT_ENTRY *ExtRootEntry
+  IN VTD_EXT_ROOT_ENTRY *ExtRootEntry,
+  IN BOOLEAN Is5LevelPaging
   )
 {
   UINTN                 Index;
@@ -127,7 +145,7 @@ DumpDmarExtContextEntryTable (
       if (ExtContextEntry[Index2].Bits.Present == 0) {
         continue;
       }
-      DumpSecondLevelPagingEntry ((VOID *)(UINTN)VTD_64BITS_ADDRESS(ExtContextEntry[Index2].Bits.SecondLevelPageTranslationPointerLo, ExtContextEntry[Index2].Bits.SecondLevelPageTranslationPointerHi));
+      DumpSecondLevelPagingEntry ((VOID *)(UINTN)VTD_64BITS_ADDRESS(ExtContextEntry[Index2].Bits.SecondLevelPageTranslationPointerLo, ExtContextEntry[Index2].Bits.SecondLevelPageTranslationPointerHi), Is5LevelPaging);
     }
 
     if (ExtRootEntry[Index].Bits.UpperPresent == 0) {

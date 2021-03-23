@@ -523,10 +523,10 @@ SetupVtd (
   for (Index = 0; Index < mVtdUnitNumber; Index++) {
     DEBUG ((DEBUG_INFO,"VTD Unit %d (Segment: %04x)\n", Index, mVtdUnitInformation[Index].Segment));
     if (mVtdUnitInformation[Index].ExtRootEntryTable != NULL) {
-      DumpDmarExtContextEntryTable (mVtdUnitInformation[Index].ExtRootEntryTable);
+      DumpDmarExtContextEntryTable (mVtdUnitInformation[Index].ExtRootEntryTable, mVtdUnitInformation[Index].Is5LevelPaging);
     }
     if (mVtdUnitInformation[Index].RootEntryTable != NULL) {
-      DumpDmarContextEntryTable (mVtdUnitInformation[Index].RootEntryTable);
+      DumpDmarContextEntryTable (mVtdUnitInformation[Index].RootEntryTable, mVtdUnitInformation[Index].Is5LevelPaging);
     }
   }
 

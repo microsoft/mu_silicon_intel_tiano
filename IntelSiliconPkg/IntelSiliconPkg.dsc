@@ -80,6 +80,7 @@
   IntelSiliconPkg/Feature/PcieSecurity/IntelPciDeviceSecurityDxe/IntelPciDeviceSecurityDxe.inf
   IntelSiliconPkg/Feature/PcieSecurity/SamplePlatformDevicePolicyDxe/SamplePlatformDevicePolicyDxe.inf
   IntelSiliconPkg/Feature/VTd/IntelVTdDxe/IntelVTdDxe.inf
+  IntelSiliconPkg/Feature/VTd/IntelVTdDmarPei/IntelVTdDmarPei.inf
   IntelSiliconPkg/Feature/VTd/IntelVTdPmrPei/IntelVTdPmrPei.inf
   IntelSiliconPkg/Feature/VTd/PlatformVTdSampleDxe/PlatformVTdSampleDxe.inf
   IntelSiliconPkg/Feature/VTd/PlatformVTdInfoSamplePei/PlatformVTdInfoSamplePei.inf

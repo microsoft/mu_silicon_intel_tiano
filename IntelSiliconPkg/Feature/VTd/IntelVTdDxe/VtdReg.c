@@ -174,8 +174,14 @@ PrepareVtdConfig (
     if ((mVtdUnitInformation[Index].CapReg.Bits.SLLPS & BIT0) == 0) {
       DEBUG((DEBUG_WARN, "!!!! 2MB super page is not supported on VTD %d !!!!\n", Index));
     }
-    if ((mVtdUnitInformation[Index].CapReg.Bits.SAGAW & BIT2) == 0) {
-      DEBUG((DEBUG_ERROR, "!!!! 4-level page-table is not supported on VTD %d !!!!\n", Index));
+    if ((mVtdUnitInformation[Index].CapReg.Bits.SAGAW & BIT3) != 0) {
+      DEBUG((DEBUG_INFO, "Support 5-level page-table on VTD %d\n", Index));
+    }
+    if ((mVtdUnitInformation[Index].CapReg.Bits.SAGAW & BIT2) != 0) {
+      DEBUG((DEBUG_INFO, "Support 4-level page-table on VTD %d\n", Index));
+    }
+    if ((mVtdUnitInformation[Index].CapReg.Bits.SAGAW & (BIT3 | BIT2)) == 0) {
+      DEBUG((DEBUG_ERROR, "!!!! Page-table type 0x%X is not supported on VTD %d !!!!\n", Index, mVtdUnitInformation[Index].CapReg.Bits.SAGAW));
       return ;
     }
 

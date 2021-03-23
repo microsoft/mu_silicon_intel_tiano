@@ -128,11 +128,25 @@ CreateContextEntry (
 
     DEBUG ((DEBUG_INFO,"Source: S%04x B%02x D%02x F%02x\n", mVtdUnitInformation[VtdIndex].Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
 
-    if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) == 0) {
-      DEBUG((DEBUG_ERROR, "!!!! 4-level page-table is not supported on VTD %d !!!!\n", VtdIndex));
+    mVtdUnitInformation[VtdIndex].Is5LevelPaging = FALSE;
+    if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT3) != 0) {
+      mVtdUnitInformation[VtdIndex].Is5LevelPaging = TRUE;
+      if ((mAcpiDmarTable->HostAddressWidth <= 48) &&
+          ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) != 0)) {
+        mVtdUnitInformation[VtdIndex].Is5LevelPaging = FALSE;
+      }
+    } else if ((mVtdUnitInformation[VtdIndex].CapReg.Bits.SAGAW & BIT2) == 0) {
+      DEBUG((DEBUG_ERROR, "!!!! Page-table type is not supported on VTD %d !!!!\n", VtdIndex));
       return EFI_UNSUPPORTED;
     }
-    ContextEntry->Bits.AddressWidth = 0x2;
+
+    if (mVtdUnitInformation[VtdIndex].Is5LevelPaging) {
+      ContextEntry->Bits.AddressWidth = 0x3;
+      DEBUG((DEBUG_INFO, "Using 5-level page-table on VTD %d\n", VtdIndex));
+    } else {
+      ContextEntry->Bits.AddressWidth = 0x2;
+      DEBUG((DEBUG_INFO, "Using 4-level page-table on VTD %d\n", VtdIndex));
+    }
   }
 
   FlushPageTableMemory (VtdIndex, (UINTN)mVtdUnitInformation[VtdIndex].RootEntryTable, EFI_PAGES_TO_SIZE(EntryTablePages));
@@ -148,6 +162,7 @@ CreateContextEntry (
   @param[in]  MemoryBase                  The base of the memory.
   @param[in]  MemoryLimit                 The limit of the memory.
   @param[in]  IoMmuAccess                 The IOMMU access.
+  @param[in]  Is5LevelPaging              If it is the 5 level paging.
 
   @return The second level paging entry.
 **/
@@ -157,16 +172,23 @@ CreateSecondLevelPagingEntryTable (
   IN VTD_SECOND_LEVEL_PAGING_ENTRY *SecondLevelPagingEntry,
   IN UINT64                        MemoryBase,
   IN UINT64                        MemoryLimit,
-  IN UINT64                        IoMmuAccess
+  IN UINT64                        IoMmuAccess,
+  IN BOOLEAN                       Is5LevelPaging
   )
 {
+  UINTN                          Index5;
   UINTN                          Index4;
   UINTN                          Index3;
   UINTN                          Index2;
+  UINTN                          Lvl5Start;
+  UINTN                          Lvl5End;
+  UINTN                          Lvl4PagesStart;
+  UINTN                          Lvl4PagesEnd;
   UINTN                          Lvl4Start;
   UINTN                          Lvl4End;
   UINTN                          Lvl3Start;
   UINTN                          Lvl3End;
+  VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl5PtEntry;
   VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl4PtEntry;
   VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl3PtEntry;
   VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl2PtEntry;
@@ -184,7 +206,7 @@ CreateSecondLevelPagingEntryTable (
   if (SecondLevelPagingEntry == NULL) {
     SecondLevelPagingEntry = AllocateZeroPages (1);
     if (SecondLevelPagingEntry == NULL) {
-      DEBUG ((DEBUG_ERROR,"Could not Alloc LVL4 PT. \n"));
+      DEBUG ((DEBUG_ERROR,"Could not Alloc LVL4 or LVL5 PT. \n"));
       return NULL;
     }
     FlushPageTableMemory (VtdIndex, (UINTN)SecondLevelPagingEntry, EFI_PAGES_TO_SIZE(1));
@@ -197,66 +219,109 @@ CreateSecondLevelPagingEntryTable (
     return SecondLevelPagingEntry;
   }
 
-  Lvl4Start = RShiftU64 (BaseAddress, 39) & 0x1FF;
-  Lvl4End = RShiftU64 (EndAddress - 1, 39) & 0x1FF;
+  if (Is5LevelPaging) {
+    Lvl5Start = RShiftU64 (BaseAddress, 48) & 0x1FF;
+    Lvl5End = RShiftU64 (EndAddress - 1, 48) & 0x1FF;
+    DEBUG ((DEBUG_INFO,"  Lvl5Start - 0x%x, Lvl5End - 0x%x\n", Lvl5Start, Lvl5End));
 
-  DEBUG ((DEBUG_INFO,"  Lvl4Start - 0x%x, Lvl4End - 0x%x\n", Lvl4Start, Lvl4End));
+    Lvl4Start = RShiftU64 (BaseAddress, 39) & 0x1FF;
+    Lvl4End = RShiftU64 (EndAddress - 1, 39) & 0x1FF;
 
-  Lvl4PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)SecondLevelPagingEntry;
-  for (Index4 = Lvl4Start; Index4 <= Lvl4End; Index4++) {
-    if (Lvl4PtEntry[Index4].Uint64 == 0) {
-      Lvl4PtEntry[Index4].Uint64 = (UINT64)(UINTN)AllocateZeroPages (1);
-      if (Lvl4PtEntry[Index4].Uint64 == 0) {
-        DEBUG ((DEBUG_ERROR,"!!!!!! ALLOCATE LVL4 PAGE FAIL (0x%x)!!!!!!\n", Index4));
-        ASSERT(FALSE);
-        return NULL;
-      }
-      FlushPageTableMemory (VtdIndex, (UINTN)Lvl4PtEntry[Index4].Uint64, SIZE_4KB);
-      SetSecondLevelPagingEntryAttribute (&Lvl4PtEntry[Index4], EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
-    }
+    Lvl4PagesStart = (Lvl5Start<<9) | Lvl4Start;
+    Lvl4PagesEnd = (Lvl5End<<9) | Lvl4End;
+    DEBUG ((DEBUG_INFO,"  Lvl4PagesStart - 0x%x, Lvl4PagesEnd - 0x%x\n", Lvl4PagesStart, Lvl4PagesEnd));
 
-    Lvl3Start = RShiftU64 (BaseAddress, 30) & 0x1FF;
-    if (ALIGN_VALUE_LOW(BaseAddress + SIZE_1GB, SIZE_1GB) <= EndAddress) {
-      Lvl3End = SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY) - 1;
-    } else {
-      Lvl3End = RShiftU64 (EndAddress - 1, 30) & 0x1FF;
-    }
-    DEBUG ((DEBUG_INFO,"  Lvl4(0x%x): Lvl3Start - 0x%x, Lvl3End - 0x%x\n", Index4, Lvl3Start, Lvl3End));
+    Lvl5PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)SecondLevelPagingEntry;
+  } else {
+    Lvl5Start = RShiftU64 (BaseAddress, 48) & 0x1FF;
+    Lvl5End = Lvl5Start;
 
-    Lvl3PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl4PtEntry[Index4].Bits.AddressLo, Lvl4PtEntry[Index4].Bits.AddressHi);
-    for (Index3 = Lvl3Start; Index3 <= Lvl3End; Index3++) {
-      if (Lvl3PtEntry[Index3].Uint64 == 0) {
-        Lvl3PtEntry[Index3].Uint64 = (UINT64)(UINTN)AllocateZeroPages (1);
-        if (Lvl3PtEntry[Index3].Uint64 == 0) {
-          DEBUG ((DEBUG_ERROR,"!!!!!! ALLOCATE LVL3 PAGE FAIL (0x%x, 0x%x)!!!!!!\n", Index4, Index3));
+    Lvl4Start = RShiftU64 (BaseAddress, 39) & 0x1FF;
+    Lvl4End = RShiftU64 (EndAddress - 1, 39) & 0x1FF;
+    DEBUG ((DEBUG_INFO,"  Lvl4Start - 0x%x, Lvl4End - 0x%x\n", Lvl4Start, Lvl4End));
+
+    Lvl4PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)SecondLevelPagingEntry;
+  }
+
+  for (Index5 = Lvl5Start; Index5 <= Lvl5End; Index5++) {
+    if (Is5LevelPaging) {
+      if (Lvl5PtEntry[Index5].Uint64 == 0) {
+        Lvl5PtEntry[Index5].Uint64 = (UINT64)(UINTN)AllocateZeroPages (1);
+        if (Lvl5PtEntry[Index5].Uint64 == 0) {
+          DEBUG ((DEBUG_ERROR,"!!!!!! ALLOCATE LVL4 PAGE FAIL (0x%x)!!!!!!\n", Index5));
           ASSERT(FALSE);
           return NULL;
         }
-        FlushPageTableMemory (VtdIndex, (UINTN)Lvl3PtEntry[Index3].Uint64, SIZE_4KB);
-        SetSecondLevelPagingEntryAttribute (&Lvl3PtEntry[Index3], EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+        FlushPageTableMemory (VtdIndex, (UINTN)Lvl5PtEntry[Index5].Uint64, SIZE_4KB);
+        SetSecondLevelPagingEntryAttribute (&Lvl5PtEntry[Index5], EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+      }
+      Lvl4Start = Lvl4PagesStart & 0x1FF;
+      if (((Index5+1)<<9) > Lvl4PagesEnd) {
+        Lvl4End = SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY) - 1;;
+        Lvl4PagesStart = (Index5+1)<<9;
+      } else {
+        Lvl4End = Lvl4PagesEnd & 0x1FF;
+      }
+      DEBUG ((DEBUG_INFO,"  Lvl5(0x%x): Lvl4Start - 0x%x, Lvl4End - 0x%x\n", Index5, Lvl4Start, Lvl4End));
+      Lvl4PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl5PtEntry[Index5].Bits.AddressLo, Lvl5PtEntry[Index5].Bits.AddressHi);
+    }
+
+    for (Index4 = Lvl4Start; Index4 <= Lvl4End; Index4++) {
+      if (Lvl4PtEntry[Index4].Uint64 == 0) {
+        Lvl4PtEntry[Index4].Uint64 = (UINT64)(UINTN)AllocateZeroPages (1);
+        if (Lvl4PtEntry[Index4].Uint64 == 0) {
+          DEBUG ((DEBUG_ERROR,"!!!!!! ALLOCATE LVL4 PAGE FAIL (0x%x)!!!!!!\n", Index4));
+          ASSERT(FALSE);
+          return NULL;
+        }
+        FlushPageTableMemory (VtdIndex, (UINTN)Lvl4PtEntry[Index4].Uint64, SIZE_4KB);
+        SetSecondLevelPagingEntryAttribute (&Lvl4PtEntry[Index4], EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
       }
 
-      Lvl2PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl3PtEntry[Index3].Bits.AddressLo, Lvl3PtEntry[Index3].Bits.AddressHi);
-      for (Index2 = 0; Index2 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index2++) {
-        Lvl2PtEntry[Index2].Uint64 = BaseAddress;
-        SetSecondLevelPagingEntryAttribute (&Lvl2PtEntry[Index2], IoMmuAccess);
-        Lvl2PtEntry[Index2].Bits.PageSize = 1;
-        BaseAddress += SIZE_2MB;
+      Lvl3Start = RShiftU64 (BaseAddress, 30) & 0x1FF;
+      if (ALIGN_VALUE_LOW(BaseAddress + SIZE_1GB, SIZE_1GB) <= EndAddress) {
+        Lvl3End = SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY) - 1;
+      } else {
+        Lvl3End = RShiftU64 (EndAddress - 1, 30) & 0x1FF;
+      }
+      DEBUG ((DEBUG_INFO,"  Lvl4(0x%x): Lvl3Start - 0x%x, Lvl3End - 0x%x\n", Index4, Lvl3Start, Lvl3End));
+
+      Lvl3PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl4PtEntry[Index4].Bits.AddressLo, Lvl4PtEntry[Index4].Bits.AddressHi);
+      for (Index3 = Lvl3Start; Index3 <= Lvl3End; Index3++) {
+        if (Lvl3PtEntry[Index3].Uint64 == 0) {
+          Lvl3PtEntry[Index3].Uint64 = (UINT64)(UINTN)AllocateZeroPages (1);
+          if (Lvl3PtEntry[Index3].Uint64 == 0) {
+            DEBUG ((DEBUG_ERROR,"!!!!!! ALLOCATE LVL3 PAGE FAIL (0x%x, 0x%x)!!!!!!\n", Index4, Index3));
+            ASSERT(FALSE);
+            return NULL;
+          }
+          FlushPageTableMemory (VtdIndex, (UINTN)Lvl3PtEntry[Index3].Uint64, SIZE_4KB);
+          SetSecondLevelPagingEntryAttribute (&Lvl3PtEntry[Index3], EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+        }
+
+        Lvl2PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl3PtEntry[Index3].Bits.AddressLo, Lvl3PtEntry[Index3].Bits.AddressHi);
+        for (Index2 = 0; Index2 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index2++) {
+          Lvl2PtEntry[Index2].Uint64 = BaseAddress;
+          SetSecondLevelPagingEntryAttribute (&Lvl2PtEntry[Index2], IoMmuAccess);
+          Lvl2PtEntry[Index2].Bits.PageSize = 1;
+          BaseAddress += SIZE_2MB;
+          if (BaseAddress >= MemoryLimit) {
+            break;
+          }
+        }
+        FlushPageTableMemory (VtdIndex, (UINTN)Lvl2PtEntry, SIZE_4KB);
         if (BaseAddress >= MemoryLimit) {
           break;
         }
       }
-      FlushPageTableMemory (VtdIndex, (UINTN)Lvl2PtEntry, SIZE_4KB);
+      FlushPageTableMemory (VtdIndex, (UINTN)&Lvl3PtEntry[Lvl3Start], (UINTN)&Lvl3PtEntry[Lvl3End + 1] - (UINTN)&Lvl3PtEntry[Lvl3Start]);
       if (BaseAddress >= MemoryLimit) {
         break;
       }
     }
-    FlushPageTableMemory (VtdIndex, (UINTN)&Lvl3PtEntry[Lvl3Start], (UINTN)&Lvl3PtEntry[Lvl3End + 1] - (UINTN)&Lvl3PtEntry[Lvl3Start]);
-    if (BaseAddress >= MemoryLimit) {
-      break;
-    }
+    FlushPageTableMemory (VtdIndex, (UINTN)&Lvl4PtEntry[Lvl4Start], (UINTN)&Lvl4PtEntry[Lvl4End + 1] - (UINTN)&Lvl4PtEntry[Lvl4Start]);
   }
-  FlushPageTableMemory (VtdIndex, (UINTN)&Lvl4PtEntry[Lvl4Start], (UINTN)&Lvl4PtEntry[Lvl4End + 1] - (UINTN)&Lvl4PtEntry[Lvl4Start]);
+  FlushPageTableMemory (VtdIndex, (UINTN)&Lvl5PtEntry[Lvl5Start], (UINTN)&Lvl5PtEntry[Lvl5End + 1] - (UINTN)&Lvl5PtEntry[Lvl5Start]);
 
   return SecondLevelPagingEntry;
 }
@@ -266,26 +331,28 @@ CreateSecondLevelPagingEntryTable (
 
   @param[in]  VtdIndex                    The index of the VTd engine.
   @param[in]  IoMmuAccess                 The IOMMU access.
+  @param[in]  Is5LevelPaging              If it is the 5 level paging.
 
   @return The second level paging entry.
 **/
 VTD_SECOND_LEVEL_PAGING_ENTRY *
 CreateSecondLevelPagingEntry (
   IN UINTN   VtdIndex,
-  IN UINT64  IoMmuAccess
+  IN UINT64  IoMmuAccess,
+  IN BOOLEAN Is5LevelPaging
   )
 {
   VTD_SECOND_LEVEL_PAGING_ENTRY *SecondLevelPagingEntry;
 
   SecondLevelPagingEntry = NULL;
-  SecondLevelPagingEntry = CreateSecondLevelPagingEntryTable (VtdIndex, SecondLevelPagingEntry, 0, mBelow4GMemoryLimit, IoMmuAccess);
+  SecondLevelPagingEntry = CreateSecondLevelPagingEntryTable (VtdIndex, SecondLevelPagingEntry, 0, mBelow4GMemoryLimit, IoMmuAccess, Is5LevelPaging);
   if (SecondLevelPagingEntry == NULL) {
     return NULL;
   }
 
   if (mAbove4GMemoryLimit != 0) {
     ASSERT (mAbove4GMemoryLimit > BASE_4GB);
-    SecondLevelPagingEntry = CreateSecondLevelPagingEntryTable (VtdIndex, SecondLevelPagingEntry, SIZE_4GB, mAbove4GMemoryLimit, IoMmuAccess);
+    SecondLevelPagingEntry = CreateSecondLevelPagingEntryTable (VtdIndex, SecondLevelPagingEntry, SIZE_4GB, mAbove4GMemoryLimit, IoMmuAccess, Is5LevelPaging);
     if (SecondLevelPagingEntry == NULL) {
       return NULL;
     }
@@ -326,11 +393,13 @@ SetupTranslationTable (
 /**
   Dump DMAR context entry table.
 
-  @param[in]  RootEntry DMAR root entry.
+  @param[in]  RootEntry       DMAR root entry.
+  @param[in]  Is5LevelPaging  If it is the 5 level paging.
 **/
 VOID
 DumpDmarContextEntryTable (
-  IN VTD_ROOT_ENTRY *RootEntry
+  IN VTD_ROOT_ENTRY *RootEntry,
+  IN BOOLEAN Is5LevelPaging
   )
 {
   UINTN                 Index;
@@ -359,7 +428,7 @@ DumpDmarContextEntryTable (
       if (ContextEntry[Index2].Bits.Present == 0) {
         continue;
       }
-      DumpSecondLevelPagingEntry ((VOID *)(UINTN)VTD_64BITS_ADDRESS(ContextEntry[Index2].Bits.SecondLevelPageTranslationPointerLo, ContextEntry[Index2].Bits.SecondLevelPageTranslationPointerHi));
+      DumpSecondLevelPagingEntry ((VOID *)(UINTN)VTD_64BITS_ADDRESS(ContextEntry[Index2].Bits.SecondLevelPageTranslationPointerLo, ContextEntry[Index2].Bits.SecondLevelPageTranslationPointerHi), Is5LevelPaging);
     }
   }
   DEBUG ((DEBUG_INFO,"=========================\n"));
@@ -368,17 +437,22 @@ DumpDmarContextEntryTable (
 /**
   Dump DMAR second level paging entry.
 
-  @param[in]  SecondLevelPagingEntry The second level paging entry.
+  @param[in]  SecondLevelPagingEntry  The second level paging entry.
+  @param[in]  Is5LevelPaging          If it is the 5 level paging.
 **/
 VOID
 DumpSecondLevelPagingEntry (
-  IN VOID *SecondLevelPagingEntry
+  IN VOID *SecondLevelPagingEntry,
+  IN BOOLEAN Is5LevelPaging
   )
 {
+  UINTN                          Index5;
   UINTN                          Index4;
   UINTN                          Index3;
   UINTN                          Index2;
   UINTN                          Index1;
+  UINTN                          Lvl5IndexEnd;
+  VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl5PtEntry;
   VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl4PtEntry;
   VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl3PtEntry;
   VTD_SECOND_LEVEL_PAGING_ENTRY  *Lvl2PtEntry;
@@ -386,38 +460,53 @@ DumpSecondLevelPagingEntry (
 
   DEBUG ((DEBUG_VERBOSE,"================\n"));
   DEBUG ((DEBUG_VERBOSE,"DMAR Second Level Page Table:\n"));
+  DEBUG ((DEBUG_VERBOSE,"SecondLevelPagingEntry Base - 0x%x, Is5LevelPaging - %d\n", SecondLevelPagingEntry, Is5LevelPaging));
 
-  DEBUG ((DEBUG_VERBOSE,"SecondLevelPagingEntry Base - 0x%x\n", SecondLevelPagingEntry));
+  Lvl5IndexEnd = Is5LevelPaging ? SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY) : 1;
   Lvl4PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)SecondLevelPagingEntry;
-  for (Index4 = 0; Index4 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index4++) {
-    if (Lvl4PtEntry[Index4].Uint64 != 0) {
-      DEBUG ((DEBUG_VERBOSE,"  Lvl4Pt Entry(0x%03x) - 0x%016lx\n", Index4, Lvl4PtEntry[Index4].Uint64));
-    }
-    if (Lvl4PtEntry[Index4].Uint64 == 0) {
-      continue;
-    }
-    Lvl3PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl4PtEntry[Index4].Bits.AddressLo, Lvl4PtEntry[Index4].Bits.AddressHi);
-    for (Index3 = 0; Index3 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index3++) {
-      if (Lvl3PtEntry[Index3].Uint64 != 0) {
-        DEBUG ((DEBUG_VERBOSE,"    Lvl3Pt Entry(0x%03x) - 0x%016lx\n", Index3, Lvl3PtEntry[Index3].Uint64));
+  Lvl5PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)SecondLevelPagingEntry;
+
+  for (Index5 = 0; Index5 < Lvl5IndexEnd; Index5++) {
+    if (Is5LevelPaging) {
+      if (Lvl5PtEntry[Index5].Uint64 != 0) {
+        DEBUG ((DEBUG_VERBOSE,"  Lvl5Pt Entry(0x%03x) - 0x%016lx\n", Index5, Lvl5PtEntry[Index5].Uint64));
       }
-      if (Lvl3PtEntry[Index3].Uint64 == 0) {
+      if (Lvl5PtEntry[Index5].Uint64 == 0) {
         continue;
       }
+      Lvl4PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl5PtEntry[Index5].Bits.AddressLo, Lvl5PtEntry[Index5].Bits.AddressHi);
+    }
 
-      Lvl2PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl3PtEntry[Index3].Bits.AddressLo, Lvl3PtEntry[Index3].Bits.AddressHi);
-      for (Index2 = 0; Index2 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index2++) {
-        if (Lvl2PtEntry[Index2].Uint64 != 0) {
-          DEBUG ((DEBUG_VERBOSE,"      Lvl2Pt Entry(0x%03x) - 0x%016lx\n", Index2, Lvl2PtEntry[Index2].Uint64));
+    for (Index4 = 0; Index4 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index4++) {
+      if (Lvl4PtEntry[Index4].Uint64 != 0) {
+        DEBUG ((DEBUG_VERBOSE,"  Lvl4Pt Entry(0x%03x) - 0x%016lx\n", Index4, Lvl4PtEntry[Index4].Uint64));
+      }
+      if (Lvl4PtEntry[Index4].Uint64 == 0) {
+        continue;
+      }
+      Lvl3PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl4PtEntry[Index4].Bits.AddressLo, Lvl4PtEntry[Index4].Bits.AddressHi);
+      for (Index3 = 0; Index3 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index3++) {
+        if (Lvl3PtEntry[Index3].Uint64 != 0) {
+          DEBUG ((DEBUG_VERBOSE,"   Lvl3Pt Entry(0x%03x) - 0x%016lx\n", Index3, Lvl3PtEntry[Index3].Uint64));
         }
-        if (Lvl2PtEntry[Index2].Uint64 == 0) {
+        if (Lvl3PtEntry[Index3].Uint64 == 0) {
           continue;
         }
-        if (Lvl2PtEntry[Index2].Bits.PageSize == 0) {
-          Lvl1PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl2PtEntry[Index2].Bits.AddressLo, Lvl2PtEntry[Index2].Bits.AddressHi);
-          for (Index1 = 0; Index1 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index1++) {
-            if (Lvl1PtEntry[Index1].Uint64 != 0) {
-              DEBUG ((DEBUG_VERBOSE,"        Lvl1Pt Entry(0x%03x) - 0x%016lx\n", Index1, Lvl1PtEntry[Index1].Uint64));
+
+        Lvl2PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl3PtEntry[Index3].Bits.AddressLo, Lvl3PtEntry[Index3].Bits.AddressHi);
+        for (Index2 = 0; Index2 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index2++) {
+          if (Lvl2PtEntry[Index2].Uint64 != 0) {
+            DEBUG ((DEBUG_VERBOSE,"    Lvl2Pt Entry(0x%03x) - 0x%016lx\n", Index2, Lvl2PtEntry[Index2].Uint64));
+          }
+          if (Lvl2PtEntry[Index2].Uint64 == 0) {
+            continue;
+          }
+          if (Lvl2PtEntry[Index2].Bits.PageSize == 0) {
+            Lvl1PtEntry = (VTD_SECOND_LEVEL_PAGING_ENTRY *)(UINTN)VTD_64BITS_ADDRESS(Lvl2PtEntry[Index2].Bits.AddressLo, Lvl2PtEntry[Index2].Bits.AddressHi);
+            for (Index1 = 0; Index1 < SIZE_4KB/sizeof(VTD_SECOND_LEVEL_PAGING_ENTRY); Index1++) {
+              if (Lvl1PtEntry[Index1].Uint64 != 0) {
+                DEBUG ((DEBUG_VERBOSE,"      Lvl1Pt Entry(0x%03x) - 0x%016lx\n", Index1, Lvl1PtEntry[Index1].Uint64));
+              }
             }
           }
         }
@@ -510,6 +599,7 @@ PageAttributeToLength (
   @param[in]   VtdIndex                 The index used to identify a VTd engine.
   @param[in]   SecondLevelPagingEntry   The second level paging entry in VTd table for the device.
   @param[in]   Address                  The address to be checked.
+  @param[in]   Is5LevelPaging           If it is the 5 level paging.
   @param[out]  PageAttributes           The page attribute of the page entry.
 
   @return The page entry.
@@ -519,6 +609,7 @@ GetSecondLevelPageTableEntry (
   IN  UINTN                         VtdIndex,
   IN  VTD_SECOND_LEVEL_PAGING_ENTRY *SecondLevelPagingEntry,
   IN  PHYSICAL_ADDRESS              Address,
+  IN  BOOLEAN                       Is5LevelPaging,
   OUT PAGE_ATTRIBUTE                *PageAttribute
   )
 {
@@ -526,17 +617,38 @@ GetSecondLevelPageTableEntry (
   UINTN                 Index2;
   UINTN                 Index3;
   UINTN                 Index4;
+  UINTN                 Index5;
   UINT64                *L1PageTable;
   UINT64                *L2PageTable;
   UINT64                *L3PageTable;
   UINT64                *L4PageTable;
+  UINT64                *L5PageTable;
 
+  Index5 = ((UINTN)RShiftU64 (Address, 48)) & PAGING_VTD_INDEX_MASK;
   Index4 = ((UINTN)RShiftU64 (Address, 39)) & PAGING_VTD_INDEX_MASK;
   Index3 = ((UINTN)Address >> 30) & PAGING_VTD_INDEX_MASK;
   Index2 = ((UINTN)Address >> 21) & PAGING_VTD_INDEX_MASK;
   Index1 = ((UINTN)Address >> 12) & PAGING_VTD_INDEX_MASK;
 
-  L4PageTable = (UINT64 *)SecondLevelPagingEntry;
+  if (Is5LevelPaging) {
+    L5PageTable = (UINT64 *)SecondLevelPagingEntry;
+    if (L5PageTable[Index5] == 0) {
+      L5PageTable[Index5] = (UINT64)(UINTN)AllocateZeroPages (1);
+      if (L5PageTable[Index5] == 0) {
+        DEBUG ((DEBUG_ERROR,"!!!!!! ALLOCATE LVL5 PAGE FAIL (0x%x)!!!!!!\n", Index4));
+        ASSERT(FALSE);
+        *PageAttribute = PageNone;
+        return NULL;
+      }
+      FlushPageTableMemory (VtdIndex, (UINTN)L5PageTable[Index5], SIZE_4KB);
+      SetSecondLevelPagingEntryAttribute ((VTD_SECOND_LEVEL_PAGING_ENTRY *)&L5PageTable[Index5], EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+      FlushPageTableMemory (VtdIndex, (UINTN)&L5PageTable[Index5], sizeof(L5PageTable[Index5]));
+    }
+    L4PageTable = (UINT64 *)(UINTN)(L5PageTable[Index5] & PAGING_4K_ADDRESS_MASK_64);
+  } else {
+    L4PageTable = (UINT64 *)SecondLevelPagingEntry;
+  }
+
   if (L4PageTable[Index4] == 0) {
     L4PageTable[Index4] = (UINT64)(UINTN)AllocateZeroPages (1);
     if (L4PageTable[Index4] == 0) {
@@ -785,7 +897,7 @@ SetSecondLevelPagingAttribute (
   }
 
   while (Length != 0) {
-    PageEntry = GetSecondLevelPageTableEntry (VtdIndex, SecondLevelPagingEntry, BaseAddress, &PageAttribute);
+    PageEntry = GetSecondLevelPageTableEntry (VtdIndex, SecondLevelPagingEntry, BaseAddress, mVtdUnitInformation[VtdIndex].Is5LevelPaging, &PageAttribute);
     if (PageEntry == NULL) {
       DEBUG ((DEBUG_ERROR, "PageEntry - NULL\n"));
       return RETURN_UNSUPPORTED;
@@ -913,7 +1025,7 @@ SetAccessAttribute (
 
   if (ExtContextEntry != NULL) {
     if (ExtContextEntry->Bits.Present == 0) {
-      SecondLevelPagingEntry = CreateSecondLevelPagingEntry (VtdIndex, 0);
+      SecondLevelPagingEntry = CreateSecondLevelPagingEntry (VtdIndex, 0, mVtdUnitInformation[VtdIndex].Is5LevelPaging);
       DEBUG ((DEBUG_VERBOSE,"SecondLevelPagingEntry - 0x%x (S%04x B%02x D%02x F%02x) New\n", SecondLevelPagingEntry, Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
       Pt = (UINT64)RShiftU64 ((UINT64)(UINTN)SecondLevelPagingEntry, 12);
 
@@ -922,7 +1034,7 @@ SetAccessAttribute (
       ExtContextEntry->Bits.DomainIdentifier = DomainIdentifier;
       ExtContextEntry->Bits.Present = 1;
       FlushPageTableMemory (VtdIndex, (UINTN)ExtContextEntry, sizeof(*ExtContextEntry));
-      DumpDmarExtContextEntryTable (mVtdUnitInformation[VtdIndex].ExtRootEntryTable);
+      DumpDmarExtContextEntryTable (mVtdUnitInformation[VtdIndex].ExtRootEntryTable, mVtdUnitInformation[VtdIndex].Is5LevelPaging);
       mVtdUnitInformation[VtdIndex].HasDirtyContext = TRUE;
     } else {
       SecondLevelPagingEntry = (VOID *)(UINTN)VTD_64BITS_ADDRESS(ExtContextEntry->Bits.SecondLevelPageTranslationPointerLo, ExtContextEntry->Bits.SecondLevelPageTranslationPointerHi);
@@ -930,7 +1042,7 @@ SetAccessAttribute (
     }
   } else if (ContextEntry != NULL) {
     if (ContextEntry->Bits.Present == 0) {
-      SecondLevelPagingEntry = CreateSecondLevelPagingEntry (VtdIndex, 0);
+      SecondLevelPagingEntry = CreateSecondLevelPagingEntry (VtdIndex, 0, mVtdUnitInformation[VtdIndex].Is5LevelPaging);
       DEBUG ((DEBUG_VERBOSE,"SecondLevelPagingEntry - 0x%x (S%04x B%02x D%02x F%02x) New\n", SecondLevelPagingEntry, Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
       Pt = (UINT64)RShiftU64 ((UINT64)(UINTN)SecondLevelPagingEntry, 12);
 
@@ -939,7 +1051,7 @@ SetAccessAttribute (
       ContextEntry->Bits.DomainIdentifier = DomainIdentifier;
       ContextEntry->Bits.Present = 1;
       FlushPageTableMemory (VtdIndex, (UINTN)ContextEntry, sizeof(*ContextEntry));
-      DumpDmarContextEntryTable (mVtdUnitInformation[VtdIndex].RootEntryTable);
+      DumpDmarContextEntryTable (mVtdUnitInformation[VtdIndex].RootEntryTable, mVtdUnitInformation[VtdIndex].Is5LevelPaging);
       mVtdUnitInformation[VtdIndex].HasDirtyContext = TRUE;
     } else {
       SecondLevelPagingEntry = (VOID *)(UINTN)VTD_64BITS_ADDRESS(ContextEntry->Bits.SecondLevelPageTranslationPointerLo, ContextEntry->Bits.SecondLevelPageTranslationPointerHi);
@@ -1000,7 +1112,7 @@ AlwaysEnablePageAttribute (
 
   if (mVtdUnitInformation[VtdIndex].FixedSecondLevelPagingEntry == 0) {
     DEBUG((DEBUG_INFO, "CreateSecondLevelPagingEntry - %d\n", VtdIndex));
-    mVtdUnitInformation[VtdIndex].FixedSecondLevelPagingEntry = CreateSecondLevelPagingEntry (VtdIndex, EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+    mVtdUnitInformation[VtdIndex].FixedSecondLevelPagingEntry = CreateSecondLevelPagingEntry (VtdIndex, EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE, mVtdUnitInformation[VtdIndex].Is5LevelPaging);
   }
 
   SecondLevelPagingEntry = mVtdUnitInformation[VtdIndex].FixedSecondLevelPagingEntry;
