@@ -70,7 +70,9 @@
                                      # in matching files
         "ExtendWords": [
            "ARMHB",                  # ARMHB000
+           "ARMHC",                  # ARMHC600
            "ARMLTD",
+           "AMLDBG",
            "EISAID",
            "CCIDX",
            "CCSIDR",
@@ -81,8 +83,11 @@
            "lgreater",
            "lless",
            "MPIDR",
+           "PERIPHBASE",
            "pytool",
            "Roadmap",
+           "ROOTNODEBASE",
+           "ssdtcmn",
            "ssdtserialporttemplate",
            "SMMUV",
            "standardised",

@@ -173,7 +173,7 @@ AmlDbgPrintNameSpaceRefList (
   while (CurrLink != NameSpaceRefList) {
     CurrNameSpaceNode = (AML_NAMESPACE_REF_NODE*)CurrLink;
 
-    AmlDbgPrintChars (
+    AMLDBG_PRINT_CHARS (
       DEBUG_INFO,
       CurrNameSpaceNode->RawAbsolutePath,
       CurrNameSpaceNode->RawAbsolutePathSize
@@ -749,7 +749,7 @@ AmlFindMethodDefinition (
   }
 
   DEBUG ((DEBUG_VERBOSE, "AmlMethodParser: Checking absolute name: "));
-  AmlDbgPrintChars (
+  AMLDBG_PRINT_CHARS (
     DEBUG_VERBOSE,
     (CONST CHAR8*)AmlStreamGetCurrPos (RawAbsolutePathFStream),
     AmlStreamGetMaxBufferSize (RawAbsolutePathFStream)
@@ -768,7 +768,7 @@ AmlFindMethodDefinition (
     ProbedNameSpaceRefNode = (AML_NAMESPACE_REF_NODE*)NextLink;
 
     // Print the raw absolute path of the probed node.
-    AmlDbgPrintChars (
+    AMLDBG_PRINT_CHARS (
       DEBUG_VERBOSE,
       ProbedNameSpaceRefNode->RawAbsolutePath,
       ProbedNameSpaceRefNode->RawAbsolutePathSize
@@ -1067,7 +1067,7 @@ AmlIsMethodInvocation (
       DEBUG_VERBOSE,
       "AmlMethodParser: Corresponding method definition: "
       ));
-    AmlDbgPrintChars (
+    AMLDBG_PRINT_CHARS (
       DEBUG_VERBOSE,
       NameSpaceRefNode->RawAbsolutePath,
       NameSpaceRefNode->RawAbsolutePathSize
@@ -1230,7 +1230,7 @@ AmlAddNameSpaceReference (
     DEBUG_VERBOSE,
     "AmlMethodParser: Adding namespace reference with name:\n"
     ));
-  AmlDbgPrintChars (
+  AMLDBG_PRINT_CHARS (
     DEBUG_VERBOSE,
     (CONST CHAR8*)AmlStreamGetCurrPos (&RawAbsolutePathBStream),
     AmlStreamGetIndex (&RawAbsolutePathBStream)
@@ -1320,7 +1320,7 @@ AmlCreateMethodInvocationNode (
     //  DefExternal := ExternalOp NameString ObjectType ArgumentCount
     //  ExternalOp := 0x15
     //  ObjectType := ByteData
-    //  ArgumentCount := ByteData (0 – 7)
+    //  ArgumentCount := ByteData (0 - 7)
 
     // Read the ArgumentCount.
     ArgCountNode = (AML_DATA_NODE*)FixedArgs[EAmlParseIndexTerm2];
@@ -1334,7 +1334,7 @@ AmlCreateMethodInvocationNode (
   // MethodInvocation := MethodInvocationOp NameString ArgumentCount
   // MethodInvocationOp := Pseudo Opcode for Method Invocation
   // NameString := Method Name
-  // ArgumentCount := ByteData (0 – 7)
+  // ArgumentCount := ByteData (0 - 7)
   Status = AmlCreateObjectNode (
              AmlGetByteEncodingByOpCode (AML_METHOD_INVOC_OP, 0),
              0,
@@ -1411,7 +1411,7 @@ error_handler:
   @retval EFI_BUFFER_TOO_SMALL    No space left in the buffer.
   @retval EFI_INVALID_PARAMETER   Invalid parameter.
   @retval EFI_OUT_OF_RESOURCES    Could not allocate memory.
-*/
+**/
 EFI_STATUS
 EFIAPI
 AmlGetMethodInvocationArgCount (

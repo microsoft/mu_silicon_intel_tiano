@@ -60,6 +60,7 @@
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
+  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   #
@@ -223,6 +224,29 @@
 #       generated for it, but the binary will not be put into any firmware volume.
 #
 ###################################################################################################
+[Components]
+  CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {
+    <LibraryClasses>
+      PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
+      UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
+      UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
+
+      BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
+      BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
+      DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+      MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+      PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+      PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
+      PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
+      PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
+      UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
+
+      UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
+      UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
+      UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibDebugLib.inf
+  }
+
 !if $(CRYPTO_SERVICES) == PACKAGE
 [Components]
   CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
@@ -284,3 +308,9 @@
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
+!if $(CRYPTO_SERVICES) IN "PACKAGE ALL"
+  MSFT:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
+  INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
+  GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
+  RVCT:*_*_*_CC_FLAGS = -DENABLE_MD5_DEPRECATED_INTERFACES
+!endif

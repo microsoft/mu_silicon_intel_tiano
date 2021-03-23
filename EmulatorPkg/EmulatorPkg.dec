@@ -11,7 +11,7 @@
 ##
 
 [Defines]
-  DEC_VERSION                    = 0x00010005
+  DEC_SPECIFICATION              = 0x00010005
   PACKAGE_NAME                   = EmulatorPkg
   PACKAGE_GUID                   = 36E48BD7-7D92-5A47-A2CD-513F072E3300
   PACKAGE_VERSION                = 0.1
@@ -46,6 +46,7 @@
   gEmuSystemConfigGuid       = { 0xF8626165, 0x6CEB, 0x924A, { 0xBA, 0xFC, 0xF1, 0x3A, 0xB9, 0xD6, 0x57, 0x28 } }
   gEmuVirtualDisksGuid       = { 0xf2ba331a, 0x8985, 0x11db, { 0xa4, 0x06, 0x00, 0x40, 0xd0, 0x2b, 0x18, 0x35 } }
   gEmuPhysicalDisksGuid      = { 0xf2bdcc96, 0x8985, 0x11db, { 0x87, 0x19, 0x00, 0x40, 0xd0, 0x2b, 0x18, 0x35 } }
+  gEmuRedfishServiceGuid     = { 0x3fb208ac, 0x2185, 0x498c, { 0xbf, 0x46, 0xdc, 0x23, 0xda, 0x58, 0x7b, 0x55 } }
 
 [PcdsFeatureFlag]
   ## If TRUE, if symbols only load on breakpoints and gdb entry
@@ -73,7 +74,18 @@
   ## Size of the packet filter
   gEmulatorPkgTokenSpaceGuid.PcdNetworkPacketFilterSize|524288|UINT32|0x0000101c
 
-
+  ## Platform level Redfish Service control PCD
+  # These PCDs are used to stop the Redfish sevice when secure boot is disabled
+  # or exit boot service.
+  gEmulatorPkgTokenSpaceGuid.PcdRedfishServieStopIfSecureBootDisabled|TRUE|BOOLEAN|0x00001020
+  gEmulatorPkgTokenSpaceGuid.PcdRedfishServieStopIfExitbootService|TRUE|BOOLEAN|0x00001021
+  ##
+  # edk2 Redfish implementation on Emulator package is designed to access
+  # to Redfish simulator.
+  # https://github.com/DMTF/Redfish-Profile-Simulator
+  # The user ID and password are fixed as below.
+  gEmulatorPkgTokenSpaceGuid.PcdRedfishServieUserId|"admin"|VOID*|0x00001022
+  gEmulatorPkgTokenSpaceGuid.PcdRedfishServiePassword|"pwd123456"|VOID*|0x00001023
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   gEmulatorPkgTokenSpaceGuid.PcdEmuBootMode|1|UINT32|0x00001006

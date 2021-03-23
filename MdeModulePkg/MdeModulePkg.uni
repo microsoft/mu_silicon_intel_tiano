@@ -4,7 +4,7 @@
 // It also provides the definitions(including PPIs/PROTOCOLs/GUIDs and library classes)
 // and libraries instances, which are used for those modules.
 //
-// Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
@@ -128,6 +128,13 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVariableStoreSize_PROMPT  #language en-US "Variable storage size"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVariableStoreSize_HELP  #language en-US "The size of volatile buffer. This buffer is used to store VOLATILE attribute variables."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdAllowVariablePolicyEnforcementDisable_PROMPT  #language en-US "Allow VariablePolicy enforcement to be disabled."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdAllowVariablePolicyEnforcementDisable_HELP  #language en-US "If this PCD is disabled, it will block the ability to<BR>\n"
+                                                                                                          "disable the enforcement and VariablePolicy enforcement will always be ON.<BR>\n"
+                                                                                                          "TRUE - VariablePolicy can be disabled by request through the interface (until interface is locked)<BR>\n"
+                                                                                                          "FALSE - VariablePolicy interface will not accept requests to disable and is ALWAYS ON<BR>\n"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdAcpiTableStorageFile_PROMPT  #language en-US "FFS name of ACPI tables storage"
 
@@ -1153,6 +1160,12 @@
                                                                                            "Note:<BR>"
                                                                                            "If Both Capsule In Ram and Capsule On Disk are provisioned at the same time, the Capsule On Disk will be bypassed."
 
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdFwVolDxeMaxEncapsulationDepth_PROMPT #language en-US "Maximum permitted FwVol section nesting depth (exclusive)."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdFwVolDxeMaxEncapsulationDepth_HELP   #language en-US "Maximum permitted encapsulation levels of sections in a firmware volume,<BR>"
+                                                                                                   "in the DXE phase. Minimum value is 1. Sections nested more deeply are<BR>"
+                                                                                                   "rejected."
+
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdCapsuleInRamSupport_PROMPT  #language en-US "Enable Capsule In Ram support"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdCapsuleInRamSupport_HELP  #language en-US   "Capsule In Ram is to use memory to deliver the capsules that will be processed after system reset.<BR><BR>"
@@ -1311,3 +1324,9 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdGhcbSize_PROMPT #language en-US "Guest-Hypervisor Communication Block (GHCB) Pool Base Size"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdGhcbSize_HELP #language en-US "Used with SEV-ES support to identify the size of the address range that is not to be encrypted."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPcieResizableBarSupport_PROMPT #language en-US "Enable PCIe Resizable BAR Capability Supported"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPcieResizableBarSupport_HELP #language en-US "Indicates if the PCIe Resizable BAR Capability Supported.<BR><BR>\n"
+                                                                                            "TRUE  - PCIe Resizable BAR Capability is supported.<BR>\n"
+                                                                                            "FALSE - PCIe Resizable BAR Capability is not supported.<BR>"

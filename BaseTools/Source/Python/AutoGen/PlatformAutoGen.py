@@ -253,7 +253,7 @@ class PlatformAutoGen(AutoGen):
         VariableInfo.SetVpdRegionMaxSize(VpdRegionSize)
         VariableInfo.SetVpdRegionOffset(VpdRegionBase)
         Index = 0
-        for Pcd in DynamicPcdSet:
+        for Pcd in sorted(DynamicPcdSet):
             pcdname = ".".join((Pcd.TokenSpaceGuidCName, Pcd.TokenCName))
             for SkuName in Pcd.SkuInfoList:
                 Sku = Pcd.SkuInfoList[SkuName]
@@ -1037,13 +1037,18 @@ class PlatformAutoGen(AutoGen):
                 TokenNumber += 1
 
         for Pcd in self.NonDynamicPcdList:
-            RetVal[Pcd.TokenCName, Pcd.TokenSpaceGuidCName] = TokenNumber
-            TokenNumber += 1
+            RetVal[Pcd.TokenCName, Pcd.TokenSpaceGuidCName] = 0
         return RetVal
 
     @cached_property
     def _MbList(self):
-        return [self.BuildDatabase[m, self.Arch, self.BuildTarget, self.ToolChain] for m in self.Platform.Modules]
+        ModuleList = []
+        for m in self.Platform.Modules:
+            component = self.Platform.Modules[m]
+            module = self.BuildDatabase[m, self.Arch, self.BuildTarget, self.ToolChain]
+            module.Guid = component.Guid
+            ModuleList.append(module)
+        return ModuleList
 
     @cached_property
     def _MaList(self):

@@ -62,6 +62,10 @@
   MdePkg/Library/BasePostCodeLibPort80/BasePostCodeLibPort80.inf
   MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
+  MdePkg/Library/DxeRngLib/DxeRngLib.inf
+  MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
+  MdePkg/Library/BaseRngLibTimerLib/BaseRngLibTimerLib.inf
+
   MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
   MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
@@ -69,7 +73,6 @@
   MdePkg/Library/BaseUefiDecompressLib/BaseUefiTianoCustomDecompressLib.inf
   MdePkg/Library/BaseSmbusLibNull/BaseSmbusLibNull.inf
   MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-  MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
   MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
@@ -106,6 +109,7 @@
   MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
   MdePkg/Library/UefiDebugLibStdErr/UefiDebugLibStdErr.inf
   MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+  MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibStandaloneMm.inf
   MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
   MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLibDevicePathProtocol.inf
   MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -164,6 +168,7 @@
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
   MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
+  MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf
 
 [Components.EBC]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -174,4 +179,3 @@
   MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
 [BuildOptions]
-  *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES

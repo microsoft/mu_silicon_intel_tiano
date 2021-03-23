@@ -57,15 +57,16 @@ VmgExit (
   Performs the necessary steps in preparation for invoking VMGEXIT. Must be
   called before setting any fields within the GHCB.
 
-  The base library function does nothing.
-
-  @param[in, out]  Ghcb       A pointer to the GHCB
+  @param[in, out]  Ghcb            A pointer to the GHCB
+  @param[in, out]  InterruptState  A pointer to hold the current interrupt
+                                   state, used for restoring in VmgDone ()
 
 **/
 VOID
 EFIAPI
 VmgInit (
-  IN OUT GHCB                *Ghcb
+  IN OUT GHCB                *Ghcb,
+  IN OUT BOOLEAN             *InterruptState
   )
 {
 }
@@ -76,17 +77,60 @@ VmgInit (
   Performs the necessary steps to cleanup after invoking VMGEXIT. Must be
   called after obtaining needed fields within the GHCB.
 
-  The base library function does nothing.
-
-  @param[in, out]  Ghcb       A pointer to the GHCB
+  @param[in, out]  Ghcb            A pointer to the GHCB
+  @param[in]       InterruptState  An indicator to conditionally (re)enable
+                                   interrupts
 
 **/
 VOID
 EFIAPI
 VmgDone (
-  IN OUT GHCB                *Ghcb
+  IN OUT GHCB                *Ghcb,
+  IN     BOOLEAN             InterruptState
   )
 {
+}
+
+/**
+  Marks a field at the specified offset as valid in the GHCB.
+
+  The ValidBitmap area represents the areas of the GHCB that have been marked
+  valid. Set the bit in ValidBitmap for the input offset.
+
+  @param[in, out] Ghcb    Pointer to the Guest-Hypervisor Communication Block
+  @param[in]      Offset  Qword offset in the GHCB to mark valid
+
+**/
+VOID
+EFIAPI
+VmgSetOffsetValid (
+  IN OUT GHCB                *Ghcb,
+  IN     GHCB_REGISTER       Offset
+  )
+{
+}
+
+/**
+  Checks if a specified offset is valid in the GHCB.
+
+  The ValidBitmap area represents the areas of the GHCB that have been marked
+  valid. Return whether the bit in the ValidBitmap is set for the input offset.
+
+  @param[in]  Ghcb            A pointer to the GHCB
+  @param[in]  Offset          Qword offset in the GHCB to mark valid
+
+  @retval TRUE                Offset is marked valid in the GHCB
+  @retval FALSE               Offset is not marked valid in the GHCB
+
+**/
+BOOLEAN
+EFIAPI
+VmgIsOffsetValid (
+  IN GHCB                    *Ghcb,
+  IN GHCB_REGISTER           Offset
+  )
+{
+  return FALSE;
 }
 
 /**

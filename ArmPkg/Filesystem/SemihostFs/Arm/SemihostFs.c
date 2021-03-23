@@ -2,7 +2,7 @@
   Support a Semi Host file system over a debuggers JTAG
 
   Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-  Portions copyright (c) 2011 - 2014, ARM Ltd. All rights reserved.<BR>
+  Portions copyright (c) 2011 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -90,8 +90,9 @@ AllocateFCB (
   VOID
   )
 {
-  SEMIHOST_FCB *Fcb = AllocateZeroPool (sizeof (SEMIHOST_FCB));
+  SEMIHOST_FCB *Fcb;
 
+  Fcb = AllocateZeroPool (sizeof (SEMIHOST_FCB));
   if (Fcb != NULL) {
     CopyMem (&Fcb->File, &gSemihostFsFile, sizeof (gSemihostFsFile));
     Fcb->Signature = SEMIHOST_FCB_SIGNATURE;
@@ -122,7 +123,7 @@ VolumeOpen (
   OUT EFI_FILE                        **Root
   )
 {
-  SEMIHOST_FCB *RootFcb = NULL;
+  SEMIHOST_FCB *RootFcb;
 
   if (Root == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -196,8 +197,8 @@ FileOpen (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((OpenMode & EFI_FILE_MODE_CREATE) &&
-      (Attributes & EFI_FILE_DIRECTORY)    ) {
+  if (((OpenMode & EFI_FILE_MODE_CREATE) != 0) &&
+      ((Attributes & EFI_FILE_DIRECTORY) != 0)) {
     return EFI_WRITE_PROTECTED;
   }
 
@@ -234,7 +235,7 @@ FileOpen (
   Return = SemihostFileOpen (AsciiFileName, SemihostMode, &SemihostHandle);
 
   if (RETURN_ERROR (Return)) {
-    if (OpenMode & EFI_FILE_MODE_CREATE) {
+    if ((OpenMode & EFI_FILE_MODE_CREATE) != 0) {
       //
       // In the create if does not exist case, if the opening in update
       // mode failed, create it and open it in update mode. The update
@@ -277,7 +278,8 @@ FileOpen (
 
   FileFcb->Info.FileSize     = Length;
   FileFcb->Info.PhysicalSize = Length;
-  FileFcb->Info.Attribute    = (OpenMode & EFI_FILE_MODE_CREATE) ? Attributes : 0;
+  FileFcb->Info.Attribute    = ((OpenMode & EFI_FILE_MODE_CREATE) != 0) ?
+                                 Attributes : 0;
 
   InsertTailList (&gFileList, &FileFcb->Link);
 
@@ -758,12 +760,13 @@ GetFileInfo (
   OUT    VOID          *Buffer
   )
 {
-  EFI_FILE_INFO   *Info = NULL;
-  UINTN           NameSize = 0;
+  EFI_FILE_INFO   *Info;
+  UINTN           NameSize;
   UINTN           ResultSize;
   UINTN           Index;
 
-  if (Fcb->IsRoot == TRUE) {
+  if (Fcb->IsRoot) {
+    NameSize = 0;
     ResultSize = SIZE_OF_EFI_FILE_INFO + sizeof(CHAR16);
   } else {
     NameSize   = AsciiStrLen (Fcb->FileName) + 1;
@@ -783,7 +786,7 @@ GetFileInfo (
   // Fill in the structure
   Info->Size = ResultSize;
 
-  if (Fcb->IsRoot == TRUE) {
+  if (Fcb->IsRoot) {
     Info->FileName[0]  = L'\0';
   } else {
     for (Index = 0; Index < NameSize; Index++) {

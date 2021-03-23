@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 //
 // Copyright (c) 2019, Pete Batard. All rights reserved.
+// Copyright (c) 2021, Arm Limited. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
@@ -17,10 +18,13 @@ int memcmp(void *, void *, size_t);
 #pragma function(memcmp)
 int memcmp(const void *s1, const void *s2, size_t n)
 {
-  unsigned char const *t1 = s1;
-  unsigned char const *t2 = s2;
+  unsigned char const *t1;
+  unsigned char const *t2;
 
-  while (n--) {
+  t1 = s1;
+  t2 = s2;
+
+  while (n-- != 0) {
     if (*t1 != *t2)
       return (int)*t1 - (int)*t2;
     t1++;

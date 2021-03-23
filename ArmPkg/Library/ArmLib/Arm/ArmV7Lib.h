@@ -48,5 +48,21 @@ ArmCleanInvalidateDataCacheEntryBySetWay (
   IN  UINTN   SetWayFormat
   );
 
+/** Reads the ID_MMFR4 register.
+
+   @return The contents of the ID_MMFR4 register.
+**/
+UINT32
+EFIAPI
+ArmReadIdMmfr4 (
+  VOID
+  );
+
+UINTN
+EFIAPI
+ArmReadIdPfr1 (
+  VOID
+  );
+
 #endif // __ARM_V7_LIB_H__
 

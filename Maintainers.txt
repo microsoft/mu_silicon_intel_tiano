@@ -88,7 +88,7 @@ W: https://github.com/tianocore/edk2/releases/
 M: Ray Ni <ray.ni@intel.com>                  (Ia32/X64)
 M: Zhichao Gao <zhichao.gao@intel.com>        (Ia32/X64)
 M: Leif Lindholm <leif@nuviainc.com>          (ARM/AArch64)
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>    (ARM/AArch64)
+M: Ard Biesheuvel <ardb+tianocore@kernel.org> (ARM/AArch64)
 
 EDK II Architectures:
 ---------------------
@@ -96,7 +96,12 @@ ARM, AARCH64
 F: */AArch64/
 F: */Arm/
 M: Leif Lindholm <leif@nuviainc.com>
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
+
+RISCV64
+F: */RiscV64/
+M: Abner Chang <abner.chang@hpe.com>
+R: Daniel Schaefer <daniel.schaefer@hpe.com>
 
 EDK II Continuous Integration:
 ------------------------------
@@ -127,19 +132,19 @@ ArmPkg
 F: ArmPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ArmPkg
 M: Leif Lindholm <leif@nuviainc.com>
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
 
 ArmPlatformPkg
 F: ArmPlatformPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ArmPlatformPkg
 M: Leif Lindholm <leif@nuviainc.com>
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
 
 ArmVirtPkg
 F: ArmVirtPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ArmVirtPkg
 M: Laszlo Ersek <lersek@redhat.com>
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
 R: Leif Lindholm <leif@nuviainc.com>
 
 ArmVirtPkg: modules used on Xen
@@ -151,6 +156,16 @@ F: ArmVirtPkg/XenAcpiPlatformDxe/
 F: ArmVirtPkg/XenPlatformHasAcpiDtDxe/
 F: ArmVirtPkg/XenioFdtDxe/
 R: Julien Grall <julien@xen.org>
+
+ArmVirtPkg: Kvmtool emulated platform support
+F: ArmVirtPkg/ArmVirtKvmTool.*
+F: ArmVirtPkg/KvmtoolPlatformDxe/
+F: ArmVirtPkg/Library/Fdt16550SerialPortHookLib/
+F: ArmVirtPkg/Library/KvmtoolPlatformPeiLib/
+F: ArmVirtPkg/Library/KvmtoolRtcFdtClientLib/
+F: ArmVirtPkg/Library/KvmtoolVirtMemInfoLib/
+F: ArmVirtPkg/Library/NorFlashKvmtoolLib/
+R: Sami Mujawar <sami.mujawar@arm.com>
 
 BaseTools
 F: BaseTools/
@@ -177,12 +192,11 @@ EmbeddedPkg
 F: EmbeddedPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/EmbeddedPkg
 M: Leif Lindholm <leif@nuviainc.com>
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
 
 EmulatorPkg
 F: EmulatorPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/EmulatorPkg
-M: Jordan Justen <jordan.l.justen@intel.com>
 M: Andrew Fish <afish@apple.com>
 M: Ray Ni <ray.ni@intel.com>
 S: Maintained
@@ -409,9 +423,9 @@ R: Siyuan Fu <siyuan.fu@intel.com>
 OvmfPkg
 F: OvmfPkg/
 W: http://www.tianocore.org/ovmf/
-M: Jordan Justen <jordan.l.justen@intel.com>
 M: Laszlo Ersek <lersek@redhat.com>
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
+R: Jordan Justen <jordan.l.justen@intel.com>
 S: Maintained
 
 OvmfPkg: bhyve-related modules
@@ -498,6 +512,11 @@ F: PcAtChipsetPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/PcAtChipsetPkg
 M: Ray Ni <ray.ni@intel.com>
 
+RedfishPkg: Redfish related modules
+F: RedfishPkg/
+M: Abner Chang <abner.chang@hpe.com>
+R: Nickle Wang <nickle.wang@hpe.com>
+
 SecurityPkg
 F: SecurityPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/SecurityPkg
@@ -533,7 +552,7 @@ M: Hao A Wu <hao.a.wu@intel.com>
 
 StandaloneMmPkg
 F: StandaloneMmPkg/
-M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Ard Biesheuvel <ardb+tianocore@kernel.org>
 M: Sami Mujawar <sami.mujawar@arm.com>
 M: Jiewen Yao <jiewen.yao@intel.com>
 R: Supreeth Venkatesh <supreeth.venkatesh@arm.com>

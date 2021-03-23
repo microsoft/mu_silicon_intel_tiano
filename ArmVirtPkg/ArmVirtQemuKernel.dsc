@@ -1,7 +1,7 @@
 #
 #  Copyright (c) 2011-2015, ARM Limited. All rights reserved.
 #  Copyright (c) 2014, Linaro Limited. All rights reserved.
-#  Copyright (c) 2015 - 2016, Intel Corporation. All rights reserved.
+#  Copyright (c) 2015 - 2020, Intel Corporation. All rights reserved.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -38,6 +38,7 @@
   DEFINE NETWORK_SNP_ENABLE              = FALSE
   DEFINE NETWORK_TLS_ENABLE              = FALSE
   DEFINE NETWORK_ALLOW_HTTP_CONNECTIONS  = TRUE
+  DEFINE NETWORK_ISCSI_ENABLE            = TRUE
 
 !if $(NETWORK_SNP_ENABLE) == TRUE
   !error "NETWORK_SNP_ENABLE is IA32/X64/EBC only"
@@ -75,6 +76,7 @@
   PciPcdProducerLib|ArmVirtPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
   PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
   PciHostBridgeLib|ArmVirtPkg/Library/FdtPciHostBridgeLib/FdtPciHostBridgeLib.inf
+  PciHostBridgeUtilityLib|OvmfPkg/Library/PciHostBridgeUtilityLib/PciHostBridgeUtilityLib.inf
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
 
 [LibraryClasses.common.DXE_DRIVER]
@@ -84,6 +86,8 @@
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
 
 [BuildOptions]
+!include NetworkPkg/NetworkBuildOptions.dsc.inc
+
   #
   # We need to avoid jump tables in SEC modules, so that the PE/COFF
   # self-relocation code itself is guaranteed to be position independent.
@@ -171,6 +175,7 @@
 !endif
 
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|3
+  gEfiShellPkgTokenSpaceGuid.PcdShellFileOperationSize|0x20000
 
 [PcdsPatchableInModule.common]
   # we need to provide a resolution for this PCD that supports PcdSet64()
@@ -341,13 +346,14 @@
   OvmfPkg/VirtioRngDxe/VirtioRng.inf
 
   #
-  # FAT filesystem + GPT/MBR partitioning + UDF filesystem
+  # FAT filesystem + GPT/MBR partitioning + UDF filesystem + virtio-fs
   #
   MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
   FatPkg/EnhancedFatDxe/Fat.inf
   MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
+  OvmfPkg/VirtioFsDxe/VirtioFsDxe.inf
 
   #
   # Bds
@@ -419,6 +425,7 @@
     <LibraryClasses>
       NULL|ArmVirtPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
   }
+  OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
   OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
   OvmfPkg/Virtio10Dxe/Virtio10.inf
 

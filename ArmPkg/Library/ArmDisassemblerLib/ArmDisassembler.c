@@ -2,6 +2,7 @@
   Default exception handler
 
   Copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
+  Copyright (c) 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -157,13 +158,15 @@ DisassembleArmInstruction (
   IN  BOOLEAN   Extended
   )
 {
-  UINT32    OpCode = **OpCodePtr;
+  UINT32    OpCode;
   CHAR8     *Type, *Root;
   BOOLEAN   I, P, U, B, W, L, S, H;
   UINT32    Rn, Rd, Rm;
   UINT32    imode, offset_8, offset_12;
   UINT32    Index;
   UINT32    shift_imm, shift;
+
+  OpCode = **OpCodePtr;
 
   I = (OpCode & BIT25) == BIT25;
   P = (OpCode & BIT24) == BIT24;
@@ -240,7 +243,7 @@ DisassembleArmInstruction (
           if (shift_imm == 0) {
             shift_imm = 32;
           }
-        } else if (shift == 0x12) {
+        } else if (shift == 0x2) {
           Type = "ASR";
         } else if (shift_imm == 0) {
           AsciiSPrint (&Buf[Index], Size - Index, "[%a, #%a%a, %a, RRX]%a", gReg[Rn], SIGN (U), gReg[Rm], WRITE (W));
@@ -270,7 +273,7 @@ DisassembleArmInstruction (
           if (shift_imm == 0) {
             shift_imm = 32;
           }
-        } else if (shift == 0x12) {
+        } else if (shift == 0x2) {
           Type = "ASR";
         } else if (shift_imm == 0) {
           AsciiSPrint (&Buf[Index], Size - Index, "[%a], #%a%a, %a, RRX", gReg[Rn], SIGN (U), gReg[Rm]);
@@ -367,7 +370,11 @@ DisassembleArmInstruction (
       AsciiSPrint (Buf, Size, "CPS #0x%x", (OpCode & 0x2f));
     } else {
       imode = (OpCode >> 18) & 0x3;
-      Index = AsciiSPrint (Buf, Size, "CPS%a %a%a%a", (imode == 3) ? "ID":"IE", (OpCode & BIT8) ? "A":"", (OpCode & BIT7) ? "I":"", (OpCode & BIT6) ? "F":"");
+      Index = AsciiSPrint (Buf, Size, "CPS%a %a%a%a",
+                      (imode == 3) ? "ID":"IE",
+                      ((OpCode & BIT8) != 0) ? "A":"",
+                      ((OpCode & BIT7) != 0) ? "I":"",
+                      ((OpCode & BIT6) != 0) ? "F":"");
       if ((OpCode & BIT17) != 0) {
         AsciiSPrint (&Buf[Index], Size - Index, ", #0x%x", OpCode & 0x1f);
       }

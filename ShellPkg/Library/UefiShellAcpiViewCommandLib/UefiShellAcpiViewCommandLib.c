@@ -1,12 +1,13 @@
 /** @file
   Main file for 'acpiview' Shell command function.
 
-  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.<BR>
+  Copyright (c) 2016 - 2020, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include <Guid/ShellLibHiiGuid.h>
 #include <IndustryStandard/Acpi.h>
+#include <IndustryStandard/ArmErrorSourceTable.h>
 
 #include <Library/BaseMemoryLib.h>
 #include <Library/HiiLib.h>
@@ -46,6 +47,7 @@ STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
 STATIC
 CONST
 ACPI_TABLE_PARSER ParserList[] = {
+  {EFI_ACPI_6_3_ARM_ERROR_SOURCE_TABLE_SIGNATURE, ParseAcpiAest},
   {EFI_ACPI_6_2_BOOT_GRAPHICS_RESOURCE_TABLE_SIGNATURE, ParseAcpiBgrt},
   {EFI_ACPI_6_2_DEBUG_PORT_2_TABLE_SIGNATURE, ParseAcpiDbg2},
   {EFI_ACPI_6_2_DIFFERENTIATED_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
@@ -53,10 +55,13 @@ ACPI_TABLE_PARSER ParserList[] = {
   {EFI_ACPI_6_3_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE, ParseAcpiFacs},
   {EFI_ACPI_6_2_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE, ParseAcpiFadt},
   {EFI_ACPI_6_2_GENERIC_TIMER_DESCRIPTION_TABLE_SIGNATURE, ParseAcpiGtdt},
+  {EFI_ACPI_6_3_HETEROGENEOUS_MEMORY_ATTRIBUTE_TABLE_SIGNATURE, ParseAcpiHmat},
   {EFI_ACPI_6_2_IO_REMAPPING_TABLE_SIGNATURE, ParseAcpiIort},
   {EFI_ACPI_6_2_MULTIPLE_APIC_DESCRIPTION_TABLE_SIGNATURE, ParseAcpiMadt},
   {EFI_ACPI_6_2_PCI_EXPRESS_MEMORY_MAPPED_CONFIGURATION_SPACE_BASE_ADDRESS_DESCRIPTION_TABLE_SIGNATURE,
    ParseAcpiMcfg},
+  {EFI_ACPI_6_2_PLATFORM_COMMUNICATIONS_CHANNEL_TABLE_SIGNATURE,
+   ParseAcpiPcct},
   {EFI_ACPI_6_2_PROCESSOR_PROPERTIES_TOPOLOGY_TABLE_STRUCTURE_SIGNATURE,
    ParseAcpiPptt},
   {RSDP_TABLE_INFO, ParseAcpiRsdp},

@@ -257,6 +257,11 @@
   #
   UnitTestHostBaseLib|Test/UnitTest/Include/Library/UnitTestHostBaseLib.h
 
+  ##  @libraryclass  This library provides an interface to request non-MMRAM pages to be mapped
+  #                  or unblocked from inside MM environment.
+  #
+  MmUnblockMemoryLib|Include/Library/MmUnblockMemoryLib.h
+
 [LibraryClasses.IA32, LibraryClasses.X64]
   ##  @libraryclass  Abstracts both S/W SMI generation and detection.
   ##
@@ -669,7 +674,7 @@
   gEfiJsonCapsuleIdGuid            = { 0x67d6f4cd, 0xd6b8, 0x4573, { 0xbf, 0x4a, 0xde, 0x5e, 0x25, 0x2d, 0x61, 0xae }}
 
   ## Include/Guid/HiiPlatformSetupFormset.h
-  gEfiHiiResetStyleFormsetGuid     = { 0x790217bd, 0xbecf, 0x485b, { 0x91, 0x70, 0x5f, 0xf7, 0x11, 0x31, 0x8b, 0x27 }}
+  gEfiHiiRestStyleFormsetGuid      = { 0x790217bd, 0xbecf, 0x485b, { 0x91, 0x70, 0x5f, 0xf7, 0x11, 0x31, 0x8b, 0x27 }}
 
   # GUIDs defined in UEFI2.8a
   #
@@ -1849,6 +1854,16 @@
   gEfiNvdimmLabelProtocolGuid               = { 0xd40b6b80, 0x97d5, 0x4282, { 0xbb, 0x1d, 0x22, 0x3a, 0x16, 0x91, 0x80, 0x58 }}
 
   #
+  # Protocols defined in UEFI2.8
+  #
+  ## Include/Protocol/RestEx.h
+  gEfiRestExProtocolGuid               = { 0x55648b91, 0xe7d, 0x40a3, { 0xa9, 0xb3, 0xa8, 0x15, 0xd7, 0xea, 0xdf, 0x97 }}
+  gEfiRestExServiceBindingProtocolGuid = { 0x456bbe01, 0x99d0, 0x45ea, { 0xbb, 0x5f, 0x16, 0xd8, 0x4b, 0xed, 0xc5, 0x59 }}
+
+  ## Include/Protocol/RestJsonStructure.h
+  gEfiRestJsonStructureProtocolGuid  = { 0xa9a048f6, 0x48a0, 0x4714, {0xb7, 0xda, 0xa9, 0xad,0x87, 0xd4, 0xda, 0xc9 }}
+
+  #
   # Protocols defined in Shell2.0
   #
   ## Include/Protocol/Shell.h
@@ -2273,6 +2288,10 @@
   ## This value is used to set the base address of PCI express hierarchy.
   # @Prompt PCI Express Base Address.
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0xE0000000|UINT64|0x0000000a
+
+  ## This value is used to set the size of PCI express hierarchy. The default is 256 MB.
+  # @Prompt PCI Express Base Size.
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseSize|0x10000000|UINT64|0x0000000f
 
   ## Default current ISO 639-2 language: English & French.
   # @Prompt Default Value of LangCodes Variable.

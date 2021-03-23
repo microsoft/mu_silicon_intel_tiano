@@ -1,7 +1,7 @@
 /** @file
   This file implements the Graphics Output protocol for Arm platforms
 
-  Copyright (c) 2011-2018, ARM Ltd. All rights reserved.<BR>
+  Copyright (c) 2011 - 2020, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -102,7 +102,7 @@ InitializeDisplay (
   IN LCD_INSTANCE* Instance
   )
 {
-  EFI_STATUS             Status = EFI_SUCCESS;
+  EFI_STATUS             Status;
   EFI_PHYSICAL_ADDRESS   VramBaseAddress;
   UINTN                  VramSize;
 
@@ -148,7 +148,7 @@ LcdGraphicsOutputDxeInitialize (
   IN EFI_SYSTEM_TABLE   *SystemTable
   )
 {
-  EFI_STATUS  Status = EFI_SUCCESS;
+  EFI_STATUS  Status;
   LCD_INSTANCE* Instance;
 
   Status = LcdIdentify ();
@@ -246,7 +246,7 @@ LcdGraphicsQueryMode (
   OUT EFI_GRAPHICS_OUTPUT_MODE_INFORMATION   **Info
   )
 {
-  EFI_STATUS Status = EFI_SUCCESS;
+  EFI_STATUS Status;
   LCD_INSTANCE *Instance;
 
   Instance = LCD_INSTANCE_FROM_GOP_THIS (This);
@@ -296,7 +296,7 @@ LcdGraphicsSetMode (
   IN UINT32                         ModeNumber
   )
 {
-  EFI_STATUS                      Status = EFI_SUCCESS;
+  EFI_STATUS                      Status;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL   FillColour;
   LCD_INSTANCE*                   Instance;
   LCD_BPP                         Bpp;
@@ -374,18 +374,18 @@ GetBytesPerPixel (
   )
 {
   switch (Bpp) {
-  case LCD_BITS_PER_PIXEL_24:
+  case LcdBitsPerPixel_24:
     return 4;
 
-  case LCD_BITS_PER_PIXEL_16_565:
-  case LCD_BITS_PER_PIXEL_16_555:
-  case LCD_BITS_PER_PIXEL_12_444:
+  case LcdBitsPerPixel_16_565:
+  case LcdBitsPerPixel_16_555:
+  case LcdBitsPerPixel_12_444:
     return 2;
 
-  case LCD_BITS_PER_PIXEL_8:
-  case LCD_BITS_PER_PIXEL_4:
-  case LCD_BITS_PER_PIXEL_2:
-  case LCD_BITS_PER_PIXEL_1:
+  case LcdBitsPerPixel_8:
+  case LcdBitsPerPixel_4:
+  case LcdBitsPerPixel_2:
+  case LcdBitsPerPixel_1:
     return 1;
 
   default:

@@ -28,6 +28,8 @@ Microsoft Windows VS2019
 ============================= ================= ============= ============= ==============
 EmulatorPkg_Win_VS2019_       | IA32            |em32d|       |em32r|       |em32n|
 |                             | X64             |em64d|       |em64r|       |em64n|
+|                             | IA32 FULL       |em32fd|      |em32fr|      |em32fn|
+|                             | X64 FULL        |em64fd|      |em64fr|      |em64fn|
 OvmfPkg_Win_VS2019_           | IA32            |op32d|       |op32r|       |op32n|
 |                             | X64             |op64d|       |op64r|       |op64n|
 |                             | IA32 X64        |op3264d|     |op3264r|     |op3264n|
@@ -44,6 +46,8 @@ ArmVirtPkg_Ubuntu_GCC5_       | AARCH64         |avAArch64du| |avAArch64ru| |avA
 |                             | ARM             |avArmdu|     |avArmru|     |avArmnu|
 EmulatorPkg_Ubuntu_GCC5_      | IA32            |em32du|      |em32ru|      |em32nu|
 |                             | X64             |em64du|      |em64ru|      |em64nu|
+|                             | IA32 FULL       |em32fdu|     |em32fru|     |em32fnu|
+|                             | X64 FULL        |em64fdu|     |em64fru|     |em64fnu|
 OvmfPkg_Ubuntu_GCC5_          | IA32            |op32du|      |op32ru|      |op32nu|
 |                             | X64             |op64du|      |op64ru|      |op64nu|
 |                             | IA32 X64        |op3264du|    |op3264ru|    |op3264nu|
@@ -89,6 +93,7 @@ that are covered by additional licenses.
 -  `MdeModulePkg/Library/BrotliCustomDecompressLib/brotli <https://github.com/google/brotli/blob/666c3280cc11dc433c303d79a83d4ffbdd12cc8d/LICENSE>`__
 -  `MdeModulePkg/Universal/RegularExpressionDxe/oniguruma <https://github.com/kkos/oniguruma/blob/abfc8ff81df4067f309032467785e06975678f0d/COPYING>`__
 -  `UnitTestFrameworkPkg/Library/CmockaLib/cmocka <https://git.cryptomilk.org/projects/cmocka.git/tree/COPYING?h=cmocka-1.1.5&id=f5e2cd77c88d9f792562888d2b70c5a396bfbf7a>`__
+-  `RedfishPkg/Library/JsonLib/jansson <https://github.com/akheron/jansson/blob/2882ead5bb90cf12a01b07b2c2361e24960fae02/LICENSE>`__
 
 The EDK II Project is composed of packages. The maintainers for each package
 are listed in `Maintainers.txt <Maintainers.txt>`__.
@@ -319,12 +324,26 @@ use.
 .. |em32n| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_NOOPT
 .. |em32nu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_NOOPT
 
+.. |em32fd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_FULL_DEBUG
+.. |em32fdu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_FULL_DEBUG
+.. |em32fr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_FULL_RELEASE
+.. |em32fru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_FULL_RELEASE
+.. |em32fn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_FULL_NOOPT
+.. |em32fnu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_IA32_FULL_NOOPT
+
 .. |em64d| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_DEBUG
 .. |em64du| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_DEBUG
 .. |em64r| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_RELEASE
 .. |em64ru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_RELEASE
 .. |em64n| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_NOOPT
 .. |em64nu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_NOOPT
+
+.. |em64fd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_DEBUG
+.. |em64fdu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_DEBUG
+.. |em64fr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_RELEASE
+.. |em64fru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_RELEASE
+.. |em64fn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Windows_VS2019_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_NOOPT
+.. |em64fnu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/PlatformCI_EmulatorPkg_Ubuntu_GCC5_CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_NOOPT
 
 .. OvmfPkg
 

@@ -1,7 +1,7 @@
 /**@file
   Initialize Secure Encrypted Virtualization (SEV) support
 
-  Copyright (c) 2017, Advanced Micro Devices. All rights reserved.<BR>
+  Copyright (c) 2017 - 2020, Advanced Micro Devices. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -17,9 +17,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
 #include <PiPei.h>
-#include <Register/Amd/Cpuid.h>
 #include <Register/Amd/Msr.h>
-#include <Register/Cpuid.h>
 #include <Register/Intel/SmramSaveStateMap.h>
 
 #include "Platform.h"
@@ -35,12 +33,17 @@ AmdSevEsInitialize (
   VOID
   )
 {
-  VOID              *GhcbBase;
-  PHYSICAL_ADDRESS  GhcbBasePa;
-  UINTN             GhcbPageCount, PageCount;
-  RETURN_STATUS     PcdStatus, DecryptStatus;
-  IA32_DESCRIPTOR   Gdtr;
-  VOID              *Gdt;
+  UINT8                *GhcbBase;
+  PHYSICAL_ADDRESS     GhcbBasePa;
+  UINTN                GhcbPageCount;
+  UINT8                *GhcbBackupBase;
+  UINT8                *GhcbBackupPages;
+  UINTN                GhcbBackupPageCount;
+  SEV_ES_PER_CPU_DATA  *SevEsData;
+  UINTN                PageCount;
+  RETURN_STATUS        PcdStatus, DecryptStatus;
+  IA32_DESCRIPTOR      Gdtr;
+  VOID                 *Gdt;
 
   if (!MemEncryptSevEsIsEnabled ()) {
     return;
@@ -86,6 +89,27 @@ AmdSevEsInitialize (
     "SEV-ES is enabled, %lu GHCB pages allocated starting at 0x%p\n",
     (UINT64)GhcbPageCount, GhcbBase));
 
+  //
+  // Allocate #VC recursion backup pages. The number of backup pages needed is
+  // one less than the maximum VC count.
+  //
+  GhcbBackupPageCount = mMaxCpuCount * (VMGEXIT_MAXIMUM_VC_COUNT - 1);
+  GhcbBackupBase = AllocatePages (GhcbBackupPageCount);
+  ASSERT (GhcbBackupBase != NULL);
+
+  GhcbBackupPages = GhcbBackupBase;
+  for (PageCount = 1; PageCount < GhcbPageCount; PageCount += 2) {
+    SevEsData =
+      (SEV_ES_PER_CPU_DATA *)(GhcbBase + EFI_PAGES_TO_SIZE (PageCount));
+    SevEsData->GhcbBackupPages = GhcbBackupPages;
+
+    GhcbBackupPages += EFI_PAGE_SIZE * (VMGEXIT_MAXIMUM_VC_COUNT - 1);
+  }
+
+  DEBUG ((DEBUG_INFO,
+    "SEV-ES is enabled, %lu GHCB backup pages allocated starting at 0x%p\n",
+    (UINT64)GhcbBackupPageCount, GhcbBackupBase));
+
   AsmWriteMsr64 (MSR_SEV_ES_GHCB, GhcbBasePa);
 
   //
@@ -116,7 +140,6 @@ AmdSevInitialize (
   VOID
   )
 {
-  CPUID_MEMORY_ENCRYPTION_INFO_EBX  Ebx;
   UINT64                            EncryptionMask;
   RETURN_STATUS                     PcdStatus;
 
@@ -128,14 +151,9 @@ AmdSevInitialize (
   }
 
   //
-  // CPUID Fn8000_001F[EBX] Bit 0:5 (memory encryption bit position)
-  //
-  AsmCpuid (CPUID_MEMORY_ENCRYPTION_INFO, NULL, &Ebx.Uint32, NULL, NULL);
-  EncryptionMask = LShiftU64 (1, Ebx.Bits.PtePosBits);
-
-  //
   // Set Memory Encryption Mask PCD
   //
+  EncryptionMask = MemEncryptSevGetEncryptionMask ();
   PcdStatus = PcdSet64S (PcdPteMemoryEncryptionAddressOrMask, EncryptionMask);
   ASSERT_RETURN_ERROR (PcdStatus);
 

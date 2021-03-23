@@ -1,7 +1,7 @@
 /** @file
   AML NameSpace.
 
-  Copyright (c) 2019 - 2020, Arm Limited. All rights reserved.<BR>
+  Copyright (c) 2019 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -674,7 +674,7 @@ AmlAddPrefix (
 
   @retval EFI_SUCCESS             The function completed successfully.
   @retval EFI_INVALID_PARAMETER   Invalid parameter.
-*/
+**/
 STATIC
 EFI_STATUS
 EFIAPI
@@ -1075,10 +1075,8 @@ AmlEnumeratePathCallback (
   AML_PATH_SEARCH_CONTEXT   * PathSearchContext;
 
   AML_STREAM                * SearchPathBStream;
-  CHAR8                     * SearchedPath;
 
   AML_STREAM                * CurrNodePathBStream;
-  CHAR8                     * CurrNodePath;
   UINT32                      CurrNodePathSize;
 
   ContinueEnum = TRUE;
@@ -1123,9 +1121,6 @@ AmlEnumeratePathCallback (
     goto exit_handler;
   }
 
-  SearchedPath = (CHAR8*)AmlStreamGetCurrPos (SearchPathBStream);
-  CurrNodePath = (CHAR8*)AmlStreamGetCurrPos (CurrNodePathBStream);
-
   // Get the raw AML absolute pathname of the current node.
   Status1 = AmlGetRawNameSpacePath (Node, 0, CurrNodePathBStream);
   if (EFI_ERROR (Status1)) {
@@ -1140,13 +1135,13 @@ AmlEnumeratePathCallback (
     "Comparing search path with current node path.\n"
     ));
   DEBUG ((DEBUG_VERBOSE, "Search path:"));
-  AmlDbgPrintChars (
+  AMLDBG_PRINT_CHARS (
     DEBUG_VERBOSE,
     (CHAR8*)AmlStreamGetCurrPos (SearchPathBStream),
     AmlStreamGetIndex (SearchPathBStream)
     );
   DEBUG ((DEBUG_VERBOSE, "\nPath of the current node: "));
-  AmlDbgPrintChars (
+  AMLDBG_PRINT_CHARS (
     DEBUG_VERBOSE,
     (CHAR8*)AmlStreamGetCurrPos (CurrNodePathBStream),
     AmlStreamGetIndex (CurrNodePathBStream)

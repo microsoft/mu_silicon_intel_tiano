@@ -77,13 +77,14 @@ READ_LOCK_STATUS   = TRUE
   INF MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
 
   #
-  # FAT filesystem + GPT/MBR partitioning + UDF filesystem
+  # FAT filesystem + GPT/MBR partitioning + UDF filesystem + virtio-fs
   #
   INF MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
   INF MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   INF FatPkg/EnhancedFatDxe/Fat.inf
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
   INF MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
+  INF OvmfPkg/VirtioFsDxe/VirtioFsDxe.inf
 
   #
   # Status Code Routing
@@ -103,6 +104,7 @@ READ_LOCK_STATUS   = TRUE
   #
   INF ShellPkg/Application/Shell/Shell.inf
   INF ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
+  INF ShellPkg/DynamicCommand/HttpDynamicCommand/HttpDynamicCommand.inf
   INF OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand.inf
 
   #
@@ -160,6 +162,7 @@ READ_LOCK_STATUS   = TRUE
   INF ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe.inf
   INF MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
   INF MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
+  INF OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
   INF OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
   INF OvmfPkg/Virtio10Dxe/Virtio10.inf
 

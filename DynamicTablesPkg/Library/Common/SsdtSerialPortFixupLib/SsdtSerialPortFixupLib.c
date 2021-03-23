@@ -1,7 +1,7 @@
 /** @file
   SSDT Serial Port Fixup Library.
 
-  Copyright (c) 2019 - 2020, Arm Limited. All rights reserved.<BR>
+  Copyright (c) 2019 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -130,22 +130,30 @@ STATIC
 EFI_STATUS
 EFIAPI
 FixupIds (
-  IN  OUT       AML_ROOT_NODE_HANDLE        RootNodeHandle,
-  IN      CONST UINT64                      Uid,
-  IN      CONST CM_ARM_SERIAL_PORT_INFO   * SerialPortInfo
+  IN        AML_ROOT_NODE_HANDLE        RootNodeHandle,
+  IN  CONST UINT64                      Uid,
+  IN  CONST CM_ARM_SERIAL_PORT_INFO   * SerialPortInfo
   )
 {
   EFI_STATUS                Status;
   AML_OBJECT_NODE_HANDLE    NameOpIdNode;
   CONST CHAR8             * HidString;
   CONST CHAR8             * CidString;
+  CONST CHAR8             * NonBsaHid;
 
   // Get the _CID and _HID value to write.
   switch (SerialPortInfo->PortSubtype) {
     case EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550:
     {
-      HidString = "PNP0501";
-      CidString = "PNP0500";
+      // If there is a non-BSA compliant HID, use that.
+      NonBsaHid = (CONST CHAR8*)PcdGetPtr (PcdNonBsaCompliant16550SerialHid);
+      if ((NonBsaHid != NULL) && (AsciiStrLen (NonBsaHid) != 0)) {
+        HidString = NonBsaHid;
+        CidString = "";
+      } else {
+        HidString = "PNP0501";
+        CidString = "PNP0500";
+      }
       break;
     }
     case EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_ARM_PL011_UART:
@@ -243,8 +251,8 @@ STATIC
 EFI_STATUS
 EFIAPI
 FixupCrs (
-  IN  OUT       AML_ROOT_NODE_HANDLE        RootNodeHandle,
-  IN      CONST CM_ARM_SERIAL_PORT_INFO   * SerialPortInfo
+  IN        AML_ROOT_NODE_HANDLE        RootNodeHandle,
+  IN  CONST CM_ARM_SERIAL_PORT_INFO   * SerialPortInfo
   )
 {
   EFI_STATUS                Status;
@@ -318,9 +326,9 @@ STATIC
 EFI_STATUS
 EFIAPI
 FixupName (
-  IN  OUT       AML_ROOT_NODE_HANDLE        RootNodeHandle,
-  IN      CONST CM_ARM_SERIAL_PORT_INFO   * SerialPortInfo,
-  IN      CONST CHAR8                     * Name
+  IN        AML_ROOT_NODE_HANDLE        RootNodeHandle,
+  IN  CONST CM_ARM_SERIAL_PORT_INFO   * SerialPortInfo,
+  IN  CONST CHAR8                     * Name
   )
 {
   EFI_STATUS                Status;
@@ -362,7 +370,7 @@ STATIC
 EFI_STATUS
 EFIAPI
 FixupSerialPortInfo (
-  IN  OUT       AML_ROOT_NODE_HANDLE              RootNodeHandle,
+  IN            AML_ROOT_NODE_HANDLE              RootNodeHandle,
   IN      CONST CM_ARM_SERIAL_PORT_INFO         * SerialPortInfo,
   IN      CONST CHAR8                           * Name,
   IN      CONST UINT64                            Uid,

@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 //
 // Copyright (c) 2016, Linaro Ltd. All rights reserved.<BR>
+// Copyright (c) 2021, Arm Limited. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
@@ -11,10 +12,13 @@ typedef __SIZE_TYPE__ size_t;
 static __attribute__((__used__))
 void *__memset(void *s, int c, size_t n)
 {
-  unsigned char *d = s;
+  unsigned char *d;
 
-  while (n--)
+  d = s;
+
+  while (n-- != 0) {
     *d++ = c;
+  }
 
   return s;
 }

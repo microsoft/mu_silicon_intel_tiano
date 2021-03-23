@@ -213,7 +213,7 @@ AmlRdIsResourceDataBuffer (
       return TRUE;
     }
 
-    // TODO Might want to check the CRC when available.
+    // @todo Might want to check the CRC when available.
     // An end tag resource data element must be the last element of the list.
     // Thus the function should have already returned.
     if (AmlRdCompareDescId (
@@ -310,7 +310,7 @@ AmlParseResourceData (
       return Status;
     }
 
-    DumpRaw (CurrRdElement, CurrRdElementSize);
+    AMLDBG_DUMP_RAW (CurrRdElement, CurrRdElementSize);
 
     // Exit the loop when finding the resource data end tag.
     if (AmlRdCompareDescId (

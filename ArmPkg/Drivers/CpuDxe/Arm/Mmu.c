@@ -2,7 +2,7 @@
 
 Copyright (c) 2009, Hewlett-Packard Company. All rights reserved.<BR>
 Portions copyright (c) 2010, Apple Inc. All rights reserved.<BR>
-Portions copyright (c) 2013, ARM Ltd. All rights reserved.<BR>
+Portions copyright (c) 2013-2021, Arm Limited. All rights reserved.<BR>
 Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -155,8 +155,8 @@ SyncCacheConfigPage (
   EFI_STATUS                          Status;
   UINT32                              i;
   volatile ARM_PAGE_TABLE_ENTRY       *SecondLevelTable;
-  UINT32                              NextPageAttributes = 0;
-  UINT32                              PageAttributes = 0;
+  UINT32                              NextPageAttributes;
+  UINT32                              PageAttributes;
   UINT32                              BaseAddress;
   UINT64                              GcdAttributes;
 
@@ -226,8 +226,8 @@ SyncCacheConfig (
   UINT32                              i;
   EFI_PHYSICAL_ADDRESS                NextRegionBase;
   UINT64                              NextRegionLength;
-  UINT32                              NextSectionAttributes = 0;
-  UINT32                              SectionAttributes = 0;
+  UINT32                              NextSectionAttributes;
+  UINT32                              SectionAttributes;
   UINT64                              GcdAttributes;
   volatile ARM_FIRST_LEVEL_DESCRIPTOR   *FirstLevelTable;
   UINTN                               NumberOfDescriptors;
@@ -366,14 +366,14 @@ EfiAttributeToArmAttribute (
   }
 
   // Determine protection attributes
-  if (EfiAttributes & EFI_MEMORY_RO) {
+  if ((EfiAttributes & EFI_MEMORY_RO) != 0) {
     ArmAttributes |= TT_DESCRIPTOR_SECTION_AP_RO_RO;
   } else {
     ArmAttributes |= TT_DESCRIPTOR_SECTION_AP_RW_RW;
   }
 
   // Determine eXecute Never attribute
-  if (EfiAttributes & EFI_MEMORY_XP) {
+  if ((EfiAttributes & EFI_MEMORY_XP) != 0) {
     ArmAttributes |= TT_DESCRIPTOR_SECTION_XN_MASK;
   }
 

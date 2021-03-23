@@ -22,7 +22,8 @@
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
-        ]
+        ],
+        "skip": True
     },
     ## options defined .pytool/Plugin/CompilerPlugin
     "CompilerPlugin": {
@@ -78,7 +79,7 @@
         "IgnoreGuidName": ["ResetVector", "XenResetVector"], # Expected duplication for gEfiFirmwareVolumeTopFileGuid
         "IgnoreGuidValue": [],
         "IgnoreFoldersAndFiles": [],
-        "IgnoreDuplicates": [],
+        "IgnoreDuplicates": ["gGrubFileGuid=Grub"],
     },
 
     ## options defined .pytool/Plugin/LibraryClassCheck

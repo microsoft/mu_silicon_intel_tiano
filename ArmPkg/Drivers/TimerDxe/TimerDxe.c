@@ -1,7 +1,7 @@
 /** @file
   Timer Architecture Protocol driver of the ARM flavor
 
-  Copyright (c) 2011-2013 ARM Ltd. All rights reserved.<BR>
+  Copyright (c) 2011-2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -307,7 +307,7 @@ TimerInterruptHandler (
   // Check if the timer interrupt is active
   if ((ArmGenericTimerGetTimerCtrlReg () ) & ARM_ARCH_TIMER_ISTATUS) {
 
-    if (mTimerNotifyFunction) {
+    if (mTimerNotifyFunction != 0) {
       mTimerNotifyFunction (mTimerPeriod * mElapsedPeriod);
     }
 
@@ -359,7 +359,7 @@ TimerInitialize (
   IN EFI_SYSTEM_TABLE   *SystemTable
   )
 {
-  EFI_HANDLE  Handle = NULL;
+  EFI_HANDLE  Handle;
   EFI_STATUS  Status;
   UINTN       TimerCtrlReg;
   UINT32      TimerHypIntrNum;
@@ -408,6 +408,7 @@ TimerInitialize (
   Status = TimerDriverSetTimerPeriod (&gTimer, FixedPcdGet32(PcdTimerPeriod)); // TIMER_DEFAULT_PERIOD
   ASSERT_EFI_ERROR (Status);
 
+  Handle = NULL;
   // Install the Timer Architectural Protocol onto a new handle
   Status = gBS->InstallMultipleProtocolInterfaces(
                   &Handle,

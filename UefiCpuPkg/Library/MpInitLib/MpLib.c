@@ -1,7 +1,7 @@
 /** @file
   CPU MP Initialize Library common functions.
 
-  Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2021, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2020, AMD Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -485,14 +485,12 @@ CollectProcessorCount (
   CpuMpData->InitFlag = ApInitConfig;
   WakeUpAP (CpuMpData, TRUE, 0, NULL, NULL, TRUE);
   CpuMpData->InitFlag = ApInitDone;
+  //
+  // When InitFlag == ApInitConfig, WakeUpAP () guarantees all APs are checked in.
+  // FinishedCount is the number of check-in APs.
+  //
+  CpuMpData->CpuCount = CpuMpData->FinishedCount + 1;
   ASSERT (CpuMpData->CpuCount <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
-  //
-  // Wait for all APs finished the initialization
-  //
-  while (CpuMpData->FinishedCount < (CpuMpData->CpuCount - 1)) {
-    CpuPause ();
-  }
-
 
   //
   // Enable x2APIC mode if
@@ -680,10 +678,15 @@ MpInitLibSevEsAPReset (
   IN CPU_MP_DATA                  *CpuMpData
   )
 {
+  EFI_STATUS       Status;
+  UINTN            ProcessorNumber;
   UINT16           Code16, Code32;
   AP_RESET         *APResetFn;
   UINTN            BufferStart;
   UINTN            StackStart;
+
+  Status = GetProcessorNumber (CpuMpData, &ProcessorNumber);
+  ASSERT_EFI_ERROR (Status);
 
   Code16 = GetProtectedMode16CS ();
   Code32 = GetProtectedMode32CS ();
@@ -696,7 +699,7 @@ MpInitLibSevEsAPReset (
 
   BufferStart = CpuMpData->MpCpuExchangeInfo->BufferStart;
   StackStart = CpuMpData->SevEsAPResetStackStart -
-                 (AP_RESET_STACK_SIZE * GetApicId ());
+                 (AP_RESET_STACK_SIZE * ProcessorNumber);
 
   //
   // This call never returns.
@@ -746,10 +749,6 @@ ApWakeupFunction (
   CurrentApicMode = GetApicMode ();
   while (TRUE) {
     if (CpuMpData->InitFlag == ApInitConfig) {
-      //
-      // Add CPU number
-      //
-      InterlockedIncrement ((UINT32 *) &CpuMpData->CpuCount);
       ProcessorNumber = ApIndex;
       //
       // This is first time AP wakeup, get BIST information from AP stack
@@ -764,15 +763,6 @@ ApWakeupFunction (
       RestoreVolatileRegisters (&CpuMpData->CpuData[0].VolatileRegisters, FALSE);
       InitializeApData (CpuMpData, ProcessorNumber, BistData, ApTopOfStack);
       ApStartupSignalBuffer = CpuMpData->CpuData[ProcessorNumber].StartupApSignal;
-
-      //
-      // Delay decrementing the APs executing count when SEV-ES is enabled
-      // to allow the APs to issue an AP_RESET_HOLD before the BSP possibly
-      // performs another INIT-SIPI-SIPI sequence.
-      //
-      if (!CpuMpData->SevEsIsEnabled) {
-        InterlockedDecrement ((UINT32 *) &CpuMpData->MpCpuExchangeInfo->NumApsExecuting);
-      }
     } else {
       //
       // Execute AP function if AP is ready
@@ -861,19 +851,33 @@ ApWakeupFunction (
       }
     }
 
-    //
-    // AP finished executing C code
-    //
-    InterlockedIncrement ((UINT32 *) &CpuMpData->FinishedCount);
-
-    //
-    // Place AP is specified loop mode
-    //
     if (CpuMpData->ApLoopMode == ApInHltLoop) {
       //
       // Save AP volatile registers
       //
       SaveVolatileRegisters (&CpuMpData->CpuData[ProcessorNumber].VolatileRegisters);
+    }
+
+    //
+    // AP finished executing C code
+    //
+    InterlockedIncrement ((UINT32 *) &CpuMpData->FinishedCount);
+
+    if (CpuMpData->InitFlag == ApInitConfig) {
+      //
+      // Delay decrementing the APs executing count when SEV-ES is enabled
+      // to allow the APs to issue an AP_RESET_HOLD before the BSP possibly
+      // performs another INIT-SIPI-SIPI sequence.
+      //
+      if (!CpuMpData->SevEsIsEnabled) {
+        InterlockedDecrement ((UINT32 *) &CpuMpData->MpCpuExchangeInfo->NumApsExecuting);
+      }
+    }
+
+    //
+    // Place AP is specified loop mode
+    //
+    if (CpuMpData->ApLoopMode == ApInHltLoop) {
       //
       // Place AP in HLT-loop
       //
@@ -884,6 +888,7 @@ ApWakeupFunction (
           GHCB                      *Ghcb;
           UINT64                    Status;
           BOOLEAN                   DoDecrement;
+          BOOLEAN                   InterruptState;
 
           DoDecrement = (BOOLEAN) (CpuMpData->InitFlag == ApInitConfig);
 
@@ -891,7 +896,7 @@ ApWakeupFunction (
             Msr.GhcbPhysicalAddress = AsmReadMsr64 (MSR_SEV_ES_GHCB);
             Ghcb = Msr.Ghcb;
 
-            VmgInit (Ghcb);
+            VmgInit (Ghcb, &InterruptState);
 
             if (DoDecrement) {
               DoDecrement = FALSE;
@@ -905,11 +910,11 @@ ApWakeupFunction (
 
             Status = VmgExit (Ghcb, SVM_EXIT_AP_RESET_HOLD, 0, 0);
             if ((Status == 0) && (Ghcb->SaveArea.SwExitInfo2 != 0)) {
-              VmgDone (Ghcb);
+              VmgDone (Ghcb, InterruptState);
               break;
             }
 
-            VmgDone (Ghcb);
+            VmgDone (Ghcb, InterruptState);
           }
 
           //
@@ -1001,7 +1006,6 @@ FillExchangeInfoData (
   IA32_CR4                         Cr4;
 
   ExchangeInfo                  = CpuMpData->MpCpuExchangeInfo;
-  ExchangeInfo->Lock            = 0;
   ExchangeInfo->StackStart      = CpuMpData->Buffer;
   ExchangeInfo->StackSize       = CpuMpData->CpuApStackSize;
   ExchangeInfo->BufferStart     = CpuMpData->WakeupBuffer;
@@ -1142,20 +1146,6 @@ RestoreWakeupBuffer(
 }
 
 /**
-  Calculate the size of the reset stack.
-
-  @return                 Total amount of memory required for stacks
-**/
-STATIC
-UINTN
-GetApResetStackSize (
-  VOID
-  )
-{
-  return AP_RESET_STACK_SIZE * PcdGet32(PcdCpuMaxLogicalProcessorNumber);
-}
-
-/**
   Calculate the size of the reset vector.
 
   @param[in]  AddressMap  The pointer to Address Map structure.
@@ -1170,11 +1160,23 @@ GetApResetVectorSize (
 {
   UINTN  Size;
 
-  Size = ALIGN_VALUE (AddressMap->RendezvousFunnelSize +
-                        AddressMap->SwitchToRealSize +
-                        sizeof (MP_CPU_EXCHANGE_INFO),
-                      CPU_STACK_ALIGNMENT);
-  Size += GetApResetStackSize ();
+  Size = AddressMap->RendezvousFunnelSize +
+           AddressMap->SwitchToRealSize +
+           sizeof (MP_CPU_EXCHANGE_INFO);
+
+  //
+  // The AP reset stack is only used by SEV-ES guests. Do not add to the
+  // allocation if SEV-ES is not enabled.
+  //
+  if (PcdGetBool (PcdSevEsIsEnabled)) {
+    //
+    // Stack location is based on APIC ID, so use the total number of
+    // processors for calculating the total stack area.
+    //
+    Size += AP_RESET_STACK_SIZE * PcdGet32 (PcdCpuMaxLogicalProcessorNumber);
+
+    Size = ALIGN_VALUE (Size, CPU_STACK_ALIGNMENT);
+  }
 
   return Size;
 }
