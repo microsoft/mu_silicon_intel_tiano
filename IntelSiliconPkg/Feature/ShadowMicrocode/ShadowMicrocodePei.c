@@ -291,7 +291,6 @@ ShadowMicrocode (
   UINTN                             MaxPatchNumber;
   CPU_MICROCODE_HEADER              *MicrocodeEntryPoint;
   UINTN                             PatchCount;
-  UINTN                             DataSize;
   UINTN                             TotalSize;
   UINTN                             TotalLoadSize;
 
@@ -342,7 +341,7 @@ ShadowMicrocode (
     if (FitEntry[Index].Type == FIT_TYPE_01_MICROCODE) {
       MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *) (UINTN) FitEntry[Index].Address;
       TotalSize = GetMicrocodeLength (MicrocodeEntryPoint);
-      if (IsValidMicrocode (MicrocodeEntryPoint, TotalSize, MicrocodeCpuId, CpuIdCount, FALSE)) {
+      if (IsValidMicrocode (MicrocodeEntryPoint, TotalSize, 0, MicrocodeCpuId, CpuIdCount, FALSE)) {
         PatchInfoBuffer[PatchCount].Address = (UINTN) MicrocodeEntryPoint;
         PatchInfoBuffer[PatchCount].Size    = TotalSize;
         TotalLoadSize += TotalSize;
