@@ -69,6 +69,7 @@ typedef struct {
 typedef struct {
   UINTN                            VtdUnitBaseAddress;
   UINT16                           Segment;
+  VTD_VER_REG                      VerReg;
   VTD_CAP_REG                      CapReg;
   VTD_ECAP_REG                     ECapReg;
   VTD_ROOT_ENTRY                   *RootEntryTable;
@@ -78,6 +79,10 @@ typedef struct {
   BOOLEAN                          HasDirtyPages;
   PCI_DEVICE_INFORMATION           PciDeviceInfo;
   BOOLEAN                          Is5LevelPaging;
+  UINT8                            EnableQueuedInvalidation;
+  UINT16                           QiDescLength;
+  QI_DESC                          *QiDesc;
+  UINT16                           QiFreeHead;
 } VTD_UNIT_INFORMATION;
 
 //
@@ -180,6 +185,20 @@ FlushWriteBuffer (
   );
 
 /**
+  Perpare cache invalidation interface.
+
+  @param[in]  VtdIndex          The index used to identify a VTd engine.
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval EFI_UNSUPPORTED       Invalidation method is not supported.
+  @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
+**/
+EFI_STATUS
+PerpareCacheInvalidationInterface (
+  IN UINTN  VtdIndex
+  );
+
+/**
   Invalidate VTd context cache.
 
   @param[in]  VtdIndex          The index used to identify a VTd engine.
@@ -228,6 +247,16 @@ DumpVtdRegs (
 VOID
 DumpVtdRegsAll (
   VOID
+  );
+
+/**
+  Dump VTd version registers.
+
+  @param[in]  VerReg            The version register.
+**/
+VOID
+DumpVtdVerRegs (
+  IN VTD_VER_REG                *VerReg
   );
 
 /**

@@ -55,6 +55,218 @@ FlushWriteBuffer (
 }
 
 /**
+  Perpare cache invalidation interface.
+
+  @param[in]  VtdIndex          The index used to identify a VTd engine.
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval EFI_UNSUPPORTED       Invalidation method is not supported.
+  @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
+**/
+EFI_STATUS
+PerpareCacheInvalidationInterface (
+  IN UINTN  VtdIndex
+  )
+{
+  UINT16  QueueSize;
+  UINT64  Reg64;
+  UINT32  Reg32;
+
+  if (mVtdUnitInformation[VtdIndex].VerReg.Bits.Major <= 6) {
+    mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation = 0;
+    DEBUG ((DEBUG_INFO, "Use Register-based Invalidation Interface for engine [%d]\n", VtdIndex));
+    return EFI_SUCCESS;
+  }
+
+  if (mVtdUnitInformation[VtdIndex].ECapReg.Bits.QI == 0) {
+    DEBUG ((DEBUG_ERROR, "Hardware does not support queued invalidations interface for engine [%d]\n", VtdIndex));
+    return EFI_UNSUPPORTED;
+  }
+
+  mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation = 1;
+  DEBUG ((DEBUG_INFO, "Use Queued Invalidation Interface for engine [%d]\n", VtdIndex));
+
+  Reg32 = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GSTS_REG);
+  if ((Reg32 & B_GSTS_REG_QIES) != 0) {
+    DEBUG ((DEBUG_ERROR,"Queued Invalidation Interface was enabled.\n"));
+    Reg32 &= (~B_GSTS_REG_QIES);
+    MmioWrite32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GCMD_REG, Reg32);
+    do {
+      Reg32 = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GSTS_REG);
+    } while ((Reg32 & B_GSTS_REG_QIES) != 0);
+  }
+
+  //
+  // Initialize the Invalidation Queue Tail Register to zero.
+  //
+  MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_IQT_REG, 0);
+
+  //
+  // Setup the IQ address, size and descriptor width through the Invalidation Queue Address Register
+  //
+  QueueSize = 0;
+  mVtdUnitInformation[VtdIndex].QiDescLength = 1 << (QueueSize + 8);
+  mVtdUnitInformation[VtdIndex].QiDesc = (QI_DESC *) AllocatePages (EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * mVtdUnitInformation[VtdIndex].QiDescLength));
+
+  if (mVtdUnitInformation[VtdIndex].QiDesc == NULL) {
+    mVtdUnitInformation[VtdIndex].QiDescLength = 0;
+    DEBUG ((DEBUG_ERROR,"Could not Alloc Invalidation Queue Buffer.\n"));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  DEBUG ((DEBUG_INFO, "Invalidation Queue Length : %d\n", mVtdUnitInformation[VtdIndex].QiDescLength));
+  Reg64 = (UINT64)(UINTN)mVtdUnitInformation[VtdIndex].QiDesc;
+  Reg64 |= QueueSize;
+  MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_IQA_REG, Reg64);
+
+  //
+  // Enable the queued invalidation interface through the Global Command Register.
+  // When enabled, hardware sets the QIES field in the Global Status Register.
+  //
+  Reg32 = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GSTS_REG);
+  Reg32 |= B_GMCD_REG_QIE;
+  MmioWrite32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GCMD_REG, Reg32);
+  DEBUG ((DEBUG_INFO, "Enable Queued Invalidation Interface. GCMD_REG = 0x%x\n", Reg32));
+  do {
+    Reg32 = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & B_GSTS_REG_QIES) == 0);
+
+  mVtdUnitInformation[VtdIndex].QiFreeHead = 0;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Disable queued invalidation interface.
+
+  @param[in]  VtdIndex          The index used to identify a VTd engine.
+**/
+VOID
+DisableQueuedInvalidationInterface (
+  IN UINTN  VtdIndex
+  )
+{
+  UINT32  Reg32;
+
+  if (mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation != 0) {
+    Reg32 = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GSTS_REG);
+    Reg32 &= (~B_GMCD_REG_QIE);
+    MmioWrite32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GCMD_REG, Reg32);
+    DEBUG ((DEBUG_INFO, "Disable Queued Invalidation Interface. GCMD_REG = 0x%x\n", Reg32));
+    do {
+      Reg32 = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_GSTS_REG);
+    } while ((Reg32 & B_GSTS_REG_QIES) != 0);
+
+    if (mVtdUnitInformation[VtdIndex].QiDesc != NULL) {
+      FreePages(mVtdUnitInformation[VtdIndex].QiDesc, EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * mVtdUnitInformation[VtdIndex].QiDescLength));
+      mVtdUnitInformation[VtdIndex].QiDesc = NULL;
+      mVtdUnitInformation[VtdIndex].QiDescLength = 0;
+    }
+
+    mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation = 0;
+  }
+}
+
+/**
+  Check Queued Invalidation Fault.
+
+  @param[in]  VtdIndex          The index used to identify a VTd engine.
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval RETURN_DEVICE_ERROR   A fault is detected.
+**/
+EFI_STATUS
+QueuedInvalidationCheckFault (
+  IN UINTN  VtdIndex
+  )
+{
+  UINT32     FaultReg;
+
+  FaultReg = MmioRead32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_FSTS_REG);
+
+  if (FaultReg & B_FSTS_REG_IQE) {
+    DEBUG((DEBUG_ERROR, "Detect Invalidation Queue Error [0x%08x]\n", FaultReg));
+    FaultReg |= B_FSTS_REG_IQE;
+    MmioWrite32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_FSTS_REG, FaultReg);
+    return RETURN_DEVICE_ERROR;
+  }
+
+  if (FaultReg & B_FSTS_REG_ITE) {
+    DEBUG((DEBUG_ERROR, "Detect Invalidation Time-out Error [0x%08x]\n", FaultReg));
+    FaultReg |= B_FSTS_REG_ITE;
+    MmioWrite32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_FSTS_REG, FaultReg);
+    return RETURN_DEVICE_ERROR;
+  }
+
+  if (FaultReg & B_FSTS_REG_ICE) {
+    DEBUG((DEBUG_ERROR, "Detect Invalidation Completion Error [0x%08x]\n", FaultReg));
+    FaultReg |= B_FSTS_REG_ICE;
+    MmioWrite32 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_FSTS_REG, FaultReg);
+    return RETURN_DEVICE_ERROR;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Submit the queued invalidation descriptor to the remapping
+   hardware unit and wait for its completion.
+
+  @param[in]  VtdIndex          The index used to identify a VTd engine.
+  @param[in]  Desc              The invalidate descriptor
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval RETURN_DEVICE_ERROR   A fault is detected.
+  @retval EFI_INVALID_PARAMETER Parameter is invalid.
+**/
+EFI_STATUS
+SubmitQueuedInvalidationDescriptor (
+  IN UINTN    VtdIndex,
+  IN QI_DESC  *Desc
+  )
+{
+  EFI_STATUS Status;
+  UINT16     QiDescLength;
+  QI_DESC    *BaseDesc;
+  UINT64     Reg64Iqt;
+  UINT64     Reg64Iqh;
+
+  if (Desc == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  QiDescLength = mVtdUnitInformation[VtdIndex].QiDescLength;
+  BaseDesc = mVtdUnitInformation[VtdIndex].QiDesc;
+
+  DEBUG((DEBUG_INFO, "[%d] Submit QI Descriptor [0x%08x, 0x%08x] Free Head (%d)\n", VtdIndex, Desc->Low, Desc->High, mVtdUnitInformation[VtdIndex].QiFreeHead));
+
+  BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead].Low = Desc->Low;
+  BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead].High = Desc->High;
+  FlushPageTableMemory(VtdIndex, (UINTN) &BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead], sizeof(QI_DESC));
+
+  mVtdUnitInformation[VtdIndex].QiFreeHead = (mVtdUnitInformation[VtdIndex].QiFreeHead + 1) % QiDescLength;
+
+  //
+  // Update the HW tail register indicating the presence of new descriptors.
+  //
+  Reg64Iqt = mVtdUnitInformation[VtdIndex].QiFreeHead << DMAR_IQ_SHIFT;
+  MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_IQT_REG, Reg64Iqt);
+
+  Status = EFI_SUCCESS;
+  do {
+    Status = QueuedInvalidationCheckFault(VtdIndex);
+    if (Status != EFI_SUCCESS) {
+      DEBUG((DEBUG_ERROR,"Detect Queued Invalidation Fault.\n"));
+      break;
+    }
+
+    Reg64Iqh = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_IQH_REG);
+  } while (Reg64Iqt != Reg64Iqh);
+
+  return Status;
+}
+
+/**
   Invalidate VTd context cache.
 
   @param[in]  VtdIndex          The index used to identify a VTd engine.
@@ -64,22 +276,35 @@ InvalidateContextCache (
   IN UINTN  VtdIndex
   )
 {
-  UINT64  Reg64;
+  UINT64     Reg64;
+  QI_DESC    QiDesc;
 
-  Reg64 = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_CCMD_REG);
-  if ((Reg64 & B_CCMD_REG_ICC) != 0) {
-    DEBUG ((DEBUG_ERROR,"ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%d)\n",VtdIndex));
-    return EFI_DEVICE_ERROR;
-  }
-
-  Reg64 &= ((~B_CCMD_REG_ICC) & (~B_CCMD_REG_CIRG_MASK));
-  Reg64 |= (B_CCMD_REG_ICC | V_CCMD_REG_CIRG_GLOBAL);
-  MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_CCMD_REG, Reg64);
-
-  do {
+  if (mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation == 0) {
+    //
+    // Register-based Invalidation
+    //
     Reg64 = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_CCMD_REG);
-  } while ((Reg64 & B_CCMD_REG_ICC) != 0);
+    if ((Reg64 & B_CCMD_REG_ICC) != 0) {
+      DEBUG ((DEBUG_ERROR,"ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%d)\n",VtdIndex));
+      return EFI_DEVICE_ERROR;
+    }
 
+    Reg64 &= ((~B_CCMD_REG_ICC) & (~B_CCMD_REG_CIRG_MASK));
+    Reg64 |= (B_CCMD_REG_ICC | V_CCMD_REG_CIRG_GLOBAL);
+    MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_CCMD_REG, Reg64);
+
+    do {
+      Reg64 = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_CCMD_REG);
+    } while ((Reg64 & B_CCMD_REG_ICC) != 0);
+  } else {
+    //
+    // Queued Invalidation
+    //
+    QiDesc.Low = QI_CC_FM(0) | QI_CC_SID(0) | QI_CC_DID(0) | QI_CC_GRAN(1) | QI_CC_TYPE;
+    QiDesc.High = 0;
+
+    return SubmitQueuedInvalidationDescriptor(VtdIndex, &QiDesc);
+  }
   return EFI_SUCCESS;
 }
 
@@ -93,21 +318,35 @@ InvalidateIOTLB (
   IN UINTN  VtdIndex
   )
 {
-  UINT64  Reg64;
+  UINT64     Reg64;
+  QI_DESC    QiDesc;
 
-  Reg64 = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + (mVtdUnitInformation[VtdIndex].ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
-  if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
-    DEBUG ((DEBUG_ERROR,"ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%d)\n", VtdIndex));
-    return EFI_DEVICE_ERROR;
-  }
-
-  Reg64 &= ((~B_IOTLB_REG_IVT) & (~B_IOTLB_REG_IIRG_MASK));
-  Reg64 |= (B_IOTLB_REG_IVT | V_IOTLB_REG_IIRG_GLOBAL);
-  MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + (mVtdUnitInformation[VtdIndex].ECapReg.Bits.IRO * 16) + R_IOTLB_REG, Reg64);
-
-  do {
+  if (mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation == 0) {
+    //
+    // Register-based Invalidation
+    //
     Reg64 = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + (mVtdUnitInformation[VtdIndex].ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
-  } while ((Reg64 & B_IOTLB_REG_IVT) != 0);
+    if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
+      DEBUG ((DEBUG_ERROR,"ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%d)\n", VtdIndex));
+      return EFI_DEVICE_ERROR;
+    }
+
+    Reg64 &= ((~B_IOTLB_REG_IVT) & (~B_IOTLB_REG_IIRG_MASK));
+    Reg64 |= (B_IOTLB_REG_IVT | V_IOTLB_REG_IIRG_GLOBAL);
+    MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + (mVtdUnitInformation[VtdIndex].ECapReg.Bits.IRO * 16) + R_IOTLB_REG, Reg64);
+
+    do {
+      Reg64 = MmioRead64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + (mVtdUnitInformation[VtdIndex].ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
+    } while ((Reg64 & B_IOTLB_REG_IVT) != 0);
+  } else {
+    //
+    // Queued Invalidation
+    //
+    QiDesc.Low = QI_IOTLB_DID(0) | QI_IOTLB_DR(CAP_READ_DRAIN(mVtdUnitInformation[VtdIndex].CapReg.Uint64)) | QI_IOTLB_DW(CAP_WRITE_DRAIN(mVtdUnitInformation[VtdIndex].CapReg.Uint64)) | QI_IOTLB_GRAN(1) | QI_IOTLB_TYPE;
+    QiDesc.High = QI_IOTLB_ADDR(0) | QI_IOTLB_IH(0) | QI_IOTLB_AM(0);
+
+    return SubmitQueuedInvalidationDescriptor(VtdIndex, &QiDesc);
+  }
 
   return EFI_SUCCESS;
 }
@@ -163,9 +402,12 @@ PrepareVtdConfig (
 {
   UINTN         Index;
   UINTN         DomainNumber;
+  EFI_STATUS    Status;
 
   for (Index = 0; Index < mVtdUnitNumber; Index++) {
     DEBUG ((DEBUG_INFO, "Dump VTd Capability (%d)\n", Index));
+    mVtdUnitInformation[Index].VerReg.Uint32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_VER_REG);
+    DumpVtdVerRegs (&mVtdUnitInformation[Index].VerReg);
     mVtdUnitInformation[Index].CapReg.Uint64 = MmioRead64 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_CAP_REG);
     DumpVtdCapRegs (&mVtdUnitInformation[Index].CapReg);
     mVtdUnitInformation[Index].ECapReg.Uint64 = MmioRead64 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_ECAP_REG);
@@ -189,6 +431,12 @@ PrepareVtdConfig (
     if (mVtdUnitInformation[Index].PciDeviceInfo.PciDeviceDataNumber >= DomainNumber) {
       DEBUG((DEBUG_ERROR, "!!!! Pci device Number(0x%x) >= DomainNumber(0x%x) !!!!\n", mVtdUnitInformation[Index].PciDeviceInfo.PciDeviceDataNumber, DomainNumber));
       return ;
+    }
+
+    Status = PerpareCacheInvalidationInterface(Index);
+    if (EFI_ERROR (Status)) {
+      ASSERT(FALSE);
+      return;
     }
   }
   return ;
@@ -252,7 +500,8 @@ EnableDmar (
       MmioWrite64 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)(UINTN)mVtdUnitInformation[Index].RootEntryTable);
     }
 
-    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, B_GMCD_REG_SRTP);
+    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
+    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
 
     DEBUG((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
     do {
@@ -282,7 +531,8 @@ EnableDmar (
     //
     // Enable VTd
     //
-    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, B_GMCD_REG_TE);
+    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
+    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_TE);
     DEBUG((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
     do {
       Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
@@ -360,6 +610,8 @@ DisableDmar (
     DEBUG((DEBUG_INFO, "DisableDmar: GSTS_REG - 0x%08x\n", Reg32));
 
     DEBUG ((DEBUG_INFO,"VTD (%d) Disabled!<<<<<<\n",Index));
+
+    DisableQueuedInvalidationInterface(Index);
   }
 
   mVtdEnabled = FALSE;
@@ -378,6 +630,21 @@ DisableDmar (
   }
 
   return EFI_SUCCESS;
+}
+
+/**
+  Dump VTd version registers.
+
+  @param[in]  VerReg            The version register.
+**/
+VOID
+DumpVtdVerRegs (
+  IN VTD_VER_REG                *VerReg
+  )
+{
+  DEBUG ((DEBUG_INFO, "  VerReg:\n", VerReg->Uint32));
+  DEBUG ((DEBUG_INFO, "    Major - 0x%x\n", VerReg->Bits.Major));
+  DEBUG ((DEBUG_INFO, "    Minor - 0x%x\n", VerReg->Bits.Minor));
 }
 
 /**

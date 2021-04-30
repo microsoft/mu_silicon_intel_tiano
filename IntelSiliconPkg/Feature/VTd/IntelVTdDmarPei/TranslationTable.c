@@ -26,8 +26,6 @@
 #define ALIGN_VALUE_UP(Value, Alignment)  (((Value) + (Alignment) - 1) & (~((Alignment) - 1)))
 #define ALIGN_VALUE_LOW(Value, Alignment) ((Value) & (~((Alignment) - 1)))
 
-#define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
-
 /**
   Allocate zero pages.
 

@@ -11,6 +11,8 @@
 
 #define MAX_VTD_PCI_DATA_NUMBER             0x100
 
+#define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
+
 typedef struct {
   UINT8                            DeviceType;
   VTD_SOURCE_ID                    PciSourceId;
@@ -27,6 +29,7 @@ typedef struct {
 typedef struct {
   UINT32                           VtdUnitBaseAddress;
   UINT16                           Segment;
+  VTD_VER_REG                      VerReg;
   VTD_CAP_REG                      CapReg;
   VTD_ECAP_REG                     ECapReg;
   BOOLEAN                          Is5LevelPaging;
@@ -37,6 +40,10 @@ typedef struct {
   UINT16                           RootEntryTablePageSize;
   UINT16                           ExtRootEntryTablePageSize;
   PEI_PCI_DEVICE_INFORMATION       PciDeviceInfo;
+  UINT8                            EnableQueuedInvalidation;
+  UINT16                           QiDescLength;
+  QI_DESC                          *QiDesc;
+  UINT16                           QiFreeHead;
 } VTD_UNIT_INFO;
 
 typedef struct {
@@ -121,6 +128,18 @@ ParseDmarAcpiTableRmrr (
 VOID
 DumpAcpiDMAR (
   IN EFI_ACPI_DMAR_HEADER       *Dmar
+  );
+
+/**
+  Prepare VTD cache invalidation configuration.
+
+  @param[in]  VTdInfo           The VTd engine context information.
+
+  @retval EFI_SUCCESS           Prepare Vtd config success
+**/
+EFI_STATUS
+PrepareVtdCacheInvalidationConfig (
+  IN VTD_INFO                   *VTdInfo
   );
 
 /**
