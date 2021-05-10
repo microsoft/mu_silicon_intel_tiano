@@ -3,7 +3,7 @@
 #
 # This package provides common open source Intel silicon modules.
 #
-# Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2016 - 2021, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -41,6 +41,10 @@
   ## @libraryclass Provides services to update AML in DXE
   #
   AslUpdateLib|Include/Library/AslUpdateLib.h
+
+  ## @libraryclass Provides services to report CPU hob
+  #
+  ReportCpuHobLib|Include/Library/ReportCpuHobLib.h
 
 [Guids]
   ## GUID for Package token space

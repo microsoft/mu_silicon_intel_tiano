@@ -93,6 +93,7 @@
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/PeiFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/PeiDxeSmmBootMediaLib/DxeSmmFirmwareBootMediaLib.inf
   IntelSiliconPkg/Library/DxeAslUpdateLib/DxeAslUpdateLib.inf
+  IntelSiliconPkg/Library/ReportCpuHobLib/ReportCpuHobLib.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
