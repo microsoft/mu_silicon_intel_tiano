@@ -27,7 +27,7 @@ ReportCpuHob (
   AsmCpuid (CPUID_VIR_PHY_ADDRESS_SIZE, &AddressSizeEax.Uint32, NULL, NULL, NULL);
   if (AddressSizeEax.Uint32 >= CPUID_VIR_PHY_ADDRESS_SIZE) {
     AsmCpuid (CPUID_VIR_PHY_ADDRESS_SIZE, &AddressSizeEax.Uint32, NULL, NULL, NULL);
-    PhysicalAddressBits = AddressSizeEax.Bits.PhysicalAddressBits;
+    PhysicalAddressBits = (UINT8)AddressSizeEax.Bits.PhysicalAddressBits;
   } else {
     PhysicalAddressBits = 36;
   }
