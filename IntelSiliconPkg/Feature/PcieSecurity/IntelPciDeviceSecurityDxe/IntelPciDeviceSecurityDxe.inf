@@ -41,4 +41,5 @@
   gEdkiiDeviceIdentifierTypePciGuid       ## COMSUMES
 
 [Depex]
-  gEdkiiDeviceSecurityPolicyProtocolGuid
+  gEdkiiDeviceSecurityPolicyProtocolGuid AND
+  gEfiTcg2ProtocolGuid
