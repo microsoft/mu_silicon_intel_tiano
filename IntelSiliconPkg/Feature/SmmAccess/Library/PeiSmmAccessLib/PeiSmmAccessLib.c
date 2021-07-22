@@ -252,20 +252,23 @@ PeiInstallSmmAccessPpi (
   EFI_SMRAM_HOB_DESCRIPTOR_BLOCK  *DescriptorBlock;
   SMM_ACCESS_PRIVATE_DATA         *SmmAccessPrivate;
   VOID                            *HobList;
-  EFI_BOOT_MODE                   BootMode;
 
-  Status = PeiServicesGetBootMode (&BootMode);
-  if (EFI_ERROR (Status)) {
-    //
-    // If not in S3 boot path. do nothing
-    //
-    return EFI_SUCCESS;
-  }
+  // MU_CHANGE - START - TCBZ3539 - Remove S3 requirement in PeiInstallSmmAccessPpi()
+  // EFI_BOOT_MODE                   BootMode;
 
-  if (BootMode != BOOT_ON_S3_RESUME) {
-    return EFI_SUCCESS;
-  }
-  //
+  // Status = PeiServicesGetBootMode (&BootMode);
+  // if (EFI_ERROR (Status)) {
+  //   //
+  //   // If not in S3 boot path. do nothing
+  //   //
+  //   return EFI_SUCCESS;
+  // }
+
+  // if (BootMode != BOOT_ON_S3_RESUME) {
+  //   return EFI_SUCCESS;
+  // }
+  // MU_CHANGE - END - TCBZ3539 - Remove S3 requirement in PeiInstallSmmAccessPpi()
+
   // Initialize private data
   //
   SmmAccessPrivate  = AllocateZeroPool (sizeof (*SmmAccessPrivate));
