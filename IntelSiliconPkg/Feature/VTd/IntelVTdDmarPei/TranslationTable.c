@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2020 - 2021, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -110,6 +110,11 @@ CreateSecondLevelPagingEntryTable (
   if (MemoryLimit == 0) {
     return EFI_SUCCESS;
   }
+
+  Lvl4PagesStart = 0;
+  Lvl4PagesEnd   = 0;
+  Lvl4PtEntry    = NULL;
+  Lvl5PtEntry    = NULL;
 
   BaseAddress = ALIGN_VALUE_LOW (MemoryBase, SIZE_2MB);
   EndAddress = ALIGN_VALUE_UP (MemoryLimit, SIZE_2MB);
