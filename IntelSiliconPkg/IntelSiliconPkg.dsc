@@ -129,6 +129,9 @@
   IntelSiliconPkg/Library/SpiFlashCommonLibNull/SpiFlashCommonLibNull.inf
   IntelSiliconPkg/Library/SmmSpiFlashCommonLib/SmmSpiFlashCommonLib.inf
 
+  # MU_CHANGE [BEGIN]
+  IntelSiliconPkg/Feature/SmmAccess/Library/BaseSmmAccessLibNull/BaseSmmAccessLibNull.inf   # MU_CHANGE - TCBZ3540
+  # MU_CHANGE [END]
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
 
