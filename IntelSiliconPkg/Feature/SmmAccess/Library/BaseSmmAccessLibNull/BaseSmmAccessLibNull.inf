@@ -1,0 +1,28 @@
+## @file
+# A NULL library instance of SmmAccessLib.
+#
+# Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) Microsoft Corporation.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+# MU_CHANGE - WHOLE FILE - TCBZ3540
+
+[Defines]
+INF_VERSION     = 0x00010017
+BASE_NAME       = BaseSmmAccessLibNull
+FILE_GUID       = C1A14AB6-B757-4046-9B92-9DCE1A2154C6
+VERSION_STRING  = 1.0
+MODULE_TYPE     = BASE
+LIBRARY_CLASS   = SmmAccessLib
+
+[Packages]
+  MdePkg/MdePkg.dec
+  IntelSiliconPkg/IntelSiliconPkg.dec
+
+[LibraryClasses]
+  DebugLib
+
+[Sources]
+  BaseSmmAccessLibNull.c
