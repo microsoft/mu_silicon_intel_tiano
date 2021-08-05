@@ -111,6 +111,7 @@
   IntelSiliconPkg/Library/ReportCpuHobLib/ReportCpuHobLib.inf
 
   # MU_CHANGE
+  IntelSiliconPkg/Feature/SmmAccess/Library/BaseSmmAccessLibNull/BaseSmmAccessLibNull.inf   # MU_CHANGE - TCBZ3540
   IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLib/PeiSmmAccessLib.inf
   IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
   IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
