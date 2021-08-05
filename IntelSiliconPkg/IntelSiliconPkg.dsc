@@ -136,6 +136,7 @@
   IntelSiliconPkg/Library/IntelVTdPeiDxeLib/IntelVTdPeiDxeLib.inf
   IntelSiliconPkg/Library/IntelVTdPeiDxeLib/IntelVTdPeiDxeLibExt.inf
 
+  IntelSiliconPkg/Feature/SmmAccess/Library/BaseSmmAccessLibNull/BaseSmmAccessLibNull.inf   # MU_CHANGE - TCBZ3540
   IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLib/PeiSmmAccessLib.inf
   IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLibSmramc/PeiSmmAccessLib.inf
   IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
