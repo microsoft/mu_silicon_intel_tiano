@@ -10,8 +10,8 @@
 *    (https://developer.arm.com/documentation/den0028/c/?lang=en)
 **/
 
-#ifndef __ARM_STD_SMC_H__
-#define __ARM_STD_SMC_H__
+#ifndef ARM_STD_SMC_H_
+#define ARM_STD_SMC_H_
 
 /*
  * SMC function IDs for Standard Service queries
@@ -48,6 +48,14 @@
 // Request service from secure standalone MM environment
 #define ARM_SMC_ID_MM_COMMUNICATE_AARCH32          0x84000041
 #define ARM_SMC_ID_MM_COMMUNICATE_AARCH64          0xC4000041
+
+/* Generic ID when using AArch32 or AArch64 execution state */
+#ifdef MDE_CPU_AARCH64
+#define ARM_SMC_ID_MM_COMMUNICATE   ARM_SMC_ID_MM_COMMUNICATE_AARCH64
+#endif
+#ifdef MDE_CPU_ARM
+#define ARM_SMC_ID_MM_COMMUNICATE   ARM_SMC_ID_MM_COMMUNICATE_AARCH32
+#endif
 
 /* MM return error codes */
 #define ARM_SMC_MM_RET_SUCCESS              0
@@ -129,4 +137,4 @@
 /*                                    0xbf00ff02 is reserved */
 #define ARM_SMC_ID_TOS_REVISION       0xbf00ff03
 
-#endif
+#endif // ARM_STD_SMC_H_

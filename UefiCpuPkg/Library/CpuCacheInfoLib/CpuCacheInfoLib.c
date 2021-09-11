@@ -1,7 +1,7 @@
 /** @file
   Provides cache info for each package, core type, cache level and cache type.
 
-  Copyright (c) 2020 Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2020 - 2021, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -23,18 +23,59 @@ CpuCacheInfoPrintCpuCacheInfoTable (
 {
   UINTN                     Index;
 
-  DEBUG ((DEBUG_INFO, "+-------+-------------------------------------------------------------------------------+\n"));
-  DEBUG ((DEBUG_INFO, "| Index | Packge  CoreType  CacheLevel  CacheType  CacheWays  CacheSizeinKB  CacheCount |\n"));
-  DEBUG ((DEBUG_INFO, "+-------+-------------------------------------------------------------------------------+\n"));
+  DEBUG ((DEBUG_INFO, "+-------+--------------------------------------------------------------------------------------+\n"));
+  DEBUG ((DEBUG_INFO, "| Index | Packge  CoreType  CacheLevel  CacheType  CacheWays (FA|DM) CacheSizeinKB  CacheCount |\n"));
+  DEBUG ((DEBUG_INFO, "+-------+--------------------------------------------------------------------------------------+\n"));
 
   for (Index = 0; Index < CpuCacheInfoCount; Index++) {
-    DEBUG ((DEBUG_INFO, "| %4x  | %4x       %2x        %2x          %2x       %4x      %8x         %4x     |\n", Index,
-        CpuCacheInfo[Index].Package, CpuCacheInfo[Index].CoreType, CpuCacheInfo[Index].CacheLevel,
-        CpuCacheInfo[Index].CacheType, CpuCacheInfo[Index].CacheWays, CpuCacheInfo[Index].CacheSizeinKB,
-        CpuCacheInfo[Index].CacheCount));
+    DEBUG ((DEBUG_INFO, "| %4x  | %4x       %2x        %2x          %2x       %4x     ( %x| %x) %8x         %4x     |\n",
+        Index, CpuCacheInfo[Index].Package, CpuCacheInfo[Index].CoreType, CpuCacheInfo[Index].CacheLevel,
+        CpuCacheInfo[Index].CacheType, CpuCacheInfo[Index].CacheWays, CpuCacheInfo[Index].FullyAssociativeCache,
+        CpuCacheInfo[Index].DirectMappedCache, CpuCacheInfo[Index].CacheSizeinKB, CpuCacheInfo[Index].CacheCount));
   }
 
-  DEBUG ((DEBUG_INFO, "+-------+-------------------------------------------------------------------------------+\n"));
+  DEBUG ((DEBUG_INFO, "+-------+--------------------------------------------------------------------------------------+\n"));
+}
+
+/**
+  Function to compare CPU package ID, core type, cache level and cache type for use in QuickSort.
+
+  @param[in]  Buffer1             pointer to CPU_CACHE_INFO poiner to compare
+  @param[in]  Buffer2             pointer to second CPU_CACHE_INFO pointer to compare
+
+  @retval  0                      Buffer1 equal to Buffer2
+  @retval  1                      Buffer1 is greater than Buffer2
+  @retval  -1                     Buffer1 is less than Buffer2
+**/
+INTN
+EFIAPI
+CpuCacheInfoCompare (
+  IN CONST VOID             *Buffer1,
+  IN CONST VOID             *Buffer2
+  )
+{
+  CPU_CACHE_INFO_COMPARATOR Comparator1, Comparator2;
+
+  ZeroMem (&Comparator1, sizeof (Comparator1));
+  ZeroMem (&Comparator2, sizeof (Comparator2));
+
+  Comparator1.Bits.Package    = ((CPU_CACHE_INFO*)Buffer1)->Package;
+  Comparator1.Bits.CoreType   = ((CPU_CACHE_INFO*)Buffer1)->CoreType;
+  Comparator1.Bits.CacheLevel = ((CPU_CACHE_INFO*)Buffer1)->CacheLevel;
+  Comparator1.Bits.CacheType  = ((CPU_CACHE_INFO*)Buffer1)->CacheType;
+
+  Comparator2.Bits.Package    = ((CPU_CACHE_INFO*)Buffer2)->Package;
+  Comparator2.Bits.CoreType   = ((CPU_CACHE_INFO*)Buffer2)->CoreType;
+  Comparator2.Bits.CacheLevel = ((CPU_CACHE_INFO*)Buffer2)->CacheLevel;
+  Comparator2.Bits.CacheType  = ((CPU_CACHE_INFO*)Buffer2)->CacheType;
+
+  if (Comparator1.Uint64 == Comparator2.Uint64) {
+    return 0;
+  } else if (Comparator1.Uint64 > Comparator2.Uint64) {
+    return 1;
+  } else {
+    return -1;
+  }
 }
 
 /**
@@ -160,6 +201,7 @@ CpuCacheInfoCollectCoreAndCacheData (
   CPUID_CACHE_PARAMS_EAX    CacheParamEax;
   CPUID_CACHE_PARAMS_EBX    CacheParamEbx;
   UINT32                    CacheParamEcx;
+  CPUID_CACHE_PARAMS_EDX    CacheParamEdx;
   CPUID_NATIVE_MODEL_ID_AND_CORE_TYPE_EAX   NativeModelIdAndCoreTypeEax;
   COLLECT_CPUID_CACHE_DATA_CONTEXT  *Context;
   CPUID_CACHE_DATA          *CacheData;
@@ -185,17 +227,19 @@ CpuCacheInfoCollectCoreAndCacheData (
   CacheParamLeafIndex = 0;
 
   while (CacheParamLeafIndex < MAX_NUM_OF_CACHE_PARAMS_LEAF) {
-    AsmCpuidEx (CPUID_CACHE_PARAMS, CacheParamLeafIndex, &CacheParamEax.Uint32, &CacheParamEbx.Uint32, &CacheParamEcx, NULL);
+    AsmCpuidEx (CPUID_CACHE_PARAMS, CacheParamLeafIndex, &CacheParamEax.Uint32, &CacheParamEbx.Uint32, &CacheParamEcx, &CacheParamEdx.Uint32);
 
     if (CacheParamEax.Bits.CacheType == 0) {
       break;
     }
 
-    CacheData[CacheParamLeafIndex].CacheLevel     = (UINT8)CacheParamEax.Bits.CacheLevel;
-    CacheData[CacheParamLeafIndex].CacheType      = (UINT8)CacheParamEax.Bits.CacheType;
-    CacheData[CacheParamLeafIndex].CacheWays      = (UINT16)CacheParamEbx.Bits.Ways;
-    CacheData[CacheParamLeafIndex].CacheShareBits = (UINT16)CacheParamEax.Bits.MaximumAddressableIdsForLogicalProcessors;
-    CacheData[CacheParamLeafIndex].CacheSizeinKB  = (CacheParamEbx.Bits.Ways + 1) *
+    CacheData[CacheParamLeafIndex].CacheLevel            = (UINT8)CacheParamEax.Bits.CacheLevel;
+    CacheData[CacheParamLeafIndex].CacheType             = (UINT8)CacheParamEax.Bits.CacheType;
+    CacheData[CacheParamLeafIndex].CacheWays             = (UINT16)CacheParamEbx.Bits.Ways;
+    CacheData[CacheParamLeafIndex].FullyAssociativeCache = (UINT8)CacheParamEax.Bits.FullyAssociativeCache;
+    CacheData[CacheParamLeafIndex].DirectMappedCache     = (UINT8)(CacheParamEdx.Bits.ComplexCacheIndexing == 0);
+    CacheData[CacheParamLeafIndex].CacheShareBits        = (UINT16)CacheParamEax.Bits.MaximumAddressableIdsForLogicalProcessors;
+    CacheData[CacheParamLeafIndex].CacheSizeinKB         = (CacheParamEbx.Bits.Ways + 1) *
         (CacheParamEbx.Bits.LinePartitions + 1) * (CacheParamEbx.Bits.LineSize + 1) * (CacheParamEcx + 1) / SIZE_1KB;
 
     CacheParamLeafIndex++;
@@ -305,13 +349,15 @@ CpuCacheInfoCollectCpuCacheInfoData (
     if (CacheInfoIndex == LocalCacheInfoCount) {
       ASSERT (LocalCacheInfoCount < MaxCacheInfoCount);
 
-      LocalCacheInfo[LocalCacheInfoCount].Package       = ProcessorInfo[Index / MAX_NUM_OF_CACHE_PARAMS_LEAF].Package;
-      LocalCacheInfo[LocalCacheInfoCount].CoreType      = ProcessorInfo[Index / MAX_NUM_OF_CACHE_PARAMS_LEAF].CoreType;
-      LocalCacheInfo[LocalCacheInfoCount].CacheLevel    = CacheData[Index].CacheLevel;
-      LocalCacheInfo[LocalCacheInfoCount].CacheType     = CacheData[Index].CacheType;
-      LocalCacheInfo[LocalCacheInfoCount].CacheWays     = CacheData[Index].CacheWays;
-      LocalCacheInfo[LocalCacheInfoCount].CacheSizeinKB = CacheData[Index].CacheSizeinKB;
-      LocalCacheInfo[LocalCacheInfoCount].CacheCount    = 1;
+      LocalCacheInfo[LocalCacheInfoCount].Package               = ProcessorInfo[Index / MAX_NUM_OF_CACHE_PARAMS_LEAF].Package;
+      LocalCacheInfo[LocalCacheInfoCount].CoreType              = ProcessorInfo[Index / MAX_NUM_OF_CACHE_PARAMS_LEAF].CoreType;
+      LocalCacheInfo[LocalCacheInfoCount].CacheLevel            = CacheData[Index].CacheLevel;
+      LocalCacheInfo[LocalCacheInfoCount].CacheType             = CacheData[Index].CacheType;
+      LocalCacheInfo[LocalCacheInfoCount].CacheWays             = CacheData[Index].CacheWays;
+      LocalCacheInfo[LocalCacheInfoCount].FullyAssociativeCache = CacheData[Index].FullyAssociativeCache;
+      LocalCacheInfo[LocalCacheInfoCount].DirectMappedCache     = CacheData[Index].DirectMappedCache;
+      LocalCacheInfo[LocalCacheInfoCount].CacheSizeinKB         = CacheData[Index].CacheSizeinKB;
+      LocalCacheInfo[LocalCacheInfoCount].CacheCount            = 1;
 
       LocalCacheInfoCount++;
     }
@@ -320,6 +366,10 @@ CpuCacheInfoCollectCpuCacheInfoData (
   if (*CacheInfoCount < LocalCacheInfoCount) {
     Status = EFI_BUFFER_TOO_SMALL;
   } else {
+    //
+    // Sort LocalCacheInfo array by CPU package ID, core type, cache level and cache type.
+    //
+    PerformQuickSort (LocalCacheInfo, LocalCacheInfoCount, sizeof (*LocalCacheInfo), (SORT_COMPARE) CpuCacheInfoCompare);
     CopyMem (CacheInfo, LocalCacheInfo, sizeof (*CacheInfo) * LocalCacheInfoCount);
     DEBUG_CODE (
       CpuCacheInfoPrintCpuCacheInfoTable (CacheInfo, LocalCacheInfoCount);
@@ -335,7 +385,7 @@ CpuCacheInfoCollectCpuCacheInfoData (
 }
 
 /**
-  Get CpuCacheInfo data array.
+  Get CpuCacheInfo data array. The array is sorted by CPU package ID, core type, cache level and cache type.
 
   @param[in, out] CpuCacheInfo        Pointer to the CpuCacheInfo array.
   @param[in, out] CpuCacheInfoCount   As input, point to the length of response CpuCacheInfo array.

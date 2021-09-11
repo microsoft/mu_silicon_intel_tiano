@@ -1,7 +1,7 @@
 ## @file
 #  UefiCpuPkg Package
 #
-#  Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -20,6 +20,8 @@
 #
 # External libraries to build package
 #
+
+!include MdePkg/MdeLibs.dsc.inc
 
 [LibraryClasses]
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
@@ -58,6 +60,7 @@
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
   VmgExitLib|UefiCpuPkg/Library/VmgExitLibNull/VmgExitLibNull.inf
+  MicrocodeLib|UefiCpuPkg/Library/MicrocodeLib/MicrocodeLib.inf
 
 [LibraryClasses.common.SEC]
   PlatformSecLib|UefiCpuPkg/Library/PlatformSecLibNull/PlatformSecLibNull.inf
@@ -114,8 +117,6 @@
   UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
   UefiCpuPkg/Application/Cpuid/Cpuid.inf
   UefiCpuPkg/Library/CpuTimerLib/BaseCpuTimerLib.inf
-  UefiCpuPkg/Library/CpuTimerLib/DxeCpuTimerLib.inf
-  UefiCpuPkg/Library/CpuTimerLib/PeiCpuTimerLib.inf
   UefiCpuPkg/Library/CpuCacheInfoLib/PeiCpuCacheInfoLib.inf
   UefiCpuPkg/Library/CpuCacheInfoLib/DxeCpuCacheInfoLib.inf
 
@@ -147,6 +148,7 @@
   UefiCpuPkg/Library/MpInitLib/PeiMpInitLib.inf
   UefiCpuPkg/Library/MpInitLib/DxeMpInitLib.inf
   UefiCpuPkg/Library/MpInitLibUp/MpInitLibUp.inf
+  UefiCpuPkg/Library/MicrocodeLib/MicrocodeLib.inf
   UefiCpuPkg/Library/MtrrLib/MtrrLib.inf
   UefiCpuPkg/Library/PlatformSecLibNull/PlatformSecLibNull.inf
   UefiCpuPkg/Library/RegisterCpuFeaturesLib/PeiRegisterCpuFeaturesLib.inf

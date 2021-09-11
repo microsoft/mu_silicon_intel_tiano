@@ -32,6 +32,7 @@
 #include <Library/MtrrLib.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
+#include <Library/MicrocodeLib.h>
 
 #include <Guid/MicrocodePatchHob.h>
 
@@ -144,6 +145,7 @@ typedef struct {
   UINT32                         ProcessorSignature;
   UINT8                          PlatformId;
   UINT64                         MicrocodeEntryAddr;
+  UINT32                         MicrocodeRevision;
 } CPU_AP_DATA;
 
 //

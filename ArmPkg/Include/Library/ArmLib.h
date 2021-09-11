@@ -2,14 +2,14 @@
 
   Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   Copyright (c) 2011 - 2016, ARM Ltd. All rights reserved.<BR>
-  Copyright (c) 2020, NUVIA Inc. All rights reserved.<BR>
+  Copyright (c) 2020 - 2021, NUVIA Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __ARM_LIB__
-#define __ARM_LIB__
+#ifndef ARM_LIB_H_
+#define ARM_LIB_H_
 
 #include <Uefi/UefiBaseType.h>
 
@@ -109,9 +109,37 @@ typedef enum {
 #define GET_MPID(ClusterId, CoreId)   (((ClusterId) << 8) | (CoreId))
 #define PRIMARY_CORE_ID       (PcdGet32(PcdArmPrimaryCore) & ARM_CORE_MASK)
 
-// The ARM Architecture Reference Manual for ARMv8-A defines up
-// to 7 levels of cache, L1 through L7.
-#define MAX_ARM_CACHE_LEVEL   7
+/** Reads the CCSIDR register for the specified cache.
+
+  @param CSSELR The CSSELR cache selection register value.
+
+  @return The contents of the CCSIDR_EL1 register for the specified cache, when in AARCH64 mode.
+          Returns the contents of the CCSIDR register in AARCH32 mode.
+**/
+UINTN
+ReadCCSIDR (
+  IN UINT32 CSSELR
+  );
+
+/** Reads the CCSIDR2 for the specified cache.
+
+  @param CSSELR The CSSELR cache selection register value
+
+  @return The contents of the CCSIDR2 register for the specified cache.
+**/
+UINT32
+ReadCCSIDR2 (
+  IN UINT32 CSSELR
+  );
+
+/** Reads the Cache Level ID (CLIDR) register.
+
+  @return The contents of the CLIDR_EL1 register.
+**/
+UINT32
+ReadCLIDR (
+  VOID
+  );
 
 UINTN
 EFIAPI
@@ -753,4 +781,4 @@ ArmHasSecurityExtensions (
   );
 #endif // MDE_CPU_ARM
 
-#endif // __ARM_LIB__
+#endif // ARM_LIB_H_

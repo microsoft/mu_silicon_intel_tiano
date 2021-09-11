@@ -188,19 +188,19 @@ TABLE_ITEM  SystemEnclosureTypeTable[] = {
   },
   {
     0x10,
-    L"  Main Server Chassis"
+    L"  Lunch Box"
   },
   {
     0x11,
-    L"  Expansion Chassis"
+    L"  Main Server Chassis"
   },
   {
     0x12,
-    L"  SubChassis"
+    L"  Expansion Chassis"
   },
   {
     0x13,
-    L"  Sub Notebook"
+    L"  SubChassis"
   },
   {
     0x14,
@@ -2300,8 +2300,8 @@ TABLE_ITEM  PMALocationTable[] = {
     L"  PC-98/Local bus add-on card"
   },
   {
-    MemoryArrayLocationCXLFlexbus10AddonCard,
-    L"  CXL Flexbus 1.0 add-on card"
+    MemoryArrayLocationCXLAddonCard,
+    L"  CXL add-on card"
   }
 };
 
@@ -2650,8 +2650,8 @@ TABLE_ITEM  MemoryDeviceMemoryTechnologyTable[] = {
     L" NVDIMM-P"
   },
   {
-    MemoryTechnologyIntelPersistentMemory,
-    L" Intel Optane DC Persistent Memory"
+    MemoryTechnologyIntelOptanePersistentMemory,
+    L" Intel Optane Persistent Memory"
   }
 };
 

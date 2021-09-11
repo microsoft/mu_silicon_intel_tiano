@@ -21,6 +21,9 @@ jobs:
   #Use matrix to speed up the build process
   strategy:
     matrix:
+      TARGET_ARM_ARMPLATFORM:
+        Build.Pkgs: 'ArmPkg,ArmPlatformPkg'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_MDE_CPU:
         Build.Pkgs: 'MdePkg,UefiCpuPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
@@ -64,23 +67,3 @@ jobs:
       build_pkgs: $(Build.Pkgs)
       build_targets: $(Build.Targets)
       build_archs: ${{ parameters.arch_list }}
-
-- job: FINISHED
-  dependsOn: Build_${{ parameters.tool_chain_tag }}
-  condition: succeeded()
-  steps:
-  - checkout: none
-  - script: |
-      echo FINISHED
-      sleep 10
-    displayName: FINISHED
-
-- job: FAILED
-  dependsOn: Build_${{ parameters.tool_chain_tag }}
-  condition: failed()
-  steps:
-  - checkout: none
-  - script: |
-      echo FAILED
-      sleep 10
-    displayName: FAILED

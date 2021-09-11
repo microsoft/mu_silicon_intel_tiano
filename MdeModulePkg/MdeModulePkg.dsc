@@ -2,7 +2,7 @@
 # EFI/PI Reference Module Package for All Architectures
 #
 # (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-# Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) Microsoft Corporation.
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -18,6 +18,8 @@
   SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
+
+!include MdePkg/MdeLibs.dsc.inc
 
 [LibraryClasses]
   #
@@ -218,6 +220,7 @@
   MdeModulePkg/Logo/Logo.inf
   MdeModulePkg/Logo/LogoDxe.inf
   MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
+  MdeModulePkg/Library/BootDiscoveryPolicyUiLib/BootDiscoveryPolicyUiLib.inf
   MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
   MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
   MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
@@ -339,6 +342,7 @@
   MdeModulePkg/Application/UiApp/UiApp.inf{
     <LibraryClasses>
       NULL|MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
+      NULL|MdeModulePkg/Library/BootDiscoveryPolicyUiLib/BootDiscoveryPolicyUiLib.inf
       NULL|MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
       NULL|MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
   }
