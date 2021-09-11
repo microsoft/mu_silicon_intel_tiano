@@ -1,8 +1,54 @@
-Build/
+/Build/
 .DS_Store
 *_extdep/
 *.pyc
 __pycache__/
 tags/
 .vscode/
-.venv/
+*.bak
+BuildConfig.conf
+
+# Ignore cloned dependencies
+/Common/MU_TIANO
+/MU_BASECORE
+
+# Packages not ignored:
+# IntelFsp2Pkg
+# IntelFsp2WrapperPkg
+
+# Ignore unused UDK PKGs.
+/ArmPkg/
+/ArmPlatformPkg/
+/ArmVirtPkg/
+/BaseTools/
+/Conf/
+/CryptoPkg/
+/DynamicTablesPkg/
+/EmbeddedPkg/
+/EmulatorPkg/
+/FatPkg/
+/FmpDevicePkg/
+/MdeModulePkg/
+/MdePkg/
+/NetworkPkg/
+/OvmfPkg/
+/PcAtChipsetPkg/
+/PrmPkg/
+/RedfishPkg/
+/SecurityPkg/
+/ShellPkg/
+/SignedCapsulePkg/
+/SourceLevelDebugPkg/
+/StandaloneMmPkg/
+/UefiCpuPkg/
+/UefiPayloadPkg/
+/UnitTestFrameworkPkg/
+
+# Ignore dropped EDK2 files.
+/.mergify
+/.pytool/Plugin
+/.pytool/Readme.md
+/.mailmap
+/edksetup.bat
+/edksetup.sh
+/Maintainers.txt
