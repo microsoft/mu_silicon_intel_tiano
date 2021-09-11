@@ -482,6 +482,7 @@ InitVTdDmarForAll (
   VOID                          *Hob;
   VTD_INFO                      *VTdInfo;
   UINT64                        EngineMask;
+  EFI_STATUS                    Status;
 
   Hob = GetFirstGuidHob (&mVTdInfoGuid);
   if (Hob == NULL) {
@@ -490,6 +491,13 @@ InitVTdDmarForAll (
   }
   VTdInfo = GET_GUID_HOB_DATA (Hob);
   EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
+
+  DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
+  Status = PrepareVtdConfig (VTdInfo);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
 
   EnableVTdTranslationProtectionAll (VTdInfo, EngineMask);
 
@@ -591,6 +599,13 @@ InitVTdDmarForDma (
 
   DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
   Status = PrepareVtdConfig (VTdInfo);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  DEBUG ((DEBUG_INFO, "PrepareVtdCacheInvalidationConfig\n"));
+  Status = PrepareVtdCacheInvalidationConfig (VTdInfo);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;

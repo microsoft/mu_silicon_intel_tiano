@@ -66,30 +66,269 @@ FlushWriteBuffer (
 }
 
 /**
+  Perpare cache invalidation interface.
+
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval EFI_UNSUPPORTED       Invalidation method is not supported.
+  @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
+**/
+EFI_STATUS
+PerpareCacheInvalidationInterface (
+  IN VTD_UNIT_INFO *VTdUnitInfo
+  )
+{
+  UINT16         QueueSize;
+  UINT64         Reg64;
+  UINT32         Reg32;
+  VTD_ECAP_REG   ECapReg;
+
+
+  if (VTdUnitInfo->VerReg.Bits.Major <= 6) {
+    VTdUnitInfo->EnableQueuedInvalidation = 0;
+    DEBUG ((DEBUG_INFO, "Use Register-based Invalidation Interface for engine [0x%x]\n", VTdUnitInfo->VtdUnitBaseAddress));
+    return EFI_SUCCESS;
+  }
+
+  ECapReg.Uint64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_ECAP_REG);
+  if (ECapReg.Bits.QI == 0) {
+    DEBUG ((DEBUG_ERROR, "Hardware does not support queued invalidations interface for engine [0x%x]\n", VTdUnitInfo->VtdUnitBaseAddress));
+    return EFI_UNSUPPORTED;
+  }
+
+  VTdUnitInfo->EnableQueuedInvalidation = 1;
+  DEBUG ((DEBUG_INFO, "Use Queued Invalidation Interface for engine [0x%x]\n", VTdUnitInfo->VtdUnitBaseAddress));
+
+  Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+  if ((Reg32 & B_GSTS_REG_QIES) != 0) {
+    DEBUG ((DEBUG_INFO,"Queued Invalidation Interface was enabled.\n"));
+    Reg32 &= (~B_GSTS_REG_QIES);
+    MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GCMD_REG, Reg32);
+    do {
+      Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+    } while ((Reg32 & B_GSTS_REG_QIES) != 0);
+    MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_IQA_REG, 0);
+
+    if (VTdUnitInfo->QiDesc != NULL) {
+      FreePages(VTdUnitInfo->QiDesc, EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * VTdUnitInfo->QiDescLength));
+      VTdUnitInfo->QiDesc = NULL;
+      VTdUnitInfo->QiDescLength = 0;
+    }
+  }
+
+  //
+  // Initialize the Invalidation Queue Tail Register to zero.
+  //
+  MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_IQT_REG, 0);
+
+  //
+  // Setup the IQ address, size and descriptor width through the Invalidation Queue Address Register
+  //
+  QueueSize = 0;
+  VTdUnitInfo->QiDescLength = 1 << (QueueSize + 8);
+  VTdUnitInfo->QiDesc = (QI_DESC *) AllocatePages (EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * VTdUnitInfo->QiDescLength));
+
+  if (VTdUnitInfo->QiDesc == NULL) {
+    VTdUnitInfo->QiDescLength = 0;
+    DEBUG ((DEBUG_ERROR,"Could not Alloc Invalidation Queue Buffer.\n"));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  DEBUG ((DEBUG_INFO, "Invalidation Queue Length : %d\n", VTdUnitInfo->QiDescLength));
+  Reg64 = (UINT64)(UINTN)VTdUnitInfo->QiDesc;
+  Reg64 |= QueueSize;
+  MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_IQA_REG, Reg64);
+
+  //
+  // Enable the queued invalidation interface through the Global Command Register.
+  // When enabled, hardware sets the QIES field in the Global Status Register.
+  //
+  Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+  Reg32 |= B_GMCD_REG_QIE;
+  MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GCMD_REG, Reg32);
+  DEBUG ((DEBUG_INFO, "Enable Queued Invalidation Interface. GCMD_REG = 0x%x\n", Reg32));
+  do {
+    Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & B_GSTS_REG_QIES) == 0);
+
+  VTdUnitInfo->QiFreeHead = 0;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Disable queued invalidation interface.
+
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
+**/
+VOID
+DisableQueuedInvalidationInterface (
+  IN VTD_UNIT_INFO *VTdUnitInfo
+  )
+{
+  UINT32  Reg32;
+
+  if (VTdUnitInfo->EnableQueuedInvalidation != 0) {
+    Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+    Reg32 &= (~B_GMCD_REG_QIE);
+    MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GCMD_REG, Reg32);
+    DEBUG ((DEBUG_INFO, "Disable Queued Invalidation Interface. GCMD_REG = 0x%x\n", Reg32));
+    do {
+      Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+    } while ((Reg32 & B_GSTS_REG_QIES) != 0);
+
+    if (VTdUnitInfo->QiDesc != NULL) {
+      FreePages(VTdUnitInfo->QiDesc, EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * VTdUnitInfo->QiDescLength));
+      VTdUnitInfo->QiDesc = NULL;
+      VTdUnitInfo->QiDescLength = 0;
+    }
+
+    VTdUnitInfo->EnableQueuedInvalidation = 0;
+  }
+}
+
+/**
+  Check Queued Invalidation Fault.
+
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval RETURN_DEVICE_ERROR   A fault is detected.
+**/
+EFI_STATUS
+QueuedInvalidationCheckFault (
+  IN VTD_UNIT_INFO *VTdUnitInfo
+  )
+{
+  UINT32     FaultReg;
+
+  FaultReg = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_FSTS_REG);
+
+  if (FaultReg & B_FSTS_REG_IQE) {
+    DEBUG((DEBUG_ERROR, "Detect Invalidation Queue Error [0x%08x]\n", FaultReg));
+    FaultReg |= B_FSTS_REG_IQE;
+    MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_FSTS_REG, FaultReg);
+    return RETURN_DEVICE_ERROR;
+  }
+
+  if (FaultReg & B_FSTS_REG_ITE) {
+    DEBUG((DEBUG_ERROR, "Detect Invalidation Time-out Error [0x%08x]\n", FaultReg));
+    FaultReg |= B_FSTS_REG_ITE;
+    MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_FSTS_REG, FaultReg);
+    return RETURN_DEVICE_ERROR;
+  }
+
+  if (FaultReg & B_FSTS_REG_ICE) {
+    DEBUG((DEBUG_ERROR, "Detect Invalidation Completion Error [0x%08x]\n", FaultReg));
+    FaultReg |= B_FSTS_REG_ICE;
+    MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_FSTS_REG, FaultReg);
+    return RETURN_DEVICE_ERROR;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Submit the queued invalidation descriptor to the remapping
+   hardware unit and wait for its completion.
+
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
+  @param[in]  Desc              The invalidate descriptor
+
+  @retval EFI_SUCCESS           The operation was successful.
+  @retval RETURN_DEVICE_ERROR   A fault is detected.
+  @retval EFI_INVALID_PARAMETER Parameter is invalid.
+**/
+EFI_STATUS
+SubmitQueuedInvalidationDescriptor (
+  IN VTD_UNIT_INFO *VTdUnitInfo,
+  IN QI_DESC       *Desc
+  )
+{
+  EFI_STATUS Status;
+  UINT16     QiDescLength;
+  QI_DESC    *BaseDesc;
+  UINT64     Reg64Iqt;
+  UINT64     Reg64Iqh;
+
+  if (Desc == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  QiDescLength = VTdUnitInfo->QiDescLength;
+  BaseDesc = VTdUnitInfo->QiDesc;
+
+  DEBUG((DEBUG_INFO, "[0x%x] Submit QI Descriptor [0x%08x, 0x%08x]\n", VTdUnitInfo->VtdUnitBaseAddress, Desc->Low, Desc->High));
+
+  BaseDesc[VTdUnitInfo->QiFreeHead].Low = Desc->Low;
+  BaseDesc[VTdUnitInfo->QiFreeHead].High = Desc->High;
+  FlushPageTableMemory(VTdUnitInfo, (UINTN) &BaseDesc[VTdUnitInfo->QiFreeHead], sizeof(QI_DESC));
+
+  DEBUG((DEBUG_INFO,"QI Free Head=0x%x\n", VTdUnitInfo->QiFreeHead));
+  VTdUnitInfo->QiFreeHead = (VTdUnitInfo->QiFreeHead + 1) % QiDescLength;
+
+  Reg64Iqh = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_IQH_REG);
+  //
+  // Update the HW tail register indicating the presence of new descriptors.
+  //
+  Reg64Iqt = VTdUnitInfo->QiFreeHead << DMAR_IQ_SHIFT;
+  MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_IQT_REG, Reg64Iqt);
+
+  Status = EFI_SUCCESS;
+  do {
+    Status = QueuedInvalidationCheckFault(VTdUnitInfo);
+    if (Status != EFI_SUCCESS) {
+      DEBUG((DEBUG_ERROR,"Detect Queued Invalidation Fault.\n"));
+      break;
+    }
+
+    Reg64Iqh = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_IQH_REG);
+  } while (Reg64Iqt != Reg64Iqh);
+
+  DEBUG((DEBUG_ERROR,"SubmitQueuedInvalidationDescriptor end\n"));
+  return Status;
+}
+
+/**
   Invalidate VTd context cache.
 
-  @param[in]  VtdUnitBaseAddress        The base address of the VTd engine.
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
 **/
 EFI_STATUS
 InvalidateContextCache (
-  IN UINTN                      VtdUnitBaseAddress
+  IN VTD_UNIT_INFO              *VTdUnitInfo
   )
 {
   UINT64                        Reg64;
+  QI_DESC                       QiDesc;
 
-  Reg64 = MmioRead64 (VtdUnitBaseAddress + R_CCMD_REG);
-  if ((Reg64 & B_CCMD_REG_ICC) != 0) {
-    DEBUG ((DEBUG_ERROR,"ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%x)\n",VtdUnitBaseAddress));
-    return EFI_DEVICE_ERROR;
+  if (VTdUnitInfo->EnableQueuedInvalidation == 0) {
+    //
+    // Register-based Invalidation
+    //
+    Reg64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_CCMD_REG);
+    if ((Reg64 & B_CCMD_REG_ICC) != 0) {
+      DEBUG ((DEBUG_ERROR,"ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%x)\n", (UINTN)VTdUnitInfo->VtdUnitBaseAddress));
+      return EFI_DEVICE_ERROR;
+    }
+
+    Reg64 &= ((~B_CCMD_REG_ICC) & (~B_CCMD_REG_CIRG_MASK));
+    Reg64 |= (B_CCMD_REG_ICC | V_CCMD_REG_CIRG_GLOBAL);
+    MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_CCMD_REG, Reg64);
+
+    do {
+      Reg64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_CCMD_REG);
+    } while ((Reg64 & B_CCMD_REG_ICC) != 0);
+  } else {
+    //
+    // Queued Invalidation
+    //
+    QiDesc.Low = QI_CC_FM(0) | QI_CC_SID(0) | QI_CC_DID(0) | QI_CC_GRAN(1) | QI_CC_TYPE;
+    QiDesc.High = 0;
+
+    return SubmitQueuedInvalidationDescriptor(VTdUnitInfo, &QiDesc);
   }
-
-  Reg64 &= ((~B_CCMD_REG_ICC) & (~B_CCMD_REG_CIRG_MASK));
-  Reg64 |= (B_CCMD_REG_ICC | V_CCMD_REG_CIRG_GLOBAL);
-  MmioWrite64 (VtdUnitBaseAddress + R_CCMD_REG, Reg64);
-
-  do {
-    Reg64 = MmioRead64 (VtdUnitBaseAddress + R_CCMD_REG);
-  } while ((Reg64 & B_CCMD_REG_ICC) != 0);
 
   return EFI_SUCCESS;
 }
@@ -97,63 +336,80 @@ InvalidateContextCache (
 /**
   Invalidate VTd IOTLB.
 
-  @param[in]  VtdUnitBaseAddress        The base address of the VTd engine.
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
 **/
 EFI_STATUS
 InvalidateIOTLB (
-  IN UINTN                      VtdUnitBaseAddress
+  IN VTD_UNIT_INFO              *VTdUnitInfo
   )
 {
   UINT64                        Reg64;
   VTD_ECAP_REG                  ECapReg;
+  QI_DESC                       QiDesc;
 
-  ECapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_ECAP_REG);
+  if (VTdUnitInfo->EnableQueuedInvalidation == 0) {
+    //
+    // Register-based Invalidation
+    //
+    ECapReg.Uint64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_ECAP_REG);
 
-  Reg64 = MmioRead64 (VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
-  if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
-    DEBUG ((DEBUG_ERROR, "ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%x)\n", VtdUnitBaseAddress));
-    return EFI_DEVICE_ERROR;
+    Reg64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
+     if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
+       DEBUG ((DEBUG_ERROR, "ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%x)\n", (UINTN)VTdUnitInfo->VtdUnitBaseAddress));
+       return EFI_DEVICE_ERROR;
+    }
+
+    Reg64 &= ((~B_IOTLB_REG_IVT) & (~B_IOTLB_REG_IIRG_MASK));
+    Reg64 |= (B_IOTLB_REG_IVT | V_IOTLB_REG_IIRG_GLOBAL);
+    MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG, Reg64);
+
+    do {
+      Reg64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
+    } while ((Reg64 & B_IOTLB_REG_IVT) != 0);
+  } else {
+    //
+    // Queued Invalidation
+    //
+    ECapReg.Uint64 = MmioRead64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_ECAP_REG);
+    QiDesc.Low = QI_IOTLB_DID(0) | QI_IOTLB_DR(CAP_READ_DRAIN(ECapReg.Uint64)) | QI_IOTLB_DW(CAP_WRITE_DRAIN(ECapReg.Uint64)) | QI_IOTLB_GRAN(1) | QI_IOTLB_TYPE;
+    QiDesc.High = QI_IOTLB_ADDR(0) | QI_IOTLB_IH(0) | QI_IOTLB_AM(0);
+
+    return SubmitQueuedInvalidationDescriptor(VTdUnitInfo, &QiDesc);
   }
-
-  Reg64 &= ((~B_IOTLB_REG_IVT) & (~B_IOTLB_REG_IIRG_MASK));
-  Reg64 |= (B_IOTLB_REG_IVT | V_IOTLB_REG_IIRG_GLOBAL);
-  MmioWrite64 (VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG, Reg64);
-
-  do {
-    Reg64 = MmioRead64 (VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
-  } while ((Reg64 & B_IOTLB_REG_IVT) != 0);
 
   return EFI_SUCCESS;
 }
 
 /**
-  Enable DMAR translation.
+  Enable DMAR translation inpre-mem phase.
 
-  @param[in]  VtdUnitBaseAddress        The base address of the VTd engine.
-  @param[in]  RootEntryTable            The address of the VTd RootEntryTable.
+  @param[in]  VtdUnitBaseAddress  The base address of the VTd engine.
+  @param[in]  RootEntryTable      The address of the VTd RootEntryTable.
 
-  @retval EFI_SUCCESS           DMAR translation is enabled.
-  @retval EFI_DEVICE_ERROR      DMAR translation is not enabled.
+  @retval EFI_SUCCESS             DMAR translation is enabled.
+  @retval EFI_DEVICE_ERROR        DMAR translation is not enabled.
 **/
 EFI_STATUS
-EnableDmar (
-  IN UINTN                      VtdUnitBaseAddress,
-  IN UINTN                      RootEntryTable
+EnableDmarPreMem (
+  IN UINTN                        VtdUnitBaseAddress,
+  IN UINTN                        RootEntryTable
   )
 {
-  UINT32                        Reg32;
+  UINT32                          Reg32;
 
-  DEBUG ((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%x] \n", VtdUnitBaseAddress));
+  DEBUG ((DEBUG_INFO, ">>>>>>EnableDmarPreMem() for engine [%x] \n", VtdUnitBaseAddress));
 
   DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
   MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) (UINTN) RootEntryTable);
 
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, B_GMCD_REG_SRTP);
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
 
-  DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
+  DEBUG ((DEBUG_INFO, "EnableDmarPreMem: waiting for RTPS bit to be set... \n"));
   do {
     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+  DEBUG ((DEBUG_INFO, "EnableDmarPreMem: R_GSTS_REG = 0x%x \n", Reg32));
 
   //
   // Init DMAr Fault Event and Data registers
@@ -166,22 +422,79 @@ EnableDmar (
   FlushWriteBuffer (VtdUnitBaseAddress);
 
   //
+  // Enable VTd
+  //
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_TE);
+  DEBUG ((DEBUG_INFO, "EnableDmarPreMem: Waiting B_GSTS_REG_TE ...\n"));
+  do {
+    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & B_GSTS_REG_TE) == 0);
+
+  DEBUG ((DEBUG_INFO, "VTD () enabled!<<<<<<\n"));
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Enable DMAR translation.
+
+  @param[in]  VTdUnitInfo       The VTd engine unit information.
+  @param[in]  RootEntryTable    The address of the VTd RootEntryTable.
+
+  @retval EFI_SUCCESS           DMAR translation is enabled.
+  @retval EFI_DEVICE_ERROR      DMAR translation is not enabled.
+**/
+EFI_STATUS
+EnableDmar (
+  IN VTD_UNIT_INFO              *VTdUnitInfo,
+  IN UINTN                      RootEntryTable
+  )
+{
+  UINT32                        Reg32;
+
+  DEBUG ((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%x] \n", VTdUnitInfo->VtdUnitBaseAddress));
+
+  DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
+  MmioWrite64 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) (UINTN) RootEntryTable);
+
+  Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+  MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
+
+  DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
+  do {
+    Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+  } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+  DEBUG ((DEBUG_INFO, "EnableDmar: R_GSTS_REG = 0x%x \n", Reg32));
+
+  //
+  // Init DMAr Fault Event and Data registers
+  //
+  Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_FEDATA_REG);
+
+  //
+  // Write Buffer Flush before invalidation
+  //
+  FlushWriteBuffer ((UINTN)VTdUnitInfo->VtdUnitBaseAddress);
+
+  //
   // Invalidate the context cache
   //
-  InvalidateContextCache (VtdUnitBaseAddress);
+  InvalidateContextCache (VTdUnitInfo);
 
   //
   // Invalidate the IOTLB cache
   //
-  InvalidateIOTLB (VtdUnitBaseAddress);
+  InvalidateIOTLB (VTdUnitInfo);
 
   //
   // Enable VTd
   //
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, B_GMCD_REG_TE);
+  Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
+  MmioWrite32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_TE);
   DEBUG ((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
   do {
-    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+    Reg32 = MmioRead32 ((UINTN)VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
   } while ((Reg32 & B_GSTS_REG_TE) == 0);
 
   DEBUG ((DEBUG_INFO, "VTD () enabled!<<<<<<\n"));
@@ -253,101 +566,18 @@ DisableDmar (
 }
 
 /**
-  Enable VTd translation table protection for all.
+  Dump VTd version registers.
 
-  @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  EngineMask        The mask of the VTd engine to be accessed.
+  @param[in]  VerReg            The version register.
 **/
 VOID
-EnableVTdTranslationProtectionAll (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT64                     EngineMask
+DumpVtdVerRegs (
+  IN VTD_VER_REG                *VerReg
   )
 {
-  EFI_STATUS                                Status;
-  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI       *RootEntryTable;
-  UINTN                                     Index;
-
-  DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtectionAll - 0x%lx\n", EngineMask));
-
-  Status = PeiServicesLocatePpi (
-                 &gEdkiiVTdNullRootEntryTableGuid,
-                 0,
-                 NULL,
-                 (VOID **)&RootEntryTable
-                 );
-  if (EFI_ERROR(Status)) {
-    DEBUG ((DEBUG_ERROR, "Locate Null Root Entry Table Ppi Failed : %r\n", Status));
-    ASSERT (FALSE);
-    return;
-  }
-
-  for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
-      continue;
-    }
-    EnableDmar ((UINTN) VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress, (UINTN) *RootEntryTable);
-  }
-
-  return;
-}
-
-/**
-  Enable VTd translation table protection.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-
-  @retval EFI_SUCCESS           DMAR translation is enabled.
-  @retval EFI_DEVICE_ERROR      DMAR translation is not enabled.
-**/
-EFI_STATUS
-EnableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo
-  )
-{
-  EFI_STATUS                    Status;
-  UINTN                         VtdIndex;
-
-  for (VtdIndex = 0; VtdIndex < VTdInfo->VTdEngineCount; VtdIndex++) {
-    if (VTdInfo->VtdUnitInfo[VtdIndex].ExtRootEntryTable != 0) {
-      DEBUG ((DEBUG_INFO, "EnableVtdDmar (%d) ExtRootEntryTable 0x%x\n", VtdIndex, VTdInfo->VtdUnitInfo[VtdIndex].ExtRootEntryTable));
-      Status = EnableDmar (VTdInfo->VtdUnitInfo[VtdIndex].VtdUnitBaseAddress, VTdInfo->VtdUnitInfo[VtdIndex].ExtRootEntryTable);
-    } else {
-      DEBUG ((DEBUG_INFO, "EnableVtdDmar (%d) RootEntryTable 0x%x\n", VtdIndex, VTdInfo->VtdUnitInfo[VtdIndex].RootEntryTable));
-      Status = EnableDmar (VTdInfo->VtdUnitInfo[VtdIndex].VtdUnitBaseAddress, VTdInfo->VtdUnitInfo[VtdIndex].RootEntryTable);
-    }
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "EnableVtdDmar (%d) Failed !\n", VtdIndex));
-      return Status;
-    }
-  }
-  return EFI_SUCCESS;
-}
-
-/**
-  Disable VTd translation table protection.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  EngineMask        The mask of the VTd engine to be accessed.
-**/
-VOID
-DisableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT64                     EngineMask
-  )
-{
-  UINTN                         Index;
-
-  DEBUG ((DEBUG_INFO, "DisableVTdTranslationProtection - 0x%lx\n", EngineMask));
-
-  for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
-      continue;
-    }
-    DisableDmar ((UINTN) VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress);
-  }
-
-  return;
+  DEBUG ((DEBUG_INFO, "  VerReg:\n", VerReg->Uint32));
+  DEBUG ((DEBUG_INFO, "    Major    - 0x%x\n", VerReg->Bits.Major));
+  DEBUG ((DEBUG_INFO, "    Minor    - 0x%x\n", VerReg->Bits.Minor));
 }
 
 /**
@@ -414,6 +644,140 @@ DumpVtdECapRegs (
   DEBUG ((DEBUG_INFO, "    PSS    - 0x%x\n", ECapReg->Bits.PSS));
 }
 
+
+/**
+  Enable VTd translation table protection for all.
+
+  @param[in]  VTdInfo           The VTd engine context information.
+  @param[in]  EngineMask        The mask of the VTd engine to be accessed.
+**/
+VOID
+EnableVTdTranslationProtectionAll (
+  IN VTD_INFO                   *VTdInfo,
+  IN UINT64                     EngineMask
+  )
+{
+  EFI_STATUS                                Status;
+  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI       *RootEntryTable;
+  UINTN                                     Index;
+
+  DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtectionAll - 0x%lx\n", EngineMask));
+
+  Status = PeiServicesLocatePpi (
+                 &gEdkiiVTdNullRootEntryTableGuid,
+                 0,
+                 NULL,
+                 (VOID **)&RootEntryTable
+                 );
+  if (EFI_ERROR(Status)) {
+    DEBUG ((DEBUG_ERROR, "Locate Null Root Entry Table Ppi Failed : %r\n", Status));
+    ASSERT (FALSE);
+    return;
+  }
+
+  for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
+    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+      continue;
+    }
+
+    VTdInfo->VtdUnitInfo[Index].VerReg.Uint32 = MmioRead32 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_VER_REG);
+    DumpVtdVerRegs (&VTdInfo->VtdUnitInfo[Index].VerReg);
+    VTdInfo->VtdUnitInfo[Index].CapReg.Uint64 = MmioRead64 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_CAP_REG);
+    DumpVtdCapRegs (&VTdInfo->VtdUnitInfo[Index].CapReg);
+    VTdInfo->VtdUnitInfo[Index].ECapReg.Uint64 = MmioRead64 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_ECAP_REG);
+    DumpVtdECapRegs (&VTdInfo->VtdUnitInfo[Index].ECapReg);
+
+    EnableDmarPreMem (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress, (UINTN) *RootEntryTable);
+  }
+
+  return;
+}
+
+/**
+  Enable VTd translation table protection.
+
+  @param[in]  VTdInfo           The VTd engine context information.
+
+  @retval EFI_SUCCESS           DMAR translation is enabled.
+  @retval EFI_DEVICE_ERROR      DMAR translation is not enabled.
+**/
+EFI_STATUS
+EnableVTdTranslationProtection (
+  IN VTD_INFO                   *VTdInfo
+  )
+{
+  EFI_STATUS                    Status;
+  UINTN                         VtdIndex;
+
+  for (VtdIndex = 0; VtdIndex < VTdInfo->VTdEngineCount; VtdIndex++) {
+    if (VTdInfo->VtdUnitInfo[VtdIndex].ExtRootEntryTable != 0) {
+      DEBUG ((DEBUG_INFO, "EnableVtdDmar (%d) ExtRootEntryTable 0x%x\n", VtdIndex, VTdInfo->VtdUnitInfo[VtdIndex].ExtRootEntryTable));
+      Status = EnableDmar (&VTdInfo->VtdUnitInfo[VtdIndex], VTdInfo->VtdUnitInfo[VtdIndex].ExtRootEntryTable);
+    } else {
+      DEBUG ((DEBUG_INFO, "EnableVtdDmar (%d) RootEntryTable 0x%x\n", VtdIndex, VTdInfo->VtdUnitInfo[VtdIndex].RootEntryTable));
+      Status = EnableDmar (&VTdInfo->VtdUnitInfo[VtdIndex], VTdInfo->VtdUnitInfo[VtdIndex].RootEntryTable);
+    }
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "EnableVtdDmar (%d) Failed !\n", VtdIndex));
+      return Status;
+    }
+  }
+  return EFI_SUCCESS;
+}
+
+/**
+  Disable VTd translation table protection.
+
+  @param[in]  VTdInfo           The VTd engine context information.
+  @param[in]  EngineMask        The mask of the VTd engine to be accessed.
+**/
+VOID
+DisableVTdTranslationProtection (
+  IN VTD_INFO                   *VTdInfo,
+  IN UINT64                     EngineMask
+  )
+{
+  UINTN                         Index;
+
+  DEBUG ((DEBUG_INFO, "DisableVTdTranslationProtection - 0x%lx\n", EngineMask));
+
+  for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
+    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+      continue;
+    }
+    DisableDmar ((UINTN) VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress);
+
+    DisableQueuedInvalidationInterface(&VTdInfo->VtdUnitInfo[Index]);
+  }
+
+  return;
+}
+
+/**
+  Prepare VTD cache invalidation configuration.
+
+  @param[in]  VTdInfo           The VTd engine context information.
+
+  @retval EFI_SUCCESS           Prepare Vtd config success
+**/
+EFI_STATUS
+PrepareVtdCacheInvalidationConfig (
+  IN VTD_INFO                   *VTdInfo
+  )
+{
+  UINTN                         Index;
+  EFI_STATUS                    Status;
+
+  for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
+    Status = PerpareCacheInvalidationInterface(&VTdInfo->VtdUnitInfo[Index]);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
 /**
   Prepare VTD configuration.
 
@@ -431,6 +795,8 @@ PrepareVtdConfig (
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
     DEBUG ((DEBUG_ERROR, "Dump VTd Capability (%d)\n", Index));
+    VTdInfo->VtdUnitInfo[Index].VerReg.Uint32 = MmioRead32 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_VER_REG);
+    DumpVtdVerRegs (&VTdInfo->VtdUnitInfo[Index].VerReg);
     VTdInfo->VtdUnitInfo[Index].CapReg.Uint64 = MmioRead64 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_CAP_REG);
     DumpVtdCapRegs (&VTdInfo->VtdUnitInfo[Index].CapReg);
     VTdInfo->VtdUnitInfo[Index].ECapReg.Uint64 = MmioRead64 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_ECAP_REG);

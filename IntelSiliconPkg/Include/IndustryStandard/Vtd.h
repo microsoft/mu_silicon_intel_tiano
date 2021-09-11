@@ -206,10 +206,12 @@ typedef union {
 #define   B_CAP_REG_RWBF       BIT4
 #define R_ECAP_REG       0x10
 #define R_GCMD_REG       0x18
+#define   B_GMCD_REG_QIE       BIT26
 #define   B_GMCD_REG_WBF       BIT27
 #define   B_GMCD_REG_SRTP      BIT30
 #define   B_GMCD_REG_TE        BIT31
 #define R_GSTS_REG       0x1C
+#define   B_GSTS_REG_QIES      BIT26
 #define   B_GSTS_REG_WBF       BIT27
 #define   B_GSTS_REG_RTPS      BIT30
 #define   B_GSTS_REG_TE        BIT31
@@ -221,6 +223,9 @@ typedef union {
 #define   V_CCMD_REG_CIRG_DEVICE  (BIT62|BIT61)
 #define   B_CCMD_REG_ICC          BIT63
 #define R_FSTS_REG       0x34
+#define   B_FSTS_REG_IQE          BIT4
+#define   B_FSTS_REG_ICE          BIT5
+#define   B_FSTS_REG_ITE          BIT6
 #define R_FECTL_REG      0x38
 #define R_FEDATA_REG     0x3C
 #define R_FEADDR_REG     0x40
@@ -246,6 +251,58 @@ typedef union {
 #define R_PMEN_LOW_LIMITE_REG     0x6C
 #define R_PMEN_HIGH_BASE_REG      0x70
 #define R_PMEN_HIGH_LIMITE_REG    0x78
+
+#define R_IQH_REG        0x80
+#define R_IQT_REG        0x88
+#define   DMAR_IQ_SHIFT  4   /* Invalidation queue head/tail shift */
+
+#define R_IQA_REG        0x90
+
+#define VTD_PAGE_SHIFT   (12)
+#define VTD_PAGE_SIZE    (1UL << VTD_PAGE_SHIFT)
+#define VTD_PAGE_MASK    (((UINT64)-1) << VTD_PAGE_SHIFT)
+
+#define QI_CC_TYPE       0x1
+#define QI_IOTLB_TYPE    0x2
+#define QI_DIOTLB_TYPE   0x3
+#define QI_IEC_TYPE      0x4
+#define QI_IWD_TYPE      0x5
+
+#define QI_CC_FM(fm)        (((UINT64)fm) << 48)
+#define QI_CC_SID(sid)      (((UINT64)sid) << 32)
+#define QI_CC_DID(did)      (((UINT64)did) << 16)
+#define QI_CC_GRAN(gran)    (((UINT64)gran) << 4)
+
+#define QI_IOTLB_DID(did)   (((UINT64)did) << 16)
+#define QI_IOTLB_DR(dr)     (((UINT64)dr) << 7)
+#define QI_IOTLB_DW(dw)     (((UINT64)dw) << 6)
+#define QI_IOTLB_GRAN(gran) (((UINT64)gran) << 4)
+#define QI_IOTLB_ADDR(addr) (((UINT64)addr) & VTD_PAGE_MASK)
+#define QI_IOTLB_IH(ih)     (((UINT64)ih) << 6)
+#define QI_IOTLB_AM(am)     (((UINT8)am))
+
+#define CAP_READ_DRAIN(c)   (((c) >> 55) & 1)
+#define CAP_WRITE_DRAIN(c)  (((c) >> 54) & 1)
+
+#define QI_IWD_STATUS_DATA(d)   (((UINT64)d) << 32)
+#define QI_IWD_STATUS_WRITE (((UINT64)1) << 5)
+
+//
+// This is the queued invalidate descriptor.
+//
+typedef struct {
+  UINT64 Low;
+  UINT64 High;
+} QI_DESC;
+
+typedef union {
+  struct {
+    UINT8         Minor:4;
+    UINT8         Major:4;
+    UINT32        Rsvd:24;
+  } Bits;
+  UINT32          Uint32;
+} VTD_VER_REG;
 
 typedef union {
   struct {

@@ -561,6 +561,8 @@ ProcessDhrd (
   DEBUG ((DEBUG_INFO,"  VTD BaseAddress -  0x%016lx\n", DmarDrhd->RegisterBaseAddress));
   VTdUnitInfo->VtdUnitBaseAddress = (UINT32) DmarDrhd->RegisterBaseAddress;
 
+  VTdUnitInfo->EnableQueuedInvalidation = 0;
+
   DEBUG ((DEBUG_INFO,"  VTD Segment - %d\n", DmarDrhd->SegmentNumber));
   VTdUnitInfo->Segment = DmarDrhd->SegmentNumber;
 
