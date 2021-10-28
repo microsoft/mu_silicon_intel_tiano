@@ -88,6 +88,10 @@
   # @Prompt Shadow all microcode update patches.
   gIntelSiliconPkgTokenSpaceGuid.PcdShadowAllMicrocode|FALSE|BOOLEAN|0x00000006
 
+[PcdsFixedAtBuild]
+  gIntelSiliconPkgTokenSpaceGuid.PcdBiosAreaBaseAddress|0xFF800000|UINT32|0x00000007
+  gIntelSiliconPkgTokenSpaceGuid.PcdBiosSize|0x00800000|UINT32|0x00000008
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Error code for VTd error.<BR><BR>
   #  EDKII_ERROR_CODE_VTD_ERROR = (EFI_IO_BUS_UNSPECIFIED | (EFI_OEM_SPECIFIC | 0x00000000)) = 0x02008000<BR>
