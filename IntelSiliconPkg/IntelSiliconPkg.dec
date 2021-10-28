@@ -91,6 +91,9 @@
 [PcdsFixedAtBuild]
   gIntelSiliconPkgTokenSpaceGuid.PcdBiosAreaBaseAddress|0xFF800000|UINT32|0x00000007
   gIntelSiliconPkgTokenSpaceGuid.PcdBiosSize|0x00800000|UINT32|0x00000008
+  gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvBase|0xFFE60000|UINT32|0x00000009
+  gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvSize|0x000A0000|UINT32|0x0000000A
+  gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvOffset|0x00660000|UINT32|0x0000000B
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Error code for VTd error.<BR><BR>
