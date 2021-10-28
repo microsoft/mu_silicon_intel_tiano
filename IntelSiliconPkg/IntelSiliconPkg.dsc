@@ -59,6 +59,10 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
 
+[LibraryClasses.common.DXE_SMM_DRIVER]
+  MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
+  SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
+
 ###################################################################################################
 #
 # Components Section - list of the modules and components that will be processed by compilation
@@ -95,6 +99,7 @@
   IntelSiliconPkg/Library/DxeAslUpdateLib/DxeAslUpdateLib.inf
   IntelSiliconPkg/Library/ReportCpuHobLib/ReportCpuHobLib.inf
   IntelSiliconPkg/Library/SpiFlashCommonLibNull/SpiFlashCommonLibNull.inf
+  IntelSiliconPkg/Library/SmmSpiFlashCommonLib/SmmSpiFlashCommonLib.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
