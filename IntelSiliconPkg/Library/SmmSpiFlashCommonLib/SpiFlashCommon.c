@@ -1,5 +1,5 @@
 /** @file
-  Wrap PCH_SPI_PROTOCOL to provide some library level interfaces
+  Wrap PCH_SPI2_PROTOCOL to provide some library level interfaces
   for module use.
 
   Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
@@ -8,9 +8,9 @@
 
 #include <Library/SpiFlashCommonLib.h>
 #include <Library/IoLib.h>
-#include <Protocol/Spi.h>
+#include <Protocol/Spi2.h>
 
-PCH_SPI_PROTOCOL       *mSpiProtocol;
+PCH_SPI2_PROTOCOL       *mSpi2Protocol;
 
 //
 // Variables for boottime and runtime usage.
@@ -125,13 +125,13 @@ SpiFlashWrite (
     } else {
       Length = RemainingBytes;
     }
-    Status = mSpiProtocol->FlashWrite (
-                             mSpiProtocol,
-                             FlashRegionBios,
-                             (UINT32) Offset,
-                             Length,
-                             Buffer
-                             );
+    Status = mSpi2Protocol->FlashWrite (
+                              mSpi2Protocol,
+                              &gFlashRegionBiosGuid,
+                              (UINT32) Offset,
+                              Length,
+                              Buffer
+                              );
     if (EFI_ERROR (Status)) {
       break;
     }
@@ -199,11 +199,11 @@ SpiFlashBlockErase (
   RemainingBytes = *NumBytes;
 
 
-  Status = mSpiProtocol->FlashErase (
-                           mSpiProtocol,
-                           FlashRegionBios,
-                           (UINT32) Offset,
-                           (UINT32) RemainingBytes
-                           );
+  Status = mSpi2Protocol->FlashErase (
+                            mSpi2Protocol,
+                            &gFlashRegionBiosGuid,
+                            (UINT32) Offset,
+                            (UINT32) RemainingBytes
+                            );
   return Status;
 }

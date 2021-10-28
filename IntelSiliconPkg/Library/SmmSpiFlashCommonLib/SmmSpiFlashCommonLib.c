@@ -2,21 +2,23 @@
   SMM Library instance of SPI Flash Common Library Class
 
   Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.<BR>
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include <Library/SmmServicesTableLib.h>
-#include <Protocol/Spi.h>
+#include <Protocol/Spi2.h>
 #include <Library/DebugLib.h>
 
-extern PCH_SPI_PROTOCOL   *mSpiProtocol;
+extern PCH_SPI2_PROTOCOL   *mSpi2Protocol;
 
 extern UINTN mBiosAreaBaseAddress;
 extern UINTN mBiosSize;
 extern UINTN mBiosOffset;
 
 /**
-  The library constructuor.
+  The library constructor.
 
   The function does the necessary initialization work for this library
   instance.
@@ -43,16 +45,16 @@ SmmSpiFlashCommonLibConstructor (
   mBiosSize            = (UINTN)PcdGet32 (PcdBiosSize);
 
   //
-  // Locate the SMM SPI protocol.
+  // Locate the SMM SPI2 protocol.
   //
   Status = gSmst->SmmLocateProtocol (
-                    &gPchSmmSpiProtocolGuid,
+                    &gPchSmmSpi2ProtocolGuid,
                     NULL,
-                    (VOID **) &mSpiProtocol
+                    (VOID **) &mSpi2Protocol
                     );
   ASSERT_EFI_ERROR (Status);
 
-  mSpiProtocol->GetRegionAddress (mSpiProtocol, FlashRegionBios, &BaseAddr, &RegionSize);
+  mSpi2Protocol->GetRegionAddress (mSpi2Protocol, &gFlashRegionBiosGuid, &BaseAddr, &RegionSize);
   mBiosOffset = BaseAddr;
   return Status;
 }

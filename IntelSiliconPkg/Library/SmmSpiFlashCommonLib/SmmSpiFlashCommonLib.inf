@@ -37,12 +37,15 @@
   gIntelSiliconPkgTokenSpaceGuid.PcdBiosAreaBaseAddress   ## CONSUMES
   gIntelSiliconPkgTokenSpaceGuid.PcdBiosSize              ## CONSUMES
 
+[Guids]
+  gFlashRegionBiosGuid
+
 [Sources]
   SmmSpiFlashCommonLib.c
   SpiFlashCommon.c
 
 [Protocols]
-  gPchSmmSpiProtocolGuid                                  ## CONSUMES
+  gPchSmmSpi2ProtocolGuid                                 ## CONSUMES
 
 [Depex.X64.DXE_SMM_DRIVER]
-  gPchSmmSpiProtocolGuid
+  gPchSmmSpi2ProtocolGuid
