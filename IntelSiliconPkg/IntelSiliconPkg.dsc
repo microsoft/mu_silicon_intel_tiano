@@ -40,6 +40,9 @@
   PeiGetVtdPmrAlignmentLib|IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
   MicrocodeLib|UefiCpuPkg/Library/MicrocodeLib/MicrocodeLib.inf
+  SpiFlashCommonLib|IntelSiliconPkg/Library/SpiFlashCommonLibNull/SpiFlashCommonLibNull.inf
+  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
+  UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
 
 [LibraryClasses.common.PEIM]
   PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
@@ -61,7 +64,13 @@
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
   MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
+  MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
   SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
+
+[LibraryClasses.common.MM_STANDALONE]
+  MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
+  MmServicesTableLib|MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
+  StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
 
 ###################################################################################################
 #
@@ -86,6 +95,8 @@
   IntelSiliconPkg/Library/DxeSmbiosDataHobLib/DxeSmbiosDataHobLib.inf
   IntelSiliconPkg/Feature/PcieSecurity/IntelPciDeviceSecurityDxe/IntelPciDeviceSecurityDxe.inf
   IntelSiliconPkg/Feature/PcieSecurity/SamplePlatformDevicePolicyDxe/SamplePlatformDevicePolicyDxe.inf
+  IntelSiliconPkg/Feature/Flash/SpiFvbService/SpiFvbServiceSmm.inf
+  IntelSiliconPkg/Feature/Flash/SpiFvbService/SpiFvbServiceStandaloneMm.inf
   IntelSiliconPkg/Feature/VTd/IntelVTdDxe/IntelVTdDxe.inf
   IntelSiliconPkg/Feature/VTd/IntelVTdDmarPei/IntelVTdDmarPei.inf
   IntelSiliconPkg/Feature/VTd/IntelVTdPmrPei/IntelVTdPmrPei.inf
