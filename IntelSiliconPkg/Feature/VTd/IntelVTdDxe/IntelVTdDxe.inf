@@ -70,6 +70,7 @@
   gEfiPciIoProtocolGuid                       ## CONSUMES
   gEfiPciEnumerationCompleteProtocolGuid      ## CONSUMES
   gEdkiiPlatformVTdPolicyProtocolGuid         ## SOMETIMES_CONSUMES
+  gEfiPciRootBridgeIoProtocolGuid             ## CONSUMES
 
 [Pcd]
   gIntelSiliconPkgTokenSpaceGuid.PcdVTdPolicyPropertyMask   ## CONSUMES

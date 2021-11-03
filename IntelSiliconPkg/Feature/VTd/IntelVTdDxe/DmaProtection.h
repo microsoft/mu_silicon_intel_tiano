@@ -33,6 +33,7 @@
 #include <Protocol/PciEnumerationComplete.h>
 #include <Protocol/PlatformVtdPolicy.h>
 #include <Protocol/IoMmu.h>
+#include <Protocol/PciRootBridgeIo.h>
 
 #include <IndustryStandard/Pci.h>
 #include <IndustryStandard/DmaRemappingReportingTable.h>
@@ -338,6 +339,22 @@ ScanPciBus (
   IN VOID                         *Context,
   IN UINT16                       Segment,
   IN UINT8                        Bus,
+  IN SCAN_BUS_FUNC_CALLBACK_FUNC  Callback
+  );
+
+/**
+  Scan PCI bus and invoke callback function for each PCI devices under all root bus.
+
+  @param[in]  Context               The context of the callback function.
+  @param[in]  Segment               The segment of the source.
+  @param[in]  Callback              The callback function in PCI scan.
+
+  @retval EFI_SUCCESS           The PCI devices under the bus are scaned.
+**/
+EFI_STATUS
+ScanAllPciBus (
+  IN VOID                         *Context,
+  IN UINT16                       Segment,
   IN SCAN_BUS_FUNC_CALLBACK_FUNC  Callback
   );
 
