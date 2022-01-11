@@ -238,7 +238,7 @@ SubmitQueuedInvalidationDescriptor (
   QiDescLength = mVtdUnitInformation[VtdIndex].QiDescLength;
   BaseDesc = mVtdUnitInformation[VtdIndex].QiDesc;
 
-  DEBUG((DEBUG_INFO, "[%d] Submit QI Descriptor [0x%08x, 0x%08x] Free Head (%d)\n", VtdIndex, Desc->Low, Desc->High, mVtdUnitInformation[VtdIndex].QiFreeHead));
+  DEBUG((DEBUG_VERBOSE, "[%d] Submit QI Descriptor [0x%08x, 0x%08x] Free Head (%d)\n", VtdIndex, Desc->Low, Desc->High, mVtdUnitInformation[VtdIndex].QiFreeHead));
 
   BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead].Low = Desc->Low;
   BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead].High = Desc->High;
