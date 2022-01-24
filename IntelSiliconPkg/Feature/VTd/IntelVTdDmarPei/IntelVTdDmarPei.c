@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2020 - 2021, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -22,6 +22,8 @@
 #include <Ppi/EndOfPeiPhase.h>
 #include <Guid/VtdPmrInfoHob.h>
 #include "IntelVTdDmarPei.h"
+
+#define VTD_UNIT_MAX 42
 
 EFI_GUID mVTdInfoGuid = {
   0x222f5e30, 0x5cd, 0x49c6, { 0x8a, 0xc, 0x36, 0xd6, 0x58, 0x41, 0xe0, 0x82 }
@@ -50,20 +52,20 @@ typedef struct {
   the device driver need use SetAttribute() to update the IOMMU
   attribute to request DMA access (read and/or write).
 
-  @param[in]  This              The PPI instance pointer.
-  @param[in]  DeviceHandle      The device who initiates the DMA access request.
-  @param[in]  Mapping           The mapping value returned from Map().
-  @param[in]  IoMmuAccess       The IOMMU access.
+  @param[in]  This                  The PPI instance pointer.
+  @param[in]  DeviceHandle          The device who initiates the DMA access request.
+  @param[in]  Mapping               The mapping value returned from Map().
+  @param[in]  IoMmuAccess           The IOMMU access.
 
-  @retval EFI_SUCCESS           The IoMmuAccess is set for the memory range specified by DeviceAddress and Length.
-  @retval EFI_INVALID_PARAMETER Mapping is not a value that was returned by Map().
-  @retval EFI_INVALID_PARAMETER IoMmuAccess specified an illegal combination of access.
-  @retval EFI_UNSUPPORTED       The bit mask of IoMmuAccess is not supported by the IOMMU.
-  @retval EFI_UNSUPPORTED       The IOMMU does not support the memory range specified by Mapping.
-  @retval EFI_OUT_OF_RESOURCES  There are not enough resources available to modify the IOMMU access.
-  @retval EFI_DEVICE_ERROR      The IOMMU device reported an error while attempting the operation.
-  @retval EFI_NOT_AVAILABLE_YET DMA protection has been enabled, but DMA buffer are
-                                not available to be allocated yet.
+  @retval EFI_SUCCESS               The IoMmuAccess is set for the memory range specified by DeviceAddress and Length.
+  @retval EFI_INVALID_PARAMETER     Mapping is not a value that was returned by Map().
+  @retval EFI_INVALID_PARAMETER     IoMmuAccess specified an illegal combination of access.
+  @retval EFI_UNSUPPORTED           The bit mask of IoMmuAccess is not supported by the IOMMU.
+  @retval EFI_UNSUPPORTED           The IOMMU does not support the memory range specified by Mapping.
+  @retval EFI_OUT_OF_RESOURCES      There are not enough resources available to modify the IOMMU access.
+  @retval EFI_DEVICE_ERROR          The IOMMU device reported an error while attempting the operation.
+  @retval EFI_NOT_AVAILABLE_YET     DMA protection has been enabled, but DMA buffer are
+                                    not available to be allocated yet.
 **/
 EFI_STATUS
 EFIAPI
@@ -93,22 +95,22 @@ PeiIoMmuSetAttribute (
   Provides the controller-specific addresses required to access system memory from a
   DMA bus master.
 
-  @param  This                  The PPI instance pointer.
-  @param  Operation             Indicates if the bus master is going to read or write to system memory.
-  @param  HostAddress           The system memory address to map to the PCI controller.
-  @param  NumberOfBytes         On input the number of bytes to map. On output the number of bytes
-                                that were mapped.
-  @param  DeviceAddress         The resulting map address for the bus master PCI controller to use to
-                                access the hosts HostAddress.
-  @param  Mapping               A resulting value to pass to Unmap().
+  @param [in]       This            The PPI instance pointer.
+  @param [in]       Operation       Indicates if the bus master is going to read or write to system memory.
+  @param [in]       HostAddress     The system memory address to map to the PCI controller.
+  @param [in] [out] NumberOfBytes   On input the number of bytes to map. On output the number of bytes
+                                    that were mapped.
+  @param [out]      DeviceAddress   The resulting map address for the bus master PCI controller to use to
+                                    access the hosts HostAddress.
+  @param [out]      Mapping         A resulting value to pass to Unmap().
 
-  @retval EFI_SUCCESS           The range was mapped for the returned NumberOfBytes.
-  @retval EFI_UNSUPPORTED       The HostAddress cannot be mapped as a common buffer.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
-  @retval EFI_DEVICE_ERROR      The system hardware could not map the requested address.
-  @retval EFI_NOT_AVAILABLE_YET DMA protection has been enabled, but DMA buffer are
-                                not available to be allocated yet.
+  @retval EFI_SUCCESS               The range was mapped for the returned NumberOfBytes.
+  @retval EFI_UNSUPPORTED           The HostAddress cannot be mapped as a common buffer.
+  @retval EFI_INVALID_PARAMETER     One or more parameters are invalid.
+  @retval EFI_OUT_OF_RESOURCES      The request could not be completed due to a lack of resources.
+  @retval EFI_DEVICE_ERROR          The system hardware could not map the requested address.
+  @retval EFI_NOT_AVAILABLE_YET     DMA protection has been enabled, but DMA buffer are
+                                    not available to be allocated yet.
 **/
 EFI_STATUS
 EFIAPI
@@ -140,7 +142,7 @@ PeiIoMmuMap (
 
   if (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer ||
       Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64) {
-    *DeviceAddress = (UINTN)HostAddress;
+    *DeviceAddress = (UINTN) HostAddress;
     *Mapping = NULL;
     return EFI_SUCCESS;
   }
@@ -184,14 +186,14 @@ PeiIoMmuMap (
 /**
   Completes the Map() operation and releases any corresponding resources.
 
-  @param  This                  The PPI instance pointer.
-  @param  Mapping               The mapping value returned from Map().
+  @param [in] This                  The PPI instance pointer.
+  @param [in] Mapping               The mapping value returned from Map().
 
-  @retval EFI_SUCCESS           The range was unmapped.
-  @retval EFI_INVALID_PARAMETER Mapping is not a value that was returned by Map().
-  @retval EFI_DEVICE_ERROR      The data was not committed to the target system memory.
-  @retval EFI_NOT_AVAILABLE_YET DMA protection has been enabled, but DMA buffer are
-                                not available to be allocated yet.
+  @retval EFI_SUCCESS               The range was unmapped.
+  @retval EFI_INVALID_PARAMETER     Mapping is not a value that was returned by Map().
+  @retval EFI_DEVICE_ERROR          The data was not committed to the target system memory.
+  @retval EFI_NOT_AVAILABLE_YET     DMA protection has been enabled, but DMA buffer are
+                                    not available to be allocated yet.
 **/
 EFI_STATUS
 EFIAPI
@@ -250,21 +252,21 @@ PeiIoMmuUnmap (
   Allocates pages that are suitable for an OperationBusMasterCommonBuffer or
   OperationBusMasterCommonBuffer64 mapping.
 
-  @param  This                  The PPI instance pointer.
-  @param  MemoryType            The type of memory to allocate, EfiBootServicesData or
-                                EfiRuntimeServicesData.
-  @param  Pages                 The number of pages to allocate.
-  @param  HostAddress           A pointer to store the base system memory address of the
-                                allocated range.
-  @param  Attributes            The requested bit mask of attributes for the allocated range.
+  @param [in]       This            The PPI instance pointer.
+  @param [in]       MemoryType      The type of memory to allocate, EfiBootServicesData or
+                                    EfiRuntimeServicesData.
+  @param [in]       Pages           The number of pages to allocate.
+  @param [in] [out] HostAddress     A pointer to store the base system memory address of the
+                                    allocated range.
+  @param [in]       Attributes      The requested bit mask of attributes for the allocated range.
 
-  @retval EFI_SUCCESS           The requested memory pages were allocated.
-  @retval EFI_UNSUPPORTED       Attributes is unsupported. The only legal attribute bits are
-                                MEMORY_WRITE_COMBINE, MEMORY_CACHED and DUAL_ADDRESS_CYCLE.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-  @retval EFI_OUT_OF_RESOURCES  The memory pages could not be allocated.
-  @retval EFI_NOT_AVAILABLE_YET DMA protection has been enabled, but DMA buffer are
-                                not available to be allocated yet.
+  @retval EFI_SUCCESS               The requested memory pages were allocated.
+  @retval EFI_UNSUPPORTED           Attributes is unsupported. The only legal attribute bits are
+                                    MEMORY_WRITE_COMBINE, MEMORY_CACHED and DUAL_ADDRESS_CYCLE.
+  @retval EFI_INVALID_PARAMETER     One or more parameters are invalid.
+  @retval EFI_OUT_OF_RESOURCES      The memory pages could not be allocated.
+  @retval EFI_NOT_AVAILABLE_YET     DMA protection has been enabled, but DMA buffer are
+                                    not available to be allocated yet.
 **/
 EFI_STATUS
 EFIAPI
@@ -307,15 +309,15 @@ PeiIoMmuAllocateBuffer (
 /**
   Frees memory that was allocated with AllocateBuffer().
 
-  @param  This                  The PPI instance pointer.
-  @param  Pages                 The number of pages to free.
-  @param  HostAddress           The base system memory address of the allocated range.
+  @param [in] This                  The PPI instance pointer.
+  @param [in] Pages                 The number of pages to free.
+  @param [in] HostAddress           The base system memory address of the allocated range.
 
-  @retval EFI_SUCCESS           The requested memory pages were freed.
-  @retval EFI_INVALID_PARAMETER The memory range specified by HostAddress and Pages
-                                was not allocated with AllocateBuffer().
-  @retval EFI_NOT_AVAILABLE_YET DMA protection has been enabled, but DMA buffer are
-                                not available to be allocated yet.
+  @retval EFI_SUCCESS               The requested memory pages were freed.
+  @retval EFI_INVALID_PARAMETER     The memory range specified by HostAddress and Pages
+                                    was not allocated with AllocateBuffer().
+  @retval EFI_NOT_AVAILABLE_YET     DMA protection has been enabled, but DMA buffer are
+                                    not available to be allocated yet.
 **/
 EFI_STATUS
 EFIAPI
@@ -364,52 +366,136 @@ CONST EFI_PEI_PPI_DESCRIPTOR mIoMmuPpiList = {
 };
 
 /**
-  Release the momery in the Intel VTd Info
+  Get ACPI DMAT Table from EdkiiVTdInfo PPI
 
-  @param[in]  VTdInfo           The VTd engine context information.
+  @retval Address              ACPI DMAT Table address
+  @retval NULL                 Failed to get ACPI DMAT Table
 **/
-VOID
-ReleaseVTdInfo (
-  IN VTD_INFO                   *VTdInfo
+EFI_ACPI_DMAR_HEADER * GetAcpiDmarTable (
+  VOID
   )
 {
-  UINTN                         Index;
+  EFI_STATUS                  Status;
+  EFI_ACPI_DMAR_HEADER        *AcpiDmarTable;
 
-  for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    DEBUG ((DEBUG_INFO, "Release momery in VTdInfo[%d]\n", Index));
-
-    if (VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry, 1);
-      VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry = 0;
-    }
-
-    if (VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry, 1);
-      VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry = 0;
-    }
-
-    if (VTdInfo->VtdUnitInfo[Index].RootEntryTable) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].RootEntryTable, VTdInfo->VtdUnitInfo[Index].RootEntryTablePageSize);
-      VTdInfo->VtdUnitInfo[Index].RootEntryTable = 0;
-    }
-
-    if (VTdInfo->VtdUnitInfo[Index].ExtRootEntryTable) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].ExtRootEntryTable, VTdInfo->VtdUnitInfo[Index].ExtRootEntryTablePageSize);
-      VTdInfo->VtdUnitInfo[Index].RootEntryTable = 0;
-    }
-
-    if (VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData, VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataPageSize);
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataPageSize = 0;
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData = 0;
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataNumber = 0;
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataMaxNumber = 0;
-    }
+  //
+  // Get the DMAR table
+  //
+  Status = PeiServicesLocatePpi (
+             &gEdkiiVTdInfoPpiGuid,
+             0,
+             NULL,
+             (VOID **)&AcpiDmarTable
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Fail to get ACPI DMAR Table : %r\n", Status));
+    AcpiDmarTable = NULL;
+  } else {
+    DumpAcpiDMAR (AcpiDmarTable);
   }
+
+  return AcpiDmarTable;
 }
 
 /**
-  Initializes the Intel VTd Info.
+  Get the VTd engine context information hob.
+
+  @retval The VTd engine context information.
+
+**/
+VTD_INFO *
+GetVTdInfoHob (
+  VOID
+  )
+{
+  VOID                          *Hob;
+  VTD_INFO                      *VTdInfo;
+
+  Hob = GetFirstGuidHob (&mVTdInfoGuid);
+  if (Hob == NULL) {
+    VTdInfo = BuildGuidHob (&mVTdInfoGuid, sizeof (VTD_INFO));
+    if (VTdInfo != NULL) {
+      ZeroMem (VTdInfo, sizeof (VTD_INFO));
+    }
+  } else {
+    VTdInfo = GET_GUID_HOB_DATA(Hob);
+  }
+  return VTdInfo;
+}
+
+/**
+  Callback function of parse DMAR DRHD table in pre-memory phase.
+
+  @param [in] [out] Context          Callback function context.
+  @param [in]       VTdIndex         The VTd engine index.
+  @param [in]       DmarDrhd         The DRHD table.
+
+**/
+VOID
+ProcessDhrdPreMemory (
+  IN OUT VOID                       *Context,
+  IN     UINT32                     VTdIndex,
+  IN     EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
+  )
+{
+  DEBUG ((DEBUG_INFO,"VTD (%d) BaseAddress -  0x%016lx\n", VTdIndex, DmarDrhd->RegisterBaseAddress));
+
+  EnableVTdTranslationProtectionBlockDma ((UINTN) DmarDrhd->RegisterBaseAddress);
+}
+
+/**
+  Callback function of parse DMAR DRHD table in post memory phase.
+
+  @param [in] [out] Context          Callback function context.
+  @param [in]       VTdIndex         The VTd engine index.
+  @param [in]       DmarDrhd         The DRHD table.
+
+**/
+VOID
+ProcessDrhdPostMemory (
+  IN OUT VOID                       *Context,
+  IN     UINT32                     VTdIndex,
+  IN     EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
+  )
+{
+  VTD_UNIT_INFO                 *VtdUnitInfo;
+  UINTN                         Index;
+
+  VtdUnitInfo = (VTD_UNIT_INFO *) Context;
+
+  if (DmarDrhd->RegisterBaseAddress == 0) {
+    DEBUG ((DEBUG_INFO,"VTd Base Address is 0\n"));
+    ASSERT (FALSE);
+    return;
+  }
+
+  for (Index = 0; Index < VTD_UNIT_MAX; Index++) {
+    if (VtdUnitInfo[Index].VtdUnitBaseAddress == DmarDrhd->RegisterBaseAddress) {
+      DEBUG ((DEBUG_INFO,"Find VTD (%d) [0x%08x] Exist\n", VTdIndex, DmarDrhd->RegisterBaseAddress));
+      return;
+    }
+  }
+
+  for (VTdIndex = 0; VTdIndex < VTD_UNIT_MAX; VTdIndex++) {
+    if (VtdUnitInfo[VTdIndex].VtdUnitBaseAddress == 0) {
+      VtdUnitInfo[VTdIndex].VtdUnitBaseAddress = (UINTN) DmarDrhd->RegisterBaseAddress;
+      VtdUnitInfo[VTdIndex].Segment = DmarDrhd->SegmentNumber;
+      VtdUnitInfo[VTdIndex].Flags = DmarDrhd->Flags;
+      VtdUnitInfo[VTdIndex].Done = FALSE;
+
+      DEBUG ((DEBUG_INFO,"VTD (%d) BaseAddress -  0x%016lx\n", VTdIndex, DmarDrhd->RegisterBaseAddress));
+      DEBUG ((DEBUG_INFO,"  Segment - %d, Flags   - 0x%x\n", DmarDrhd->SegmentNumber, DmarDrhd->Flags));
+      return;
+    }
+  }
+
+  DEBUG ((DEBUG_INFO,"VtdUnitInfo Table is full\n"));
+  ASSERT (FALSE);
+  return;
+}
+
+/**
+  Initializes the Intel VTd Info in post memory phase.
 
   @retval EFI_SUCCESS           Usb bot driver is successfully initialized.
   @retval EFI_OUT_OF_RESOURCES  Can't initialize the driver.
@@ -419,89 +505,82 @@ InitVTdInfo (
   VOID
   )
 {
-  EFI_STATUS                    Status;
-  EFI_ACPI_DMAR_HEADER          *AcpiDmarTable;
-  VOID                          *Hob;
   VTD_INFO                      *VTdInfo;
-  UINT64                        EngineMask;
+  EFI_ACPI_DMAR_HEADER          *AcpiDmarTable;
+  UINTN                         VtdUnitNumber;
+  VTD_UNIT_INFO                 *VtdUnitInfo;
 
-  Status = PeiServicesLocatePpi (
-             &gEdkiiVTdInfoPpiGuid,
-             0,
-             NULL,
-             (VOID **)&AcpiDmarTable
-             );
-  ASSERT_EFI_ERROR (Status);
+  VTdInfo = GetVTdInfoHob ();
+  ASSERT (VTdInfo != NULL);
 
-  DumpAcpiDMAR (AcpiDmarTable);
+  AcpiDmarTable = GetAcpiDmarTable ();
+  ASSERT (AcpiDmarTable != NULL);
 
-  //
-  // Clear old VTdInfo Hob.
-  //
-  Hob = GetFirstGuidHob (&mVTdInfoGuid);
-  if (Hob != NULL) {
-    DEBUG ((DEBUG_INFO, " Find Hob : mVTdInfoGuid - 0x%x\n", Hob));
+  if (VTdInfo->VtdUnitInfo == NULL) {
+    //
+    // Genrate a new Vtd Unit Info Table
+    //
+    VTdInfo->VtdUnitInfo = AllocateZeroPages (EFI_SIZE_TO_PAGES (sizeof (VTD_UNIT_INFO) * VTD_UNIT_MAX));
+    if (VTdInfo->VtdUnitInfo == NULL) {
+      DEBUG ((DEBUG_ERROR, "InitVTdInfo - OUT_OF_RESOURCE\n"));
+      ASSERT (FALSE);
+      return EFI_OUT_OF_RESOURCES;
+    }
+  }
+  VtdUnitInfo = VTdInfo->VtdUnitInfo;
 
-    VTdInfo = GET_GUID_HOB_DATA(Hob);
-    EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
-    EnableVTdTranslationProtectionAll (VTdInfo, EngineMask);
+  if (VTdInfo->HostAddressWidth == 0) {
+    VTdInfo->HostAddressWidth = AcpiDmarTable->HostAddressWidth;
+  }
 
-    ReleaseVTdInfo (VTdInfo);
-    VTdInfo->VTdEngineCount = 0;
-
-    ZeroMem (&((EFI_HOB_GUID_TYPE *) Hob)->Name, sizeof (EFI_GUID));
+  if (VTdInfo->HostAddressWidth != AcpiDmarTable->HostAddressWidth) {
+    DEBUG ((DEBUG_ERROR, "Host Address Width is not match.\n"));
+    ASSERT (FALSE);
+    return EFI_UNSUPPORTED;
   }
 
   //
-  // Get DMAR information to local VTdInfo
+  // Parse the DMAR ACPI Table to the new Vtd Unit Info Table
   //
-  Status = ParseDmarAcpiTableDrhd (AcpiDmarTable);
-  if (EFI_ERROR(Status)) {
-    DEBUG ((DEBUG_ERROR, " ParseDmarAcpiTableDrhd : %r\n", Status));
-    return Status;
+  VtdUnitNumber = ParseDmarAcpiTableDrhd (AcpiDmarTable, ProcessDrhdPostMemory, VtdUnitInfo);
+  if (VtdUnitNumber == 0) {
+    return EFI_UNSUPPORTED;
   }
 
-  //
-  // NOTE: Do not parse RMRR here, because RMRR may cause DMAR programming.
-  //
+  for (VTdInfo->VTdEngineCount = 0; VTdInfo->VTdEngineCount < VTD_UNIT_MAX; VTdInfo->VTdEngineCount++) {
+    if (VtdUnitInfo[VTdInfo->VTdEngineCount].VtdUnitBaseAddress == 0) {
+      break;
+    }
+  }
+
+  VTdInfo->AcpiDmarTable = AcpiDmarTable;
 
   return EFI_SUCCESS;
 }
 
 /**
-  Initializes the Intel VTd DMAR for all memory.
+  Initializes the Intel VTd DMAR for block all DMA.
 
   @retval EFI_SUCCESS           Driver is successfully initialized.
   @retval RETURN_NOT_READY      Fail to get VTdInfo Hob .
 **/
 EFI_STATUS
-InitVTdDmarForAll (
+InitVTdDmarBlockAll (
   VOID
   )
 {
-  VOID                          *Hob;
-  VTD_INFO                      *VTdInfo;
-  UINT64                        EngineMask;
-  EFI_STATUS                    Status;
+  EFI_ACPI_DMAR_HEADER      *AcpiDmarTable;
 
-  Hob = GetFirstGuidHob (&mVTdInfoGuid);
-  if (Hob == NULL) {
-    DEBUG ((DEBUG_ERROR, "Fail to get VTdInfo Hob.\n"));
-    return RETURN_NOT_READY;
-  }
-  VTdInfo = GET_GUID_HOB_DATA (Hob);
-  EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
+  //
+  // Get the DMAR table
+  //
+  AcpiDmarTable = GetAcpiDmarTable ();
+  ASSERT (AcpiDmarTable != NULL);
 
-  DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
-  Status = PrepareVtdConfig (VTdInfo);
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    return Status;
-  }
-
-  EnableVTdTranslationProtectionAll (VTdInfo, EngineMask);
-
-  return EFI_SUCCESS;
+  //
+  // Parse the DMAR table and block all DMA
+  //
+  return ParseDmarAcpiTableDrhd (AcpiDmarTable, ProcessDhrdPreMemory, NULL);
 }
 
 /**
@@ -524,8 +603,8 @@ InitDmaBuffer(
   DEBUG ((DEBUG_INFO, "InitDmaBuffer :\n"));
 
   Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  ASSERT(Hob != NULL);
   DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
-  VtdPmrHobPtr = GetFirstGuidHob (&gVtdPmrInfoDataHobGuid);
 
   /**
   When gVtdPmrInfoDataHobGuid exists, it means:
@@ -535,7 +614,7 @@ InitDmaBuffer(
     4. Protection regions will be conveyed through VTD_PMR_INFO_HOB
 
   When gVtdPmrInfoDataHobGuid dosen't exist, it means:
-    1. IntelVTdDmar driver will calcuate the PMR memory alignment
+    1. IntelVTdDmarPei driver will calcuate the protected memory alignment
     2. Dma buffer is reserved by AllocateAlignedPages()
   **/
 
@@ -545,33 +624,40 @@ InitDmaBuffer(
     return EFI_INVALID_PARAMETER;
   }
 
-  if (VtdPmrHobPtr == NULL) {
-    //
-    // Allocate memory for DMA buffer
-    //
-    DmaBufferInfo->DmaBufferBase = (UINT64) (UINTN) AllocateAlignedPages (EFI_SIZE_TO_PAGES ((UINTN) DmaBufferInfo->DmaBufferSize), 0);
-    if (DmaBufferInfo->DmaBufferBase == 0) {
-      DEBUG ((DEBUG_ERROR, " InitDmaBuffer : OutOfResource\n"));
-      return EFI_OUT_OF_RESOURCES;
-    }
-    DmaBufferInfo->DmaBufferLimit = DmaBufferInfo->DmaBufferBase + DmaBufferInfo->DmaBufferSize;
-    DEBUG ((DEBUG_INFO, "Alloc DMA buffer success.\n"));
-  } else {
-    //
-    // Get the PMR ranges information for the VTd PMR hob
-    //
-    VtdPmrHob = GET_GUID_HOB_DATA (VtdPmrHobPtr);
-    DmaBufferInfo->DmaBufferBase = VtdPmrHob->ProtectedLowLimit;
-    DmaBufferInfo->DmaBufferLimit = VtdPmrHob->ProtectedHighBase;
-  }
-  DmaBufferInfo->DmaBufferCurrentTop = DmaBufferInfo->DmaBufferBase + DmaBufferInfo->DmaBufferSize;
-  DmaBufferInfo->DmaBufferCurrentBottom = DmaBufferInfo->DmaBufferBase;
+  if (DmaBufferInfo->DmaBufferBase == 0) {
+    VtdPmrHobPtr = GetFirstGuidHob (&gVtdPmrInfoDataHobGuid);
+    if (VtdPmrHobPtr != NULL) {
+      //
+      // Get the protected memory ranges information from the VTd PMR hob
+      //
+      VtdPmrHob = GET_GUID_HOB_DATA (VtdPmrHobPtr);
 
-  DEBUG ((DEBUG_INFO, " DmaBufferSize          : 0x%lx\n", DmaBufferInfo->DmaBufferSize));
-  DEBUG ((DEBUG_INFO, " DmaBufferBase          : 0x%lx\n", DmaBufferInfo->DmaBufferBase));
-  DEBUG ((DEBUG_INFO, " DmaBufferLimit         : 0x%lx\n", DmaBufferInfo->DmaBufferLimit));
-  DEBUG ((DEBUG_INFO, " DmaBufferCurrentTop    : 0x%lx\n", DmaBufferInfo->DmaBufferCurrentTop));
-  DEBUG ((DEBUG_INFO, " DmaBufferCurrentBottom : 0x%lx\n", DmaBufferInfo->DmaBufferCurrentBottom));
+      if ((VtdPmrHob->ProtectedHighBase - VtdPmrHob->ProtectedLowLimit) < DmaBufferInfo->DmaBufferSize) {
+        DEBUG ((DEBUG_ERROR, " DmaBufferSize not enough\n"));
+        return EFI_INVALID_PARAMETER;
+      }
+      DmaBufferInfo->DmaBufferBase = VtdPmrHob->ProtectedLowLimit;
+    } else {
+      //
+      // Allocate memory for DMA buffer
+      //
+      DmaBufferInfo->DmaBufferBase = (UINTN) AllocateAlignedPages (EFI_SIZE_TO_PAGES (DmaBufferInfo->DmaBufferSize), 0);
+      if (DmaBufferInfo->DmaBufferBase == 0) {
+        DEBUG ((DEBUG_ERROR, " InitDmaBuffer : OutOfResource\n"));
+        return EFI_OUT_OF_RESOURCES;
+      }
+      DEBUG ((DEBUG_INFO, "Alloc DMA buffer success.\n"));
+    }
+
+    DmaBufferInfo->DmaBufferCurrentTop = DmaBufferInfo->DmaBufferBase + DmaBufferInfo->DmaBufferSize;
+    DmaBufferInfo->DmaBufferCurrentBottom = DmaBufferInfo->DmaBufferBase;
+
+    DEBUG ((DEBUG_INFO, " DmaBufferSize          : 0x%x\n", DmaBufferInfo->DmaBufferSize));
+    DEBUG ((DEBUG_INFO, " DmaBufferBase          : 0x%x\n", DmaBufferInfo->DmaBufferBase));
+  }
+
+  DEBUG ((DEBUG_INFO, " DmaBufferCurrentTop    : 0x%x\n", DmaBufferInfo->DmaBufferCurrentTop));
+  DEBUG ((DEBUG_INFO, " DmaBufferCurrentBottom : 0x%x\n", DmaBufferInfo->DmaBufferCurrentBottom));
 
   return EFI_SUCCESS;
 }
@@ -588,24 +674,17 @@ InitVTdDmarForDma (
   VOID
   )
 {
-  VOID                          *Hob;
   VTD_INFO                      *VTdInfo;
+
   EFI_STATUS                    Status;
   EFI_PEI_PPI_DESCRIPTOR        *OldDescriptor;
   EDKII_IOMMU_PPI               *OldIoMmuPpi;
 
-  Hob = GetFirstGuidHob (&mVTdInfoGuid);
-  VTdInfo = GET_GUID_HOB_DATA (Hob);
+  VTdInfo = GetVTdInfoHob ();
+  ASSERT (VTdInfo != NULL);
 
   DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
   Status = PrepareVtdConfig (VTdInfo);
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    return Status;
-  }
-
-  DEBUG ((DEBUG_INFO, "PrepareVtdCacheInvalidationConfig\n"));
-  Status = PrepareVtdCacheInvalidationConfig (VTdInfo);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;
@@ -618,10 +697,6 @@ InitVTdDmarForDma (
     ASSERT_EFI_ERROR (Status);
     return Status;
   }
-
-  // If there is RMRR memory, parse it here.
-  DEBUG ((DEBUG_INFO, "PeiParseDmarAcpiTableRmrr\n"));
-  ParseDmarAcpiTableRmrr (VTdInfo);
 
   DEBUG ((DEBUG_INFO, "EnableVtdDmar\n"));
   Status = EnableVTdTranslationProtection(VTdInfo);
@@ -668,21 +743,10 @@ S3EndOfPeiNotify(
   IN VOID                       *Ppi
   )
 {
-  VOID                          *Hob;
-  VTD_INFO                      *VTdInfo;
-  UINT64                        EngineMask;
-
   DEBUG((DEBUG_INFO, "VTd DMAR PEI S3EndOfPeiNotify\n"));
 
   if ((PcdGet8(PcdVTdPolicyPropertyMask) & BIT1) == 0) {
-    Hob = GetFirstGuidHob (&mVTdInfoGuid);
-    if (Hob == NULL) {
-      return EFI_SUCCESS;
-    }
-    VTdInfo = GET_GUID_HOB_DATA(Hob);
-
-    EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
-    DisableVTdTranslationProtection (VTdInfo, EngineMask);
+    DisableVTdTranslationProtection (GetVTdInfoHob ());
   }
   return EFI_SUCCESS;
 }
@@ -733,18 +797,13 @@ VTdInfoNotify (
 
   DEBUG ((DEBUG_INFO, "MemoryInitialized - %x\n", MemoryInitialized));
 
-  //
-  // NOTE: We need reinit VTdInfo because previous information might be overriden.
-  //
-  InitVTdInfo ();
-
   if (!MemoryInitialized) {
     //
     // If the memory is not initialized,
     // Protect all system memory
     //
 
-    InitVTdDmarForAll ();
+    InitVTdDmarBlockAll ();
 
     //
     // Install PPI.
@@ -758,9 +817,16 @@ VTdInfoNotify (
     //
 
     Status = InitDmaBuffer ();
-    ASSERT_EFI_ERROR(Status);
+    ASSERT_EFI_ERROR (Status);
 
-    InitVTdDmarForDma ();
+    //
+    // NOTE: We need reinit VTdInfo because previous information might be overriden.
+    //
+    Status = InitVTdInfo ();
+    ASSERT_EFI_ERROR (Status);
+
+    Status = InitVTdDmarForDma ();
+    ASSERT_EFI_ERROR (Status);
   }
 
   return EFI_SUCCESS;
@@ -826,4 +892,3 @@ IntelVTdDmarInitialize (
 
   return EFI_SUCCESS;
 }
-

@@ -1,6 +1,7 @@
 /** @file
 
-  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2020 - 2021, Intel Corporation. All rights reserved.<BR>
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -99,74 +100,6 @@ DumpDmarDeviceScopeEntry (
 
   DEBUG ((DEBUG_INFO,
     "    *************************************************************************\n\n"
-    ));
-
-  return;
-}
-
-/**
-  Dump DMAR RMRR table.
-
-  @param[in]  Rmrr              DMAR RMRR table
-**/
-VOID
-DumpDmarRmrr (
-  IN EFI_ACPI_DMAR_RMRR_HEADER  *Rmrr
-  )
-{
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER     *DmarDeviceScopeEntry;
-  INTN                                            RmrrLen;
-
-  if (Rmrr == NULL) {
-    return;
-  }
-
-  DEBUG ((DEBUG_INFO,
-    "  ***************************************************************************\n"
-    ));
-  DEBUG ((DEBUG_INFO,
-    "  *       Reserved Memory Region Reporting Structure                        *\n"
-    ));
-  DEBUG ((DEBUG_INFO,
-    "  ***************************************************************************\n"
-    ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof (UINTN) == sizeof (UINT64)) ?
-    "  RMRR address ........................................... 0x%016lx\n" :
-    "  RMRR address ........................................... 0x%08x\n",
-    Rmrr
-    ));
-  DEBUG ((DEBUG_INFO,
-    "    Type ................................................. 0x%04x\n",
-    Rmrr->Header.Type
-    ));
-  DEBUG ((DEBUG_INFO,
-    "    Length ............................................... 0x%04x\n",
-    Rmrr->Header.Length
-    ));
-  DEBUG ((DEBUG_INFO,
-    "    Segment Number ....................................... 0x%04x\n",
-    Rmrr->SegmentNumber
-    ));
-  DEBUG ((DEBUG_INFO,
-    "    Reserved Memory Region Base Address .................. 0x%016lx\n",
-    Rmrr->ReservedMemoryRegionBaseAddress
-    ));
-  DEBUG ((DEBUG_INFO,
-    "    Reserved Memory Region Limit Address ................. 0x%016lx\n",
-    Rmrr->ReservedMemoryRegionLimitAddress
-    ));
-
-  RmrrLen  = Rmrr->Header.Length - sizeof(EFI_ACPI_DMAR_RMRR_HEADER);
-  DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *) (Rmrr + 1);
-  while (RmrrLen > 0) {
-    DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
-    RmrrLen -= DmarDeviceScopeEntry->Length;
-    DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *) ((UINTN) DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
-  }
-
-  DEBUG ((DEBUG_INFO,
-    "  ***************************************************************************\n\n"
     ));
 
   return;
@@ -312,9 +245,6 @@ DumpAcpiDMAR (
     case EFI_ACPI_DMAR_TYPE_DRHD:
       DumpDmarDrhd ((EFI_ACPI_DMAR_DRHD_HEADER *) DmarHeader);
       break;
-    case EFI_ACPI_DMAR_TYPE_RMRR:
-      DumpDmarRmrr ((EFI_ACPI_DMAR_RMRR_HEADER *) DmarHeader);
-      break;
     default:
       break;
     }
@@ -330,491 +260,42 @@ DumpAcpiDMAR (
 }
 
 /**
-  Get VTd engine number.
+  Parse DMAR DRHD table.
 
   @param[in]  AcpiDmarTable     DMAR ACPI table
+  @param[in]  Callback          Callback function for handle DRHD
+  @param[in]  Context           Callback function Context
 
   @return the VTd engine number.
+
 **/
 UINTN
-GetVtdEngineNumber (
-  IN EFI_ACPI_DMAR_HEADER       *AcpiDmarTable
-  )
-{
-  EFI_ACPI_DMAR_STRUCTURE_HEADER        *DmarHeader;
-  UINTN                                 VtdIndex;
-
-  VtdIndex = 0;
-  DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) (AcpiDmarTable + 1));
-  while ((UINTN) DmarHeader < (UINTN) AcpiDmarTable + AcpiDmarTable->Header.Length) {
-    switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_DRHD:
-      VtdIndex++;
-      break;
-    default:
-      break;
-    }
-    DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) DmarHeader + DmarHeader->Length);
-  }
-  return VtdIndex ;
-}
-
-/**
-  Get PCI device information from DMAR DevScopeEntry.
-
-  @param[in]  Segment           The segment number.
-  @param[in]  DmarDevScopeEntry DMAR DevScopeEntry
-  @param[out] Bus               The bus number.
-  @param[out] Device            The device number.
-  @param[out] Function          The function number.
-
-  @retval EFI_SUCCESS  The PCI device information is returned.
-**/
-EFI_STATUS
-GetPciBusDeviceFunction (
-  IN  UINT16                                      Segment,
-  IN  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *DmarDevScopeEntry,
-  OUT UINT8                                       *Bus,
-  OUT UINT8                                       *Device,
-  OUT UINT8                                       *Function
-  )
-{
-  EFI_ACPI_DMAR_PCI_PATH                          *DmarPciPath;
-  UINT8                                           MyBus;
-  UINT8                                           MyDevice;
-  UINT8                                           MyFunction;
-
-  DmarPciPath = (EFI_ACPI_DMAR_PCI_PATH *) ((UINTN) (DmarDevScopeEntry + 1));
-  MyBus = DmarDevScopeEntry->StartBusNumber;
-  MyDevice = DmarPciPath->Device;
-  MyFunction = DmarPciPath->Function;
-
-  switch (DmarDevScopeEntry->Type) {
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-    while ((UINTN) DmarPciPath + sizeof (EFI_ACPI_DMAR_PCI_PATH) < (UINTN) DmarDevScopeEntry + DmarDevScopeEntry->Length) {
-      MyBus = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS (Segment, MyBus, MyDevice, MyFunction, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
-      DmarPciPath ++;
-      MyDevice = DmarPciPath->Device;
-      MyFunction = DmarPciPath->Function;
-    }
-    break;
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
-    break;
-  }
-
-  *Bus = MyBus;
-  *Device = MyDevice;
-  *Function = MyFunction;
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Return the index of PCI data.
-
-  @param[in]  VTdUnitInfo       The VTd engine unit information.
-  @param[in]  Segment           The Segment used to identify a VTd engine.
-  @param[in]  SourceId          The SourceId used to identify a VTd engine and table entry.
-
-  @return The index of the PCI data.
-  @retval (UINTN)-1  The PCI data is not found.
-**/
-UINTN
-GetPciDataIndex (
-  IN VTD_UNIT_INFO              *VTdUnitInfo,
-  IN UINT16                     Segment,
-  IN VTD_SOURCE_ID              SourceId
-  )
-{
-  UINTN                         Index;
-  VTD_SOURCE_ID                 *PciSourceId;
-  PEI_PCI_DEVICE_DATA           *PciDeviceDataBase;
-
-  if (Segment != VTdUnitInfo->Segment) {
-    return (UINTN)-1;
-  }
-
-  for (Index = 0; Index < VTdUnitInfo->PciDeviceInfo.PciDeviceDataNumber; Index++) {
-    PciDeviceDataBase = (PEI_PCI_DEVICE_DATA*) (UINTN) VTdUnitInfo->PciDeviceInfo.PciDeviceData;
-    PciSourceId = &PciDeviceDataBase[Index].PciSourceId;
-    if ((PciSourceId->Bits.Bus == SourceId.Bits.Bus) &&
-        (PciSourceId->Bits.Device == SourceId.Bits.Device) &&
-        (PciSourceId->Bits.Function == SourceId.Bits.Function) ) {
-      return Index;
-    }
-  }
-
-  return (UINTN)-1;
-}
-
-
-/**
-  Register PCI device to VTd engine.
-
-  @param[in]  VTdUnitInfo       The VTd engine unit information.
-  @param[in]  Segment           The segment of the source.
-  @param[in]  SourceId          The SourceId of the source.
-  @param[in]  DeviceType        The DMAR device scope type.
-  @param[in]  CheckExist        TRUE: ERROR will be returned if the PCI device is already registered.
-                                FALSE: SUCCESS will be returned if the PCI device is registered.
-
-  @retval EFI_SUCCESS           The PCI device is registered.
-  @retval EFI_OUT_OF_RESOURCES  No enough resource to register a new PCI device.
-  @retval EFI_ALREADY_STARTED   The device is already registered.
-
-**/
-EFI_STATUS
-RegisterPciDevice (
-  IN VTD_UNIT_INFO              *VTdUnitInfo,
-  IN UINT16                     Segment,
-  IN VTD_SOURCE_ID              SourceId,
-  IN UINT8                      DeviceType,
-  IN BOOLEAN                    CheckExist
-  )
-{
-  PEI_PCI_DEVICE_INFORMATION    *PciDeviceInfo;
-  VTD_SOURCE_ID                 *PciSourceId;
-  UINTN                         PciDataIndex;
-  UINTN                         PciDeviceDataSize;
-  PEI_PCI_DEVICE_DATA           *NewPciDeviceData;
-  PEI_PCI_DEVICE_DATA           *PciDeviceDataBase;
-
-  PciDeviceInfo = &VTdUnitInfo->PciDeviceInfo;
-
-  PciDataIndex = GetPciDataIndex (VTdUnitInfo, Segment, SourceId);
-  if (PciDataIndex == (UINTN)-1) {
-    //
-    // Register new
-    //
-
-    if (PciDeviceInfo->PciDeviceDataNumber >= PciDeviceInfo->PciDeviceDataMaxNumber) {
-      //
-      // Reallocate
-      //
-      PciDeviceDataSize = sizeof(*NewPciDeviceData) * (PciDeviceInfo->PciDeviceDataMaxNumber + MAX_VTD_PCI_DATA_NUMBER);
-      DEBUG ((DEBUG_INFO, "New PciDeviceDataSize:%d Page:%d\n", PciDeviceDataSize, EFI_SIZE_TO_PAGES (PciDeviceDataSize)));
-      NewPciDeviceData = AllocateZeroPages (EFI_SIZE_TO_PAGES(PciDeviceDataSize));
-      if (NewPciDeviceData == NULL) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-      PciDeviceInfo->PciDeviceDataMaxNumber += MAX_VTD_PCI_DATA_NUMBER;
-      if (PciDeviceInfo->PciDeviceData != 0) {
-        CopyMem (NewPciDeviceData, (VOID *) (UINTN) PciDeviceInfo->PciDeviceData, sizeof (*NewPciDeviceData) * PciDeviceInfo->PciDeviceDataNumber);
-        FreePages((VOID *) (UINTN) PciDeviceInfo->PciDeviceData, PciDeviceInfo->PciDeviceDataPageSize);
-      }
-      PciDeviceInfo->PciDeviceData = (UINT32) (UINTN) NewPciDeviceData;
-      PciDeviceInfo->PciDeviceDataPageSize = (UINT32) EFI_SIZE_TO_PAGES (PciDeviceDataSize);
-    }
-
-    ASSERT (PciDeviceInfo->PciDeviceDataNumber < PciDeviceInfo->PciDeviceDataMaxNumber);
-
-    PciDeviceDataBase = (PEI_PCI_DEVICE_DATA *) (UINTN) PciDeviceInfo->PciDeviceData;
-    PciSourceId = &PciDeviceDataBase[PciDeviceInfo->PciDeviceDataNumber].PciSourceId;
-    PciSourceId->Bits.Bus = SourceId.Bits.Bus;
-    PciSourceId->Bits.Device = SourceId.Bits.Device;
-    PciSourceId->Bits.Function = SourceId.Bits.Function;
-
-    DEBUG ((DEBUG_INFO, "  RegisterPciDevice: PCI S%04x B%02x D%02x F%02x", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
-
-    PciDeviceDataBase[PciDeviceInfo->PciDeviceDataNumber].DeviceType = DeviceType;
-
-    if ((DeviceType != EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT) &&
-        (DeviceType != EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE)) {
-      DEBUG ((DEBUG_INFO, " (*)"));
-    }
-    DEBUG ((DEBUG_INFO, "\n"));
-
-    PciDeviceInfo->PciDeviceDataNumber++;
-  } else {
-    if (CheckExist) {
-      DEBUG ((DEBUG_INFO, "  RegisterPciDevice: PCI S%04x B%02x D%02x F%02x already registered\n", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
-      return EFI_ALREADY_STARTED;
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Process DMAR DRHD table.
-
-  @param[in]  VTdUnitInfo       The VTd engine unit information.
-  @param[in]  DmarDrhd          The DRHD table.
-
-**/
-VOID
-ProcessDrhd (
-  IN VTD_UNIT_INFO              *VTdUnitInfo,
-  IN EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
-  )
-{
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER     *DmarDevScopeEntry;
-  UINT8                                           Bus;
-  UINT8                                           Device;
-  UINT8                                           Function;
-  EFI_STATUS                                      Status;
-  VTD_SOURCE_ID                                   SourceId;
-
-  DEBUG ((DEBUG_INFO,"  VTD BaseAddress -  0x%016lx\n", DmarDrhd->RegisterBaseAddress));
-  VTdUnitInfo->VtdUnitBaseAddress = (UINT32) DmarDrhd->RegisterBaseAddress;
-
-  VTdUnitInfo->EnableQueuedInvalidation = 0;
-
-  DEBUG ((DEBUG_INFO,"  VTD Segment - %d\n", DmarDrhd->SegmentNumber));
-  VTdUnitInfo->Segment = DmarDrhd->SegmentNumber;
-
-  VTdUnitInfo->FixedSecondLevelPagingEntry = 0;
-  VTdUnitInfo->RmrrSecondLevelPagingEntry = 0;
-  VTdUnitInfo->RootEntryTable = 0;
-  VTdUnitInfo->ExtRootEntryTable = 0;
-  VTdUnitInfo->RootEntryTablePageSize = 0;
-  VTdUnitInfo->ExtRootEntryTablePageSize = 0;
-
-  VTdUnitInfo->PciDeviceInfo.IncludeAllFlag = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceDataMaxNumber = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceDataNumber = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceDataPageSize = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceData = 0;
-
-  if ((DmarDrhd->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) != 0) {
-    VTdUnitInfo->PciDeviceInfo.IncludeAllFlag = TRUE;
-    DEBUG ((DEBUG_INFO,"  ProcessDrhd: with INCLUDE ALL\n"));
-  } else {
-    VTdUnitInfo->PciDeviceInfo.IncludeAllFlag = FALSE;
-    DEBUG ((DEBUG_INFO,"  ProcessDrhd: without INCLUDE ALL\n"));
-  }
-
-  VTdUnitInfo->PciDeviceInfo.PciDeviceDataNumber = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceDataMaxNumber = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceDataPageSize = 0;
-  VTdUnitInfo->PciDeviceInfo.PciDeviceData = 0;
-
-  DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *) ((UINTN) (DmarDrhd + 1));
-  while ((UINTN)DmarDevScopeEntry < (UINTN) DmarDrhd + DmarDrhd->Header.Length) {
-
-    Status = GetPciBusDeviceFunction (DmarDrhd->SegmentNumber, DmarDevScopeEntry, &Bus, &Device, &Function);
-    if (EFI_ERROR (Status)) {
-      return;
-    }
-
-    DEBUG ((DEBUG_INFO,"  ProcessDrhd: "));
-    switch (DmarDevScopeEntry->Type) {
-      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
-      DEBUG ((DEBUG_INFO,"PCI Endpoint"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-      DEBUG ((DEBUG_INFO,"PCI-PCI bridge"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
-      DEBUG ((DEBUG_INFO,"IOAPIC"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
-      DEBUG ((DEBUG_INFO,"MSI Capable HPET"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
-      DEBUG ((DEBUG_INFO,"ACPI Namespace Device"));
-      break;
-    }
-    DEBUG ((DEBUG_INFO," S%04x B%02x D%02x F%02x\n", DmarDrhd->SegmentNumber, Bus, Device, Function));
-
-    SourceId.Bits.Bus = Bus;
-    SourceId.Bits.Device = Device;
-    SourceId.Bits.Function = Function;
-
-    Status = RegisterPciDevice (VTdUnitInfo, DmarDrhd->SegmentNumber, SourceId, DmarDevScopeEntry->Type, TRUE);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR,"RegisterPciDevice Failed !\n"));
-    }
-
-    DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *) ((UINTN) DmarDevScopeEntry + DmarDevScopeEntry->Length);
-  }
-}
-
-/**
-  Dump the PCI device information managed by this VTd engine.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  VtdIndex          The index of VTd engine.
-
-**/
-VOID
-DumpPciDeviceInfo (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINTN                      VtdIndex
-  )
-{
-  UINTN                         Index;
-  PEI_PCI_DEVICE_DATA           *PciDeviceDataBase;
-
-  DEBUG ((DEBUG_INFO,"PCI Device Information (Number 0x%x, IncludeAll - %d):\n",
-    VTdInfo->VtdUnitInfo[VtdIndex].PciDeviceInfo.PciDeviceDataNumber,
-    VTdInfo->VtdUnitInfo[VtdIndex].PciDeviceInfo.IncludeAllFlag
-    ));
-
-  PciDeviceDataBase = (PEI_PCI_DEVICE_DATA *) (UINTN) VTdInfo->VtdUnitInfo[VtdIndex].PciDeviceInfo.PciDeviceData;
-
-  for (Index = 0; Index < VTdInfo->VtdUnitInfo[VtdIndex].PciDeviceInfo.PciDeviceDataNumber; Index++) {
-    DEBUG ((DEBUG_INFO,"  S%04x B%02x D%02x F%02x\n",
-      VTdInfo->VtdUnitInfo[VtdIndex].Segment,
-      PciDeviceDataBase[Index].PciSourceId.Bits.Bus,
-      PciDeviceDataBase[Index].PciSourceId.Bits.Device,
-      PciDeviceDataBase[Index].PciSourceId.Bits.Function
-      ));
-  }
-}
-
-/**
-  Parse DMAR DRHD table.
-
-  @param[in]  AcpiDmarTable     DMAR ACPI table
-
-  @return EFI_SUCCESS  The DMAR DRHD table is parsed.
-
-**/
-EFI_STATUS
 ParseDmarAcpiTableDrhd (
-  IN EFI_ACPI_DMAR_HEADER               *AcpiDmarTable
+  IN EFI_ACPI_DMAR_HEADER               *AcpiDmarTable,
+  IN PROCESS_DRHD_CALLBACK_FUNC         Callback,
+  IN VOID                               *Context
   )
 {
   EFI_ACPI_DMAR_STRUCTURE_HEADER        *DmarHeader;
-  UINTN                                 VtdUnitNumber;
   UINTN                                 VtdIndex;
-  VTD_INFO                              *VTdInfo;
-
-  VtdUnitNumber = GetVtdEngineNumber (AcpiDmarTable);
-  if (VtdUnitNumber == 0) {
-    return EFI_UNSUPPORTED;
-  }
-
-  VTdInfo = BuildGuidHob (&mVTdInfoGuid, sizeof (VTD_INFO) + (VtdUnitNumber - 1) * sizeof (VTD_UNIT_INFO));
-  ASSERT(VTdInfo != NULL);
-  if (VTdInfo == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  //
-  // Initialize the engine mask to all.
-  //
-  VTdInfo->AcpiDmarTable    = (UINT32) (UINTN) AcpiDmarTable;
-  VTdInfo->HostAddressWidth = AcpiDmarTable->HostAddressWidth;
-  VTdInfo->VTdEngineCount   = (UINT32) VtdUnitNumber;
 
   VtdIndex = 0;
   DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) (AcpiDmarTable + 1));
+
   while ((UINTN) DmarHeader < (UINTN) AcpiDmarTable + AcpiDmarTable->Header.Length) {
     switch (DmarHeader->Type) {
     case EFI_ACPI_DMAR_TYPE_DRHD:
-      ASSERT (VtdIndex < VtdUnitNumber);
-      ProcessDrhd (&VTdInfo->VtdUnitInfo[VtdIndex], (EFI_ACPI_DMAR_DRHD_HEADER *) DmarHeader);
+      if (Callback != NULL) {
+        Callback (Context, VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *) DmarHeader);
+      }
       VtdIndex++;
-
-      break;
-
-    default:
-      break;
-    }
-    DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) DmarHeader + DmarHeader->Length);
-  }
-  ASSERT (VtdIndex == VtdUnitNumber);
-
-  for (VtdIndex = 0; VtdIndex < VtdUnitNumber; VtdIndex++) {
-    DumpPciDeviceInfo (VTdInfo, VtdIndex);
-  }
-
-  return EFI_SUCCESS;
-}
-
-
-/**
-  Process DMAR RMRR table.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  DmarRmrr          The RMRR table.
-
-**/
-VOID
-ProcessRmrr (
-  IN VTD_INFO                                     *VTdInfo,
-  IN EFI_ACPI_DMAR_RMRR_HEADER                    *DmarRmrr
-  )
-{
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER     *DmarDevScopeEntry;
-  UINT8                                           Bus;
-  UINT8                                           Device;
-  UINT8                                           Function;
-  EFI_STATUS                                      Status;
-  VTD_SOURCE_ID                                   SourceId;
-
-  DEBUG ((DEBUG_INFO,"  PEI RMRR (Base 0x%016lx, Limit 0x%016lx)\n", DmarRmrr->ReservedMemoryRegionBaseAddress, DmarRmrr->ReservedMemoryRegionLimitAddress));
-
-  if ((DmarRmrr->ReservedMemoryRegionBaseAddress == 0) ||
-      (DmarRmrr->ReservedMemoryRegionLimitAddress == 0)) {
-    return ;
-  }
-
-  DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *) ((UINTN) (DmarRmrr + 1));
-  while ((UINTN) DmarDevScopeEntry < (UINTN) DmarRmrr + DmarRmrr->Header.Length) {
-    if (DmarDevScopeEntry->Type != EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT) {
-      DEBUG ((DEBUG_INFO,"RMRR DevScopeEntryType is not endpoint, type[0x%x] \n", DmarDevScopeEntry->Type));
-      return;
-    }
-
-    Status = GetPciBusDeviceFunction (DmarRmrr->SegmentNumber, DmarDevScopeEntry, &Bus, &Device, &Function);
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-
-    DEBUG ((DEBUG_INFO,"RMRR S%04x B%02x D%02x F%02x\n", DmarRmrr->SegmentNumber, Bus, Device, Function));
-
-    SourceId.Bits.Bus = Bus;
-    SourceId.Bits.Device = Device;
-    SourceId.Bits.Function = Function;
-
-    Status = EnableRmrrPageAttribute (
-               VTdInfo,
-               DmarRmrr->SegmentNumber,
-               SourceId,
-               DmarRmrr->ReservedMemoryRegionBaseAddress,
-               DmarRmrr->ReservedMemoryRegionLimitAddress,
-               EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_INFO, "EnableRmrrPageAttribute : %r\n", Status));
-    }
-
-    DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *) ((UINTN) DmarDevScopeEntry + DmarDevScopeEntry->Length);
-  }
-}
-
-/**
-  Parse DMAR DRHD table.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-
-**/
-VOID
-ParseDmarAcpiTableRmrr (
-  IN VTD_INFO                           *VTdInfo
-  )
-{
-  EFI_ACPI_DMAR_HEADER                  *AcpiDmarTable;
-  EFI_ACPI_DMAR_STRUCTURE_HEADER        *DmarHeader;
-
-  AcpiDmarTable = (EFI_ACPI_DMAR_HEADER *) (UINTN) VTdInfo->AcpiDmarTable;
-
-  DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) (AcpiDmarTable + 1));
-  while ((UINTN) DmarHeader < (UINTN) AcpiDmarTable + AcpiDmarTable->Header.Length) {
-    switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_RMRR:
-      ProcessRmrr (VTdInfo, (EFI_ACPI_DMAR_RMRR_HEADER *) DmarHeader);
       break;
     default:
       break;
     }
     DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) DmarHeader + DmarHeader->Length);
   }
+
+  return VtdIndex;
 }
 
