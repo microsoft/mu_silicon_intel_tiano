@@ -356,14 +356,14 @@ GetVtdEngineNumber (
 }
 
 /**
-  Process DMAR DHRD table.
+  Process DMAR DRHD table.
 
   @param[in]  VTdInfo   The VTd engine context information.
   @param[in]  VtdIndex  The index of VTd engine.
   @param[in]  DmarDrhd  The DRHD table.
 **/
 VOID
-ProcessDhrd (
+ProcessDrhd (
   IN VTD_INFO                   *VTdInfo,
   IN UINTN                      VtdIndex,
   IN EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
@@ -415,7 +415,7 @@ ParseDmarAcpiTableDrhd (
     switch (DmarHeader->Type) {
     case EFI_ACPI_DMAR_TYPE_DRHD:
       ASSERT (VtdIndex < VtdUnitNumber);
-      ProcessDhrd (VTdInfo, VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
+      ProcessDrhd (VTdInfo, VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
       VtdIndex++;
 
       break;

@@ -662,7 +662,7 @@ GetPciBusDeviceFunction (
 }
 
 /**
-  Process DMAR DHRD table.
+  Process DMAR DRHD table.
 
   @param[in]  VtdIndex  The index of VTd engine.
   @param[in]  DmarDrhd  The DRHD table.
@@ -670,7 +670,7 @@ GetPciBusDeviceFunction (
   @retval EFI_SUCCESS The DRHD table is processed.
 **/
 EFI_STATUS
-ProcessDhrd (
+ProcessDrhd (
   IN UINTN                      VtdIndex,
   IN EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
   )
@@ -690,7 +690,7 @@ ProcessDhrd (
 
   if ((DmarDrhd->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) != 0) {
     mVtdUnitInformation[VtdIndex].PciDeviceInfo.IncludeAllFlag = TRUE;
-    DEBUG ((DEBUG_INFO,"  ProcessDhrd: with INCLUDE ALL\n"));
+    DEBUG ((DEBUG_INFO,"  ProcessDrhd: with INCLUDE ALL\n"));
 
     Status = ScanAllPciBus((VOID *)VtdIndex, DmarDrhd->SegmentNumber, ScanBusCallbackRegisterPciDevice);
     if (EFI_ERROR (Status)) {
@@ -698,7 +698,7 @@ ProcessDhrd (
     }
   } else {
     mVtdUnitInformation[VtdIndex].PciDeviceInfo.IncludeAllFlag = FALSE;
-    DEBUG ((DEBUG_INFO,"  ProcessDhrd: without INCLUDE ALL\n"));
+    DEBUG ((DEBUG_INFO,"  ProcessDrhd: without INCLUDE ALL\n"));
   }
 
   DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)(DmarDrhd + 1));
@@ -709,7 +709,7 @@ ProcessDhrd (
       return Status;
     }
 
-    DEBUG ((DEBUG_INFO,"  ProcessDhrd: "));
+    DEBUG ((DEBUG_INFO,"  ProcessDrhd: "));
     switch (DmarDevScopeEntry->Type) {
     case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
       DEBUG ((DEBUG_INFO,"PCI Endpoint"));
@@ -877,7 +877,7 @@ ParseDmarAcpiTableDrhd (
     switch (DmarHeader->Type) {
     case EFI_ACPI_DMAR_TYPE_DRHD:
       ASSERT (VtdIndex < mVtdUnitNumber);
-      Status = ProcessDhrd (VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
+      Status = ProcessDrhd (VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
       if (EFI_ERROR (Status)) {
         return Status;
       }
