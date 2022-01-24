@@ -382,11 +382,27 @@ SetupTranslationTable (
 
   for (Index = 0; Index < mVtdUnitNumber; Index++) {
     DEBUG((DEBUG_INFO, "CreateContextEntry - %d\n", Index));
-    if (mVtdUnitInformation[Index].ECapReg.Bits.ECS) {
-      Status = CreateExtContextEntry (Index);
+
+    if (mVtdUnitInformation[Index].ECapReg.Bits.SMTS) {
+      if (mVtdUnitInformation[Index].ECapReg.Bits.DEP_24) {
+        DEBUG ((DEBUG_ERROR,"ECapReg.bit24 is not zero\n"));
+        ASSERT(FALSE);
+        Status = EFI_UNSUPPORTED;
+      } else {
+        Status = CreateExtContextEntry (Index);
+      }
     } else {
-      Status = CreateContextEntry (Index);
+      if (mVtdUnitInformation[Index].ECapReg.Bits.DEP_24) {
+        //
+        // To compatible with pervious VTd engine
+        // It was ECS(Extended Context Support) bit.
+        //
+        Status = CreateExtContextEntry (Index);
+      } else {
+        Status = CreateContextEntry (Index);
+      }
     }
+
     if (EFI_ERROR (Status)) {
       return Status;
     }

@@ -631,10 +631,8 @@ DumpVtdECapRegs (
   DEBUG ((DEBUG_INFO, "    SC     - 0x%x\n", ECapReg->Bits.SC));
   DEBUG ((DEBUG_INFO, "    IRO    - 0x%x\n", ECapReg->Bits.IRO));
   DEBUG ((DEBUG_INFO, "    MHMV   - 0x%x\n", ECapReg->Bits.MHMV));
-  DEBUG ((DEBUG_INFO, "    ECS    - 0x%x\n", ECapReg->Bits.ECS));
   DEBUG ((DEBUG_INFO, "    MTS    - 0x%x\n", ECapReg->Bits.MTS));
   DEBUG ((DEBUG_INFO, "    NEST   - 0x%x\n", ECapReg->Bits.NEST));
-  DEBUG ((DEBUG_INFO, "    DIS    - 0x%x\n", ECapReg->Bits.DIS));
   DEBUG ((DEBUG_INFO, "    PASID  - 0x%x\n", ECapReg->Bits.PASID));
   DEBUG ((DEBUG_INFO, "    PRS    - 0x%x\n", ECapReg->Bits.PRS));
   DEBUG ((DEBUG_INFO, "    ERS    - 0x%x\n", ECapReg->Bits.ERS));
@@ -642,6 +640,7 @@ DumpVtdECapRegs (
   DEBUG ((DEBUG_INFO, "    NWFS   - 0x%x\n", ECapReg->Bits.NWFS));
   DEBUG ((DEBUG_INFO, "    EAFS   - 0x%x\n", ECapReg->Bits.EAFS));
   DEBUG ((DEBUG_INFO, "    PSS    - 0x%x\n", ECapReg->Bits.PSS));
+  DEBUG ((DEBUG_INFO, "    ADMS   - 0x%x\n", ECapReg->Bits.ADMS));
 }
 
 
