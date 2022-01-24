@@ -384,7 +384,7 @@ InvalidateIOTLB (
   Enable DMAR translation inpre-mem phase.
 
   @param[in]  VtdUnitBaseAddress  The base address of the VTd engine.
-  @param[in]  RootEntryTable      The address of the VTd RootEntryTable.
+  @param[in]  RtaddrRegValue      The value of RTADDR_REG.
 
   @retval EFI_SUCCESS             DMAR translation is enabled.
   @retval EFI_DEVICE_ERROR        DMAR translation is not enabled.
@@ -392,15 +392,15 @@ InvalidateIOTLB (
 EFI_STATUS
 EnableDmarPreMem (
   IN UINTN                        VtdUnitBaseAddress,
-  IN UINTN                        RootEntryTable
+  IN UINTN                        RtaddrRegValue
   )
 {
   UINT32                          Reg32;
 
   DEBUG ((DEBUG_INFO, ">>>>>>EnableDmarPreMem() for engine [%x] \n", VtdUnitBaseAddress));
 
-  DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
-  MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) (UINTN) RootEntryTable);
+  DEBUG ((DEBUG_INFO, "RTADDR_REG : 0x%x \n", RtaddrRegValue));
+  MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) RtaddrRegValue);
 
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
@@ -662,18 +662,6 @@ EnableVTdTranslationProtectionAll (
 
   DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtectionAll - 0x%lx\n", EngineMask));
 
-  Status = PeiServicesLocatePpi (
-                 &gEdkiiVTdNullRootEntryTableGuid,
-                 0,
-                 NULL,
-                 (VOID **)&RootEntryTable
-                 );
-  if (EFI_ERROR(Status)) {
-    DEBUG ((DEBUG_ERROR, "Locate Null Root Entry Table Ppi Failed : %r\n", Status));
-    ASSERT (FALSE);
-    return;
-  }
-
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
     if ((EngineMask & LShiftU64(1, Index)) == 0) {
       continue;
@@ -686,7 +674,28 @@ EnableVTdTranslationProtectionAll (
     VTdInfo->VtdUnitInfo[Index].ECapReg.Uint64 = MmioRead64 (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress + R_ECAP_REG);
     DumpVtdECapRegs (&VTdInfo->VtdUnitInfo[Index].ECapReg);
 
-    EnableDmarPreMem (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress, (UINTN) *RootEntryTable);
+    if (VTdInfo->VtdUnitInfo[Index].ECapReg.Bits.ADMS == 1) {
+      //
+      // Use Abort DMA Mode
+      //
+      Status = EnableDmarPreMem (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress, V_RTADDR_REG_TTM_ADM);
+    } else {
+      //
+      // Use Null Root Entry Table
+      //
+      Status = PeiServicesLocatePpi (
+                 &gEdkiiVTdNullRootEntryTableGuid,
+                 0,
+                 NULL,
+                 (VOID **)&RootEntryTable
+                 );
+      if (EFI_ERROR(Status)) {
+        DEBUG ((DEBUG_ERROR, "Locate Null Root Entry Table Ppi Failed : %r\n", Status));
+        ASSERT (FALSE);
+        return;
+      }
+      EnableDmarPreMem (VTdInfo->VtdUnitInfo[Index].VtdUnitBaseAddress, (UINTN) *RootEntryTable);
+    }
   }
 
   return;
