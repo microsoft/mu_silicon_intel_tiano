@@ -692,7 +692,7 @@ ProcessDhrd (
     mVtdUnitInformation[VtdIndex].PciDeviceInfo.IncludeAllFlag = TRUE;
     DEBUG ((DEBUG_INFO,"  ProcessDhrd: with INCLUDE ALL\n"));
 
-    Status = ScanPciBus((VOID *)VtdIndex, DmarDrhd->SegmentNumber, 0, ScanBusCallbackRegisterPciDevice);
+    Status = ScanAllPciBus((VOID *)VtdIndex, DmarDrhd->SegmentNumber, ScanBusCallbackRegisterPciDevice);
     if (EFI_ERROR (Status)) {
       return Status;
     }
