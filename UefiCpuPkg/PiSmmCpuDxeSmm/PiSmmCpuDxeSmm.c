@@ -729,8 +729,8 @@ PiCpuSmmEntry (
 
   DEBUG ((DEBUG_INFO, "PcdControlFlowEnforcementPropertyMask = %d\n", PcdGet32 (PcdControlFlowEnforcementPropertyMask)));
   if (PcdGet32 (PcdControlFlowEnforcementPropertyMask) != 0) {
-    AsmCpuid (CPUID_EXTENDED_FUNCTION, &RegEax, NULL, NULL, NULL);
-    if (RegEax > CPUID_EXTENDED_FUNCTION) {
+    AsmCpuid (CPUID_SIGNATURE, &RegEax, NULL, NULL, NULL);
+    if (RegEax >= CPUID_STRUCTURED_EXTENDED_FEATURE_FLAGS) {
       AsmCpuidEx (CPUID_STRUCTURED_EXTENDED_FEATURE_FLAGS, CPUID_STRUCTURED_EXTENDED_FEATURE_FLAGS_SUB_LEAF_INFO, NULL, NULL, &RegEcx, &RegEdx);
       DEBUG ((DEBUG_INFO, "CPUID[7/0] ECX - 0x%08x\n", RegEcx));
       DEBUG ((DEBUG_INFO, "  CET_SS  - 0x%08x\n", RegEcx & CPUID_CET_SS));
@@ -747,6 +747,9 @@ PiCpuSmmEntry (
         AsmCpuidEx(CPUID_EXTENDED_STATE, 12, &RegEax, NULL, &RegEcx, NULL);
         DEBUG ((DEBUG_INFO, "CPUID[D/12] EAX - 0x%08x, ECX - 0x%08x\n", RegEax, RegEcx));
       }
+    } else {
+      mCetSupported = FALSE;
+      PatchInstructionX86(mPatchCetSupported, mCetSupported, 1);
     }
   } else {
     mCetSupported = FALSE;
@@ -858,35 +861,58 @@ PiCpuSmmEntry (
   mSmmStackSize = EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (PcdGet32 (PcdCpuSmmStackSize)));
   if (FeaturePcdGet (PcdCpuSmmStackGuard)) {
     //
-    // 2 more pages is allocated for each processor.
-    // one is guard page and the other is known good stack.
+    // SMM Stack Guard Enabled
+    //   2 more pages is allocated for each processor, one is guard page and the other is known good stack.
     //
-    // +-------------------------------------------+-----+-------------------------------------------+
-    // | Known Good Stack | Guard Page | SMM Stack | ... | Known Good Stack | Guard Page | SMM Stack |
-    // +-------------------------------------------+-----+-------------------------------------------+
-    // |                                           |     |                                           |
-    // |<-------------- Processor 0 -------------->|     |<-------------- Processor n -------------->|
+    // +--------------------------------------------------+-----+--------------------------------------------------+
+    // | Known Good Stack | Guard Page |     SMM Stack    | ... | Known Good Stack | Guard Page |     SMM Stack    |
+    // +--------------------------------------------------+-----+--------------------------------------------------+
+    // |        4K        |    4K       PcdCpuSmmStackSize|     |        4K        |    4K       PcdCpuSmmStackSize|
+    // |<---------------- mSmmStackSize ----------------->|     |<---------------- mSmmStackSize ----------------->|
+    // |                                                  |     |                                                  |
+    // |<------------------ Processor 0 ----------------->|     |<------------------ Processor n ----------------->|
     //
     mSmmStackSize += EFI_PAGES_TO_SIZE (2);
   }
 
   mSmmShadowStackSize = 0;
   if ((PcdGet32 (PcdControlFlowEnforcementPropertyMask) != 0) && mCetSupported) {
-    //
-    // Append Shadow Stack after normal stack
-    //
-    // |= Stacks
-    // +--------------------------------------------------+---------------------------------------------------------------+
-    // | Known Good Stack | Guard Page |    SMM Stack     | Known Good Shadow Stack | Guard Page |    SMM Shadow Stack    |
-    // +--------------------------------------------------+---------------------------------------------------------------+
-    // |                               |PcdCpuSmmStackSize|                                      |PcdCpuSmmShadowStackSize|
-    // |<---------------- mSmmStackSize ----------------->|<--------------------- mSmmShadowStackSize ------------------->|
-    // |                                                                                                                  |
-    // |<-------------------------------------------- Processor N ------------------------------------------------------->|
-    //
     mSmmShadowStackSize = EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (PcdGet32 (PcdCpuSmmShadowStackSize)));
+
     if (FeaturePcdGet (PcdCpuSmmStackGuard)) {
+      //
+      // SMM Stack Guard Enabled
+      // Append Shadow Stack after normal stack
+      //   2 more pages is allocated for each processor, one is guard page and the other is known good shadow stack.
+      //
+      // |= Stacks
+      // +--------------------------------------------------+---------------------------------------------------------------+
+      // | Known Good Stack | Guard Page |    SMM Stack     | Known Good Shadow Stack | Guard Page |    SMM Shadow Stack    |
+      // +--------------------------------------------------+---------------------------------------------------------------+
+      // |         4K       |    4K      |PcdCpuSmmStackSize|            4K           |    4K      |PcdCpuSmmShadowStackSize|
+      // |<---------------- mSmmStackSize ----------------->|<--------------------- mSmmShadowStackSize ------------------->|
+      // |                                                                                                                  |
+      // |<-------------------------------------------- Processor N ------------------------------------------------------->|
+      //
       mSmmShadowStackSize += EFI_PAGES_TO_SIZE (2);
+    } else {
+      //
+      // SMM Stack Guard Disabled (Known Good Stack is still required for potential stack switch.)
+      //   Append Shadow Stack after normal stack with 1 more page as known good shadow stack.
+      //   1 more pages is allocated for each processor, it is known good stack.
+      //
+      //
+      // |= Stacks
+      // +-------------------------------------+--------------------------------------------------+
+      // | Known Good Stack |    SMM Stack     | Known Good Shadow Stack |    SMM Shadow Stack    |
+      // +-------------------------------------+--------------------------------------------------+
+      // |        4K        |PcdCpuSmmStackSize|          4K             |PcdCpuSmmShadowStackSize|
+      // |<---------- mSmmStackSize ---------->|<--------------- mSmmShadowStackSize ------------>|
+      // |                                                                                        |
+      // |<-------------------------------- Processor N ----------------------------------------->|
+      //
+      mSmmShadowStackSize += EFI_PAGES_TO_SIZE (1);
+      mSmmStackSize       += EFI_PAGES_TO_SIZE (1);
     }
   }
 

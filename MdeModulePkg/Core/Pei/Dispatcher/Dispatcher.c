@@ -958,7 +958,7 @@ PeiCheckAndSwitchStack (
   @param PeimFileHandle       Pointer to the FFS file header of the image.
   @param MigratedFileHandle   Pointer to the FFS file header of the migrated image.
 
-  @retval EFI_SUCCESS         Sucessfully migrated the PEIM to permanent memory.
+  @retval EFI_SUCCESS         Successfully migrated the PEIM to permanent memory.
 
 **/
 EFI_STATUS
@@ -993,7 +993,7 @@ MigratePeim (
         AsciiString[Index] = 0;
       }
     }
-    DEBUG ((DEBUG_INFO, "%a", AsciiString));
+    DEBUG ((DEBUG_VERBOSE, "%a", AsciiString));
     DEBUG_CODE_END ();
 
     Pe32Data = (VOID *) ((UINTN) ImageAddress - (UINTN) MigratedFileHandle + (UINTN) FileHandle);
@@ -1055,102 +1055,6 @@ ConvertStatusCodeCallbacks (
     Hob.Raw = GET_NEXT_HOB (Hob);
     Hob.Raw = GetNextGuidHob (&gStatusCodeCallbackGuid, Hob.Raw);
   }
-}
-
-/**
-  Migrates SEC modules in the given firmware volume.
-
-  Migrating SECURITY_CORE files requires special treatment since they are not tracked for PEI dispatch.
-
-  This functioun should be called after the FV has been copied to its post-memory location and the PEI Core FV list has
-  been updated.
-
-  @param Private          Pointer to the PeiCore's private data structure.
-  @param FvIndex          The firmware volume index to migrate.
-  @param OrgFvHandle      The handle to the firmware volume in temporary memory.
-
-  @retval   EFI_SUCCESS           SEC modules were migrated successfully
-  @retval   EFI_INVALID_PARAMETER The Private pointer is NULL or FvCount is invalid.
-  @retval   EFI_NOT_FOUND         Can't find valid FFS header.
-
-**/
-EFI_STATUS
-EFIAPI
-MigrateSecModulesInFv (
-  IN PEI_CORE_INSTANCE    *Private,
-  IN  UINTN               FvIndex,
-  IN  UINTN               OrgFvHandle
-  )
-{
-  EFI_STATUS                  Status;
-  EFI_STATUS                  FindFileStatus;
-  EFI_PEI_FILE_HANDLE         MigratedFileHandle;
-  EFI_PEI_FILE_HANDLE         FileHandle;
-  UINT32                      SectionAuthenticationStatus;
-  UINT32                      FileSize;
-  VOID                        *OrgPe32SectionData;
-  VOID                        *Pe32SectionData;
-  EFI_FFS_FILE_HEADER         *FfsFileHeader;
-  EFI_COMMON_SECTION_HEADER   *Section;
-  BOOLEAN                     IsFfs3Fv;
-  UINTN                       SectionInstance;
-
-  if (Private == NULL || FvIndex >= Private->FvCount) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  do {
-    FindFileStatus =  PeiFfsFindNextFile (
-                        GetPeiServicesTablePointer (),
-                        EFI_FV_FILETYPE_SECURITY_CORE,
-                        Private->Fv[FvIndex].FvHandle,
-                        &MigratedFileHandle
-                        );
-    if (!EFI_ERROR (FindFileStatus ) && MigratedFileHandle != NULL) {
-      FileHandle = (EFI_PEI_FILE_HANDLE) ((UINTN) MigratedFileHandle - (UINTN) Private->Fv[FvIndex].FvHandle + OrgFvHandle);
-      FfsFileHeader = (EFI_FFS_FILE_HEADER *) MigratedFileHandle;
-
-      DEBUG ((DEBUG_VERBOSE, "    Migrating SEC_CORE MigratedFileHandle at 0x%x.\n", (UINTN) MigratedFileHandle));
-      DEBUG ((DEBUG_VERBOSE, "                       FileHandle at 0x%x.\n", (UINTN) FileHandle));
-
-      IsFfs3Fv = CompareGuid (&Private->Fv[FvIndex].FvHeader->FileSystemGuid, &gEfiFirmwareFileSystem3Guid);
-      if (IS_FFS_FILE2 (FfsFileHeader)) {
-        ASSERT (FFS_FILE2_SIZE (FfsFileHeader) > 0x00FFFFFF);
-        if (!IsFfs3Fv) {
-          DEBUG ((DEBUG_ERROR, "It is a FFS3 formatted file: %g in a non-FFS3 formatted FV.\n", &FfsFileHeader->Name));
-          return EFI_NOT_FOUND;
-        }
-        Section = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) FfsFileHeader + sizeof (EFI_FFS_FILE_HEADER2));
-        FileSize = FFS_FILE2_SIZE (FfsFileHeader) - sizeof (EFI_FFS_FILE_HEADER2);
-      } else {
-        Section = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) FfsFileHeader + sizeof (EFI_FFS_FILE_HEADER));
-        FileSize = FFS_FILE_SIZE (FfsFileHeader) - sizeof (EFI_FFS_FILE_HEADER);
-      }
-
-      SectionInstance = 1;
-      SectionAuthenticationStatus = 0;
-      Status = ProcessSection (
-                GetPeiServicesTablePointer (),
-                EFI_SECTION_PE32,
-                &SectionInstance,
-                Section,
-                FileSize,
-                &Pe32SectionData,
-                &SectionAuthenticationStatus,
-                IsFfs3Fv
-                );
-
-      if (!EFI_ERROR (Status)) {
-        OrgPe32SectionData = (VOID *) ((UINTN) Pe32SectionData - (UINTN) MigratedFileHandle + (UINTN) FileHandle);
-        DEBUG ((DEBUG_VERBOSE, "      PE32 section in migrated file at 0x%x.\n", (UINTN) Pe32SectionData));
-        DEBUG ((DEBUG_VERBOSE, "      PE32 section in original file at 0x%x.\n", (UINTN) OrgPe32SectionData));
-        Status = LoadAndRelocatePeCoffImageInPlace (OrgPe32SectionData, Pe32SectionData);
-        ASSERT_EFI_ERROR (Status);
-      }
-    }
-  } while (!EFI_ERROR (FindFileStatus));
-
-  return EFI_SUCCESS;
 }
 
 /**
@@ -1216,7 +1120,7 @@ MigratePeimsInFv (
                          environment, such as the size and location of temporary RAM, the stack location and
                          the BFV location.
 
-  @retval EFI_SUCCESS           Succesfully migrated installed FVs from temporary RAM to permanent memory.
+  @retval EFI_SUCCESS           Successfully migrated installed FVs from temporary RAM to permanent memory.
   @retval EFI_OUT_OF_RESOURCES  Insufficient memory exists to allocate needed pages.
 
 **/
@@ -1231,6 +1135,7 @@ EvacuateTempRam (
   volatile UINTN                FvIndex;
   volatile UINTN                FvChildIndex;
   UINTN                         ChildFvOffset;
+  EFI_PHYSICAL_ADDRESS          FvHeaderAddress;
   EFI_FIRMWARE_VOLUME_HEADER    *FvHeader;
   EFI_FIRMWARE_VOLUME_HEADER    *ChildFvHeader;
   EFI_FIRMWARE_VOLUME_HEADER    *MigratedFvHeader;
@@ -1282,9 +1187,10 @@ EvacuateTempRam (
       Status =  PeiServicesAllocatePages (
                   EfiBootServicesCode,
                   EFI_SIZE_TO_PAGES ((UINTN) FvHeader->FvLength),
-                  (EFI_PHYSICAL_ADDRESS *) &MigratedFvHeader
+                  &FvHeaderAddress
                   );
       ASSERT_EFI_ERROR (Status);
+      MigratedFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)FvHeaderAddress;
 
       //
       // Allocate pool to save the raw PEIMs, which is used to keep consistent context across
@@ -1293,9 +1199,10 @@ EvacuateTempRam (
       Status =  PeiServicesAllocatePages (
                   EfiBootServicesCode,
                   EFI_SIZE_TO_PAGES ((UINTN) FvHeader->FvLength),
-                  (EFI_PHYSICAL_ADDRESS *) &RawDataFvHeader
+                  &FvHeaderAddress
                   );
       ASSERT_EFI_ERROR (Status);
+      RawDataFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)FvHeaderAddress;
 
       DEBUG ((
         DEBUG_VERBOSE,

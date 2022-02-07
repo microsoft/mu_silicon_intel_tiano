@@ -1,7 +1,7 @@
 /** @file
   CPU Features Initialize functions.
 
-  Copyright (c) 2017 - 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2017 - 2021, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -152,10 +152,11 @@ CpuInitDataInitialize (
   ASSERT (AcpiCpuData != NULL);
   CpuFeaturesData->AcpiCpuData= AcpiCpuData;
 
-  CpuStatus = &AcpiCpuData->CpuStatus;
-  Location = AllocateZeroPool (sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus);
+  CpuStatus = &AcpiCpuData->CpuFeatureInitData.CpuStatus;
+  Location = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus));
   ASSERT (Location != NULL);
-  AcpiCpuData->ApLocation = (EFI_PHYSICAL_ADDRESS)(UINTN)Location;
+  ZeroMem (Location, sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus);
+  AcpiCpuData->CpuFeatureInitData.ApLocation = (EFI_PHYSICAL_ADDRESS)(UINTN)Location;
 
   for (ProcessorNumber = 0; ProcessorNumber < NumberOfCpus; ProcessorNumber++) {
     InitOrder = &CpuFeaturesData->InitOrder[ProcessorNumber];
@@ -205,12 +206,14 @@ CpuInitDataInitialize (
   //
   // Collect valid core count in each package because not all cores are valid.
   //
-  ThreadCountPerPackage = AllocateZeroPool (sizeof (UINT32) * CpuStatus->PackageCount);
+  ThreadCountPerPackage = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (UINT32) * CpuStatus->PackageCount));
   ASSERT (ThreadCountPerPackage != NULL);
+  ZeroMem (ThreadCountPerPackage, sizeof (UINT32) * CpuStatus->PackageCount);
   CpuStatus->ThreadCountPerPackage = (EFI_PHYSICAL_ADDRESS)(UINTN)ThreadCountPerPackage;
 
-  ThreadCountPerCore = AllocateZeroPool (sizeof (UINT8) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount);
+  ThreadCountPerCore = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (UINT8) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount));
   ASSERT (ThreadCountPerCore != NULL);
+  ZeroMem (ThreadCountPerCore, sizeof (UINT8) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount);
   CpuStatus->ThreadCountPerCore = (EFI_PHYSICAL_ADDRESS)(UINTN)ThreadCountPerCore;
 
   for (ProcessorNumber = 0; ProcessorNumber < NumberOfCpus; ProcessorNumber++) {
@@ -1131,7 +1134,7 @@ SetProcessorRegister (
   CpuFeaturesData = (CPU_FEATURES_DATA *) Buffer;
   AcpiCpuData = CpuFeaturesData->AcpiCpuData;
 
-  RegisterTables = (CPU_REGISTER_TABLE *)(UINTN)AcpiCpuData->RegisterTable;
+  RegisterTables = (CPU_REGISTER_TABLE *)(UINTN)AcpiCpuData->CpuFeatureInitData.RegisterTable;
 
   InitApicId = GetInitialApicId ();
   RegisterTable = NULL;
@@ -1147,8 +1150,8 @@ SetProcessorRegister (
 
   ProgramProcessorRegister (
     RegisterTable,
-    (EFI_CPU_PHYSICAL_LOCATION *)(UINTN)AcpiCpuData->ApLocation + ProcIndex,
-    &AcpiCpuData->CpuStatus,
+    (EFI_CPU_PHYSICAL_LOCATION *)(UINTN)AcpiCpuData->CpuFeatureInitData.ApLocation + ProcIndex,
+    &AcpiCpuData->CpuFeatureInitData.CpuStatus,
     &CpuFeaturesData->CpuFlags
     );
 }

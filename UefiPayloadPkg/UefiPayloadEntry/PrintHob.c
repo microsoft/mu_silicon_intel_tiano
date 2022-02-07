@@ -10,6 +10,7 @@
 #include <UniversalPayload/ExtraData.h>
 #include <Guid/MemoryTypeInformation.h>
 #include <Guid/AcpiBoardInfoGuid.h>
+#include <Guid/BootManagerMenu.h>
 
 #define ROW_LIMITER 16
 
@@ -195,7 +196,10 @@ PrintResourceDiscriptorHob (
 
 /**
   Print the information in Acpi Guid Hob.
+
   @param[in] HobRaw          A pointer to the start of gUniversalPayloadAcpiTableGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -216,6 +220,8 @@ PrintAcpiGuidHob (
 /**
   Print the information in Serial Guid Hob.
   @param[in] HobRaw          A pointer to the start of gUniversalPayloadSerialPortInfoGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -239,6 +245,7 @@ PrintSerialGuidHob (
 /**
   Print the information in Smbios Guid Hob.
   @param[in] HobRaw          A pointer to the start of gUniversalPayloadSmbios3TableGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -259,6 +266,8 @@ PrintSmbios3GuidHob (
 /**
   Print the information in Smbios Guid Hob.
   @param[in] HobRaw          A pointer to the start of gUniversalPayloadSmbiosTableGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -279,6 +288,8 @@ PrintSmbiosTablGuidHob (
 /**
   Print the information in Acpi BoardInfo Guid Hob.
   @param[in] HobRaw          A pointer to the start of gUefiAcpiBoardInfoGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -306,6 +317,7 @@ PrintAcpiBoardInfoGuidHob (
 /**
   Print the information in Pci RootBridge Info Guid Hob.
   @param[in] HobRaw          A pointer to the start of gUniversalPayloadPciRootBridgeInfoGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
 
   @retval EFI_SUCCESS        If it completed successfully.
 **/
@@ -317,9 +329,11 @@ PrintPciRootBridgeInfoGuidHob (
 {
   UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGES *PciRootBridges;
   UINTN                              Index;
+  UINTN                              Length;
   Index = 0;
   PciRootBridges = (UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGES *) GET_GUID_HOB_DATA (HobRaw);
-  ASSERT (HobLength >= sizeof (UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGES));
+  Length = sizeof (UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGES) + PciRootBridges->Count * sizeof (UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGE);
+  ASSERT (HobLength >= Length);
   DEBUG ((DEBUG_INFO, "   Revision         = 0x%x\n", PciRootBridges->Header.Revision));
   DEBUG ((DEBUG_INFO, "   Length           = 0x%x\n", PciRootBridges->Header.Length));
   DEBUG ((DEBUG_INFO, "   Count            = 0x%x\n", PciRootBridges->Count));
@@ -359,6 +373,8 @@ PrintPciRootBridgeInfoGuidHob (
 /**
   Print the information in Extra Data Guid Hob.
   @param[in]  HobRaw         A pointer to the start of gUniversalPayloadExtraDataGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -369,10 +385,12 @@ PrintExtraDataGuidHob (
 {
   UNIVERSAL_PAYLOAD_EXTRA_DATA *ExtraData;
   UINTN                        Index;
+  UINTN                        Length;
 
   Index     = 0;
   ExtraData = (UNIVERSAL_PAYLOAD_EXTRA_DATA *) GET_GUID_HOB_DATA (HobRaw);
-  ASSERT (HobLength >= ExtraData->Header.Length);
+  Length = sizeof (UNIVERSAL_PAYLOAD_EXTRA_DATA) + ExtraData->Count * sizeof (UNIVERSAL_PAYLOAD_EXTRA_DATA_ENTRY);
+  ASSERT (HobLength >= Length);
   DEBUG ((DEBUG_INFO, "   Revision  = 0x%x\n", ExtraData->Header.Revision));
   DEBUG ((DEBUG_INFO, "   Length    = 0x%x\n", ExtraData->Header.Length));
   DEBUG ((DEBUG_INFO, "   Count     = 0x%x\n", ExtraData->Count));
@@ -389,6 +407,8 @@ PrintExtraDataGuidHob (
 /**
   Print the information in MemoryTypeInfoGuidHob.
   @param[in] HobRaw          A pointer to the start of gEfiMemoryTypeInformationGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+
   @retval EFI_SUCCESS        If it completed successfully.
 **/
 EFI_STATUS
@@ -406,6 +426,28 @@ PrintMemoryTypeInfoGuidHob (
   return EFI_SUCCESS;
 }
 
+/**
+  Print the information in EdkiiBootManagerMenuFileGuid.
+  @param[in] HobRaw          A pointer to the start of gEdkiiBootManagerMenuFileGuid HOB.
+  @param[in] HobLength       The size of the HOB data buffer.
+  @retval EFI_SUCCESS        If it completed successfully.
+**/
+EFI_STATUS
+PrintBootManagerMenuGuidHob (
+  IN  UINT8          *HobRaw,
+  IN  UINT16         HobLength
+  )
+{
+  UNIVERSAL_PAYLOAD_BOOT_MANAGER_MENU *BootManagerMenuFile;
+
+  BootManagerMenuFile = (UNIVERSAL_PAYLOAD_BOOT_MANAGER_MENU *) GET_GUID_HOB_DATA (HobRaw);
+  ASSERT (HobLength >= sizeof (*BootManagerMenuFile));
+  DEBUG ((DEBUG_INFO, "   Revision  = 0x%x\n", BootManagerMenuFile->Header.Revision));
+  DEBUG ((DEBUG_INFO, "   Length    = 0x%x\n", BootManagerMenuFile->Header.Length));
+  DEBUG ((DEBUG_INFO, "   FileName  = %g\n",   &BootManagerMenuFile->FileName));
+  return EFI_SUCCESS;
+}
+
 //
 // Mappint table for dump Guid Hob information.
 // This table can be easily extented.
@@ -418,7 +460,8 @@ GUID_HOB_PRINT_HANDLE GuidHobPrintHandleTable[] = {
   {&gUefiAcpiBoardInfoGuid,                 PrintAcpiBoardInfoGuidHob,     "gUefiAcpiBoardInfoGuid(Acpi Guid)"},
   {&gUniversalPayloadPciRootBridgeInfoGuid, PrintPciRootBridgeInfoGuidHob, "gUniversalPayloadPciRootBridgeInfoGuid(Pci Guid)"},
   {&gEfiMemoryTypeInformationGuid,          PrintMemoryTypeInfoGuidHob,    "gEfiMemoryTypeInformationGuid(Memory Type Information Guid)"},
-  {&gUniversalPayloadExtraDataGuid,         PrintExtraDataGuidHob,         "gUniversalPayloadExtraDataGuid(PayLoad Extra Data Guid)"}
+  {&gUniversalPayloadExtraDataGuid,         PrintExtraDataGuidHob,         "gUniversalPayloadExtraDataGuid(PayLoad Extra Data Guid)"},
+  {&gEdkiiBootManagerMenuFileGuid,          PrintBootManagerMenuGuidHob,   "gEdkiiBootManagerMenuFileGuid(Boot Manager Menu File Guid)"}
 };
 
 /**
@@ -443,7 +486,7 @@ PrintGuidHob (
   for (Index = 0; Index < ARRAY_SIZE (GuidHobPrintHandleTable); Index++) {
     if (CompareGuid (&Hob.Guid->Name, GuidHobPrintHandleTable[Index].Guid)) {
       DEBUG ((DEBUG_INFO, "   Guid   = %a\n", GuidHobPrintHandleTable[Index].GuidName));
-      Status = GuidHobPrintHandleTable[Index].PrintHandler (Hob.Raw, Hob.Header->HobLength);
+      Status = GuidHobPrintHandleTable[Index].PrintHandler (Hob.Raw, GET_GUID_HOB_DATA_SIZE (Hob.Raw));
       return Status;
     }
   }

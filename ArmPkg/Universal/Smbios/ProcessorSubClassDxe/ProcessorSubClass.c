@@ -219,7 +219,7 @@ ConfigureCacheArchitectureInformation (
     CacheSize32 = CacheSize16;
   } else if ((CacheSize64 / 64) < MAX_INT16) {
     CacheSize16 = (1 << 15) | (CacheSize64 / 64);
-    CacheSize32 = CacheSize16;
+    CacheSize32 = (1 << 31) | (CacheSize64 / 64);
   } else {
     if ((CacheSize64 / 1024) <= 2047) {
       CacheSize32 = CacheSize64;
@@ -689,7 +689,7 @@ AddSmbiosProcessorTypeTable (
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "[%a]:[%dL] Smbios Type04 Table Log Failed! %r \n",
-            __FUNCTION__, __LINE__, Status));
+            __FUNCTION__, DEBUG_LINE_NUMBER, Status));
   }
   FreePool (Type4Record);
 
