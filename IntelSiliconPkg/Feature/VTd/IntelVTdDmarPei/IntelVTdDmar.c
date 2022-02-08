@@ -626,7 +626,7 @@ EnableVTdTranslationProtection (
 
     if (VtdUnitInfo->ExtRootEntryTable != 0) {
       DEBUG ((DEBUG_INFO, "EnableVtdDmar (%d) ExtRootEntryTable 0x%x\n", Index, VtdUnitInfo->ExtRootEntryTable));
-      Status = EnableDmar (VtdUnitInfo, VtdUnitInfo->ExtRootEntryTable);
+      Status = EnableDmar (VtdUnitInfo, VtdUnitInfo->ExtRootEntryTable | BIT11);
     } else {
       DEBUG ((DEBUG_INFO, "EnableVtdDmar (%d) RootEntryTable 0x%x\n", Index, VtdUnitInfo->RootEntryTable));
       Status = EnableDmar (VtdUnitInfo, VtdUnitInfo->RootEntryTable);

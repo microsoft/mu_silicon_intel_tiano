@@ -389,7 +389,7 @@ SetupTranslationTable (
         ASSERT(FALSE);
         Status = EFI_UNSUPPORTED;
       } else {
-        Status = CreateExtContextEntry (Index);
+        Status = CreateContextEntry (Index);
       }
     } else {
       if (mVtdUnitInformation[Index].ECapReg.Bits.DEP_24) {
