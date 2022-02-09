@@ -297,7 +297,6 @@ typedef struct {
   UINT64          Low;
   UINT64          High;
 } QI_DESC;
-
 //
 // queued invalidation 256-bit descriptor
 //
@@ -419,7 +418,6 @@ typedef union {
   } Bits;
   UINT64     Uint64[2];
 } VTD_FRCD_REG;
-
 typedef union {
   struct {
     UINT32   IQEI:4;       // Invalidation Queue Error Info

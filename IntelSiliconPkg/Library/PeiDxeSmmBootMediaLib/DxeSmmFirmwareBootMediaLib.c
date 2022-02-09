@@ -17,7 +17,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/FirmwareBootMediaLib.h>
 #include <Library/HobLib.h>
 
-STATIC FW_BOOT_MEDIA_TYPE mFwBootMedia = FwBootMediaMax;
+STATIC FW_BOOT_MEDIA_TYPE  mFwBootMedia = FwBootMediaMax;
 
 /**
   Determines the current platform firmware boot media device.
@@ -30,7 +30,7 @@ STATIC FW_BOOT_MEDIA_TYPE mFwBootMedia = FwBootMediaMax;
 EFI_STATUS
 EFIAPI
 GetFirmwareBootMediaType (
-  OUT FW_BOOT_MEDIA_TYPE   *FwBootMediaType
+  OUT FW_BOOT_MEDIA_TYPE  *FwBootMediaType
   )
 {
   if (mFwBootMedia == FwBootMediaMax) {
@@ -74,22 +74,22 @@ FirmwareBootMediaIsKnown (
 EFI_STATUS
 EFIAPI
 DxeSmmFirmwareBootMediaLibInit (
-  IN EFI_HANDLE         ImageHandle,
-  IN EFI_SYSTEM_TABLE   *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  FW_BOOT_MEDIA_HOB_DATA    *BootMediaHobData;
-  FW_BOOT_MEDIA_TYPE        BootMediaType;
-  EFI_HOB_GUID_TYPE         *GuidHobPtr;
+  FW_BOOT_MEDIA_HOB_DATA  *BootMediaHobData;
+  FW_BOOT_MEDIA_TYPE      BootMediaType;
+  EFI_HOB_GUID_TYPE       *GuidHobPtr;
 
-  GuidHobPtr  = GetFirstGuidHob (&gFirmwareBootMediaHobGuid);
+  GuidHobPtr = GetFirstGuidHob (&gFirmwareBootMediaHobGuid);
   if (GuidHobPtr == NULL) {
     DEBUG ((DEBUG_ERROR, "The firmware boot media HOB does not exist!\n"));
     ASSERT (GuidHobPtr != NULL);
     return EFI_NOT_FOUND;
   }
 
-  BootMediaHobData = (FW_BOOT_MEDIA_HOB_DATA *) GET_GUID_HOB_DATA (GuidHobPtr);
+  BootMediaHobData = (FW_BOOT_MEDIA_HOB_DATA *)GET_GUID_HOB_DATA (GuidHobPtr);
   if (BootMediaHobData == NULL) {
     return EFI_NOT_FOUND;
   }

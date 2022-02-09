@@ -11,19 +11,20 @@
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
+
 #ifndef _PCH_SPI2_PROTOCOL_H_
 #define _PCH_SPI2_PROTOCOL_H_
 
 //
 // Extern the GUID for protocol users.
 //
-extern EFI_GUID                   gPchSpi2ProtocolGuid;
-extern EFI_GUID                   gPchSmmSpi2ProtocolGuid;
+extern EFI_GUID  gPchSpi2ProtocolGuid;
+extern EFI_GUID  gPchSmmSpi2ProtocolGuid;
 
 //
 // Forward reference for ANSI C compatibility
 //
-typedef struct _PCH_SPI2_PROTOCOL  PCH_SPI2_PROTOCOL;
+typedef struct _PCH_SPI2_PROTOCOL PCH_SPI2_PROTOCOL;
 
 //
 // Protocol member functions
@@ -45,7 +46,7 @@ typedef struct _PCH_SPI2_PROTOCOL  PCH_SPI2_PROTOCOL;
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_READ) (
+(EFIAPI *PCH_SPI_FLASH_READ)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     EFI_GUID           *FlashRegionGuid,
   IN     UINT32             Address,
@@ -68,7 +69,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_WRITE) (
+(EFIAPI *PCH_SPI_FLASH_WRITE)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     EFI_GUID           *FlashRegionGuid,
   IN     UINT32             Address,
@@ -90,7 +91,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_ERASE) (
+(EFIAPI *PCH_SPI_FLASH_ERASE)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     EFI_GUID           *FlashRegionGuid,
   IN     UINT32             Address,
@@ -113,7 +114,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_READ_SFDP) (
+(EFIAPI *PCH_SPI_FLASH_READ_SFDP)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     UINT8              ComponentNumber,
   IN     UINT32             Address,
@@ -136,7 +137,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_READ_JEDEC_ID) (
+(EFIAPI *PCH_SPI_FLASH_READ_JEDEC_ID)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     UINT8              ComponentNumber,
   IN     UINT32             ByteCount,
@@ -156,7 +157,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_WRITE_STATUS) (
+(EFIAPI *PCH_SPI_FLASH_WRITE_STATUS)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     UINT32             ByteCount,
   IN     UINT8              *StatusValue
@@ -175,7 +176,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_FLASH_READ_STATUS) (
+(EFIAPI *PCH_SPI_FLASH_READ_STATUS)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     UINT32             ByteCount,
   OUT    UINT8              *StatusValue
@@ -195,7 +196,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_GET_REGION_ADDRESS) (
+(EFIAPI *PCH_SPI_GET_REGION_ADDRESS)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     EFI_GUID           *FlashRegionGuid,
   OUT    UINT32             *BaseAddress,
@@ -218,7 +219,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_READ_PCH_SOFTSTRAP) (
+(EFIAPI *PCH_SPI_READ_PCH_SOFTSTRAP)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     UINT32             SoftStrapAddr,
   IN     UINT32             ByteCount,
@@ -241,7 +242,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *PCH_SPI_READ_CPU_SOFTSTRAP) (
+(EFIAPI *PCH_SPI_READ_CPU_SOFTSTRAP)(
   IN     PCH_SPI2_PROTOCOL  *This,
   IN     UINT32             SoftStrapAddr,
   IN     UINT32             ByteCount,
@@ -258,17 +259,17 @@ struct _PCH_SPI2_PROTOCOL {
     This member specifies the revision of this structure. This field is used to
     indicate backwards compatible changes to the protocol.
   **/
-  UINT8                             Revision;
-  PCH_SPI_FLASH_READ                FlashRead;          ///< Read data from the flash part.
-  PCH_SPI_FLASH_WRITE               FlashWrite;         ///< Write data to the flash part. Remark: Erase may be needed before write to the flash part.
-  PCH_SPI_FLASH_ERASE               FlashErase;         ///< Erase some area on the flash part.
-  PCH_SPI_FLASH_READ_SFDP           FlashReadSfdp;      ///< Read SFDP data from the flash part.
-  PCH_SPI_FLASH_READ_JEDEC_ID       FlashReadJedecId;   ///< Read Jedec Id from the flash part.
-  PCH_SPI_FLASH_WRITE_STATUS        FlashWriteStatus;   ///< Write the status register in the flash part.
-  PCH_SPI_FLASH_READ_STATUS         FlashReadStatus;    ///< Read status register in the flash part.
-  PCH_SPI_GET_REGION_ADDRESS        GetRegionAddress;   ///< Get the SPI region base and size
-  PCH_SPI_READ_PCH_SOFTSTRAP        ReadPchSoftStrap;   ///< Read PCH Soft Strap Values
-  PCH_SPI_READ_CPU_SOFTSTRAP        ReadCpuSoftStrap;   ///< Read CPU Soft Strap Values
+  UINT8                          Revision;
+  PCH_SPI_FLASH_READ             FlashRead;             ///< Read data from the flash part.
+  PCH_SPI_FLASH_WRITE            FlashWrite;            ///< Write data to the flash part. Remark: Erase may be needed before write to the flash part.
+  PCH_SPI_FLASH_ERASE            FlashErase;            ///< Erase some area on the flash part.
+  PCH_SPI_FLASH_READ_SFDP        FlashReadSfdp;         ///< Read SFDP data from the flash part.
+  PCH_SPI_FLASH_READ_JEDEC_ID    FlashReadJedecId;      ///< Read Jedec Id from the flash part.
+  PCH_SPI_FLASH_WRITE_STATUS     FlashWriteStatus;      ///< Write the status register in the flash part.
+  PCH_SPI_FLASH_READ_STATUS      FlashReadStatus;       ///< Read status register in the flash part.
+  PCH_SPI_GET_REGION_ADDRESS     GetRegionAddress;      ///< Get the SPI region base and size
+  PCH_SPI_READ_PCH_SOFTSTRAP     ReadPchSoftStrap;      ///< Read PCH Soft Strap Values
+  PCH_SPI_READ_CPU_SOFTSTRAP     ReadCpuSoftStrap;      ///< Read CPU Soft Strap Values
 };
 
 /**
@@ -278,6 +279,6 @@ struct _PCH_SPI2_PROTOCOL {
   Revision 2:   Identify regions by GUID
 
 **/
-#define PCH_SPI_SERVICES_REVISION       2
+#define PCH_SPI_SERVICES_REVISION  2
 
 #endif

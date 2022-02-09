@@ -11,11 +11,11 @@
 #include <Protocol/Spi2.h>
 #include <Library/DebugLib.h>
 
-extern PCH_SPI2_PROTOCOL   *mSpi2Protocol;
+extern PCH_SPI2_PROTOCOL  *mSpi2Protocol;
 
-extern UINTN mBiosAreaBaseAddress;
-extern UINTN mBiosSize;
-extern UINTN mBiosOffset;
+extern UINTN  mBiosAreaBaseAddress;
+extern UINTN  mBiosSize;
+extern UINTN  mBiosOffset;
 
 /**
   The library constructor.
@@ -37,9 +37,9 @@ SmmSpiFlashCommonLibConstructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS Status;
-  UINT32     BaseAddr;
-  UINT32     RegionSize;
+  EFI_STATUS  Status;
+  UINT32      BaseAddr;
+  UINT32      RegionSize;
 
   mBiosAreaBaseAddress = (UINTN)PcdGet32 (PcdBiosAreaBaseAddress);
   mBiosSize            = (UINTN)PcdGet32 (PcdBiosSize);
@@ -50,7 +50,7 @@ SmmSpiFlashCommonLibConstructor (
   Status = gSmst->SmmLocateProtocol (
                     &gPchSmmSpi2ProtocolGuid,
                     NULL,
-                    (VOID **) &mSpi2Protocol
+                    (VOID **)&mSpi2Protocol
                     );
   ASSERT_EFI_ERROR (Status);
 

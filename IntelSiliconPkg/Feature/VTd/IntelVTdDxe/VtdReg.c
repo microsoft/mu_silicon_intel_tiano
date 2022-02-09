@@ -140,6 +140,7 @@ PerpareCacheInvalidationInterface (
     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   } while ((Reg32 & B_GSTS_REG_QIES) == 0);
 
+
   return EFI_SUCCESS;
 }
 
@@ -684,7 +685,6 @@ EnableDmar (
     // Invalidate the IOTLB cache
     //
     InvalidateIOTLB (Index);
-
     if (TEWasEnabled && (mVtdUnitInformation[Index].ECapReg.Bits.ADMS == 1) && PcdGetBool (PcdVTdSupportAbortDmaMode)) {
       if (mVtdUnitInformation[Index].CapReg.Bits.ESRTPS == 0) {
         ClearGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
@@ -695,7 +695,6 @@ EnableDmar (
       DEBUG((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
       SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
     }
-
     //
     // Enable VTd
     //

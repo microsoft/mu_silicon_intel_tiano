@@ -6,7 +6,6 @@
 
 **/
 
-
 #ifndef __EDKII_DEVICE_SECURITY_POLICY_PROTOCOL_H__
 #define __EDKII_DEVICE_SECURITY_POLICY_PROTOCOL_H__
 
@@ -20,52 +19,52 @@ typedef struct _EDKII_DEVICE_SECURITY_POLICY_PROTOCOL EDKII_DEVICE_SECURITY_POLI
 //          All future revisions must be backwards compatible.
 //          If a future version is not back wards compatible it is not the same GUID.
 //
-#define EDKII_DEVICE_SECURITY_POLICY_PROTOCOL_REVISION 0x00010000
+#define EDKII_DEVICE_SECURITY_POLICY_PROTOCOL_REVISION  0x00010000
 
 //
 // Revision The revision to which the DEVICE_SECURITY_POLICY structure adheres.
 //          All future revisions must be backwards compatible.
 //
-#define EDKII_DEVICE_SECURITY_POLICY_REVISION 0x00010000
+#define EDKII_DEVICE_SECURITY_POLICY_REVISION  0x00010000
 
 ///
 /// The macro for the policy defined in EDKII_DEVICE_SECURITY_POLICY
 ///
-#define EDKII_DEVICE_MEASUREMENT_REQUIRED                 BIT0
-#define EDKII_DEVICE_AUTHENTICATION_REQUIRED              BIT0
+#define EDKII_DEVICE_MEASUREMENT_REQUIRED     BIT0
+#define EDKII_DEVICE_AUTHENTICATION_REQUIRED  BIT0
 
 ///
 /// The device security policy data structure
 ///
 typedef struct {
-  UINT32     Revision;
-  UINT32     MeasurementPolicy;
-  UINT32     AuthenticationPolicy;
+  UINT32    Revision;
+  UINT32    MeasurementPolicy;
+  UINT32    AuthenticationPolicy;
 } EDKII_DEVICE_SECURITY_POLICY;
 
 //
 // Revision The revision to which the DEVICE_SECURITY_STATE structure adheres.
 //          All future revisions must be backwards compatible.
 //
-#define EDKII_DEVICE_SECURITY_STATE_REVISION 0x00010000
+#define EDKII_DEVICE_SECURITY_STATE_REVISION  0x00010000
 
 ///
 /// The macro for the state defined in EDKII_DEVICE_SECURITY_STATE
 ///
-#define EDKII_DEVICE_SECURITY_STATE_SUCCESS                          0
-#define EDKII_DEVICE_SECURITY_STATE_ERROR                            BIT31
-#define EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_UNSUPPORTED           (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x0)
-#define EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_GET_POLICY_PROTOCOL   (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x1)
-#define EDKII_DEVICE_SECURITY_STATE_ERROR_PCI_NO_CAPABILITIES        (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x10)
-#define EDKII_DEVICE_SECURITY_STATE_ERROR_TCG_EXTEND_TPM_PCR         (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x20)
+#define EDKII_DEVICE_SECURITY_STATE_SUCCESS                         0
+#define EDKII_DEVICE_SECURITY_STATE_ERROR                           BIT31
+#define EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_UNSUPPORTED          (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x0)
+#define EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_GET_POLICY_PROTOCOL  (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x1)
+#define EDKII_DEVICE_SECURITY_STATE_ERROR_PCI_NO_CAPABILITIES       (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x10)
+#define EDKII_DEVICE_SECURITY_STATE_ERROR_TCG_EXTEND_TPM_PCR        (EDKII_DEVICE_SECURITY_STATE_ERROR + 0x20)
 
 ///
 /// The device security state data structure
 ///
 typedef struct {
-  UINT32     Revision;
-  UINT32     MeasurementState;
-  UINT32     AuthenticationState;
+  UINT32    Revision;
+  UINT32    MeasurementState;
+  UINT32    AuthenticationState;
 } EDKII_DEVICE_SECURITY_STATE;
 
 /**
@@ -84,7 +83,7 @@ typedef struct {
 **/
 typedef
 EFI_STATUS
-(EFIAPI *EDKII_DEVICE_SECURITY_GET_DEVICE_POLICY) (
+(EFIAPI *EDKII_DEVICE_SECURITY_GET_DEVICE_POLICY)(
   IN  EDKII_DEVICE_SECURITY_POLICY_PROTOCOL  *This,
   IN  EDKII_DEVICE_IDENTIFIER                *DeviceId,
   OUT EDKII_DEVICE_SECURITY_POLICY           *DeviceSecurityPolicy
@@ -111,18 +110,18 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *EDKII_DEVICE_SECURITY_NOTIFY_DEVICE_STATE) (
+(EFIAPI *EDKII_DEVICE_SECURITY_NOTIFY_DEVICE_STATE)(
   IN  EDKII_DEVICE_SECURITY_POLICY_PROTOCOL  *This,
   IN  EDKII_DEVICE_IDENTIFIER                *DeviceId,
   IN  EDKII_DEVICE_SECURITY_STATE            *DeviceSecurityState
   );
 
 struct _EDKII_DEVICE_SECURITY_POLICY_PROTOCOL {
-  UINT32                                      Revision;
-  EDKII_DEVICE_SECURITY_GET_DEVICE_POLICY     GetDevicePolicy;
-  EDKII_DEVICE_SECURITY_NOTIFY_DEVICE_STATE   NotifyDeviceState;
+  UINT32                                       Revision;
+  EDKII_DEVICE_SECURITY_GET_DEVICE_POLICY      GetDevicePolicy;
+  EDKII_DEVICE_SECURITY_NOTIFY_DEVICE_STATE    NotifyDeviceState;
 };
 
-extern EFI_GUID gEdkiiDeviceSecurityPolicyProtocolGuid;
+extern EFI_GUID  gEdkiiDeviceSecurityPolicyProtocolGuid;
 
 #endif
