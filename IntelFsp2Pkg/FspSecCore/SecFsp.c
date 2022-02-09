@@ -200,11 +200,11 @@ FspGlobalDataInit (
     (PeiFspData->FspInfoHeader->ImageRevision >> 24) & 0xFF, \
     (PeiFspData->FspInfoHeader->ImageRevision >> 16) & 0xFF, \
     (PeiFspData->FspInfoHeader->HeaderRevision >= 6) ? \
-      (((PeiFspData->FspInfoHeader->ImageRevision >> 8) & 0xFF) | (PeiFspData->FspInfoHeader->ExtendedImageRevision & 0xFF00)) :\
-        ((PeiFspData->FspInfoHeader->ImageRevision >> 8) & 0xFF), \
+    (((PeiFspData->FspInfoHeader->ImageRevision >> 8) & 0xFF) | (PeiFspData->FspInfoHeader->ExtendedImageRevision & 0xFF00)) : \
+    ((PeiFspData->FspInfoHeader->ImageRevision >> 8) & 0xFF), \
     (PeiFspData->FspInfoHeader->HeaderRevision >= 6) ? \
-      ((PeiFspData->FspInfoHeader->ImageRevision & 0xFF) | ((PeiFspData->FspInfoHeader->ExtendedImageRevision & 0xFF) << 8)): \
-        (PeiFspData->FspInfoHeader->ImageRevision & 0xFF)
+    ((PeiFspData->FspInfoHeader->ImageRevision & 0xFF) | ((PeiFspData->FspInfoHeader->ExtendedImageRevision & 0xFF) << 8)) : \
+    (PeiFspData->FspInfoHeader->ImageRevision & 0xFF)
     ));
 }
 

@@ -21,7 +21,6 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Protocol/Smbios.h>
 
-
 /**
   Adds SMBIOS records to tables
 
@@ -35,16 +34,16 @@
 EFI_STATUS
 EFIAPI
 DxeSmbiosDataHobLibConstructor (
-  IN EFI_HANDLE                ImageHandle,
-  IN EFI_SYSTEM_TABLE          *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_PEI_HOB_POINTERS         Hob;
-  EFI_SMBIOS_HANDLE            SmbiosHandle;
-  EFI_SMBIOS_PROTOCOL          *Smbios;
-  EFI_STATUS                   Status;
-  UINT8                        *RecordPtr;
-  UINT16                       RecordCount;
+  EFI_PEI_HOB_POINTERS  Hob;
+  EFI_SMBIOS_HANDLE     SmbiosHandle;
+  EFI_SMBIOS_PROTOCOL   *Smbios;
+  EFI_STATUS            Status;
+  UINT8                 *RecordPtr;
+  UINT16                RecordCount;
 
   RecordCount = 0;
 
@@ -59,23 +58,23 @@ DxeSmbiosDataHobLibConstructor (
   ///
   /// Get SMBIOS HOB data (each hob contains one SMBIOS record)
   ///
-  for (Hob.Raw = GetHobList (); !END_OF_HOB_LIST(Hob); Hob.Raw = GET_NEXT_HOB (Hob)) {
+  for (Hob.Raw = GetHobList (); !END_OF_HOB_LIST (Hob); Hob.Raw = GET_NEXT_HOB (Hob)) {
     if ((GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_GUID_EXTENSION) && (CompareGuid (&Hob.Guid->Name, &gIntelSmbiosDataHobGuid))) {
       RecordPtr = GET_GUID_HOB_DATA (Hob.Raw);
 
       ///
       /// Add generic SMBIOS HOB to SMBIOS table
       ///
-      DEBUG ((DEBUG_VERBOSE, "Add SMBIOS record type: %x\n", ((EFI_SMBIOS_TABLE_HEADER *) RecordPtr)->Type));
+      DEBUG ((DEBUG_VERBOSE, "Add SMBIOS record type: %x\n", ((EFI_SMBIOS_TABLE_HEADER *)RecordPtr)->Type));
       SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
-      Status = Smbios->Add (Smbios, NULL, &SmbiosHandle, (EFI_SMBIOS_TABLE_HEADER *) RecordPtr);
+      Status       = Smbios->Add (Smbios, NULL, &SmbiosHandle, (EFI_SMBIOS_TABLE_HEADER *)RecordPtr);
       if (!EFI_ERROR (Status)) {
         RecordCount++;
       }
     }
   }
+
   DEBUG ((DEBUG_INFO, "Found %d Records and added to SMBIOS table.\n", RecordCount));
 
   return EFI_SUCCESS;
 }
-

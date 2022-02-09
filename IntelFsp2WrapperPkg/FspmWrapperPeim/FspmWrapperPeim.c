@@ -43,16 +43,15 @@ extern EFI_GUID  gFspHobGuid;
 
   @return FSP-M UPD Data Address
 **/
-
 UINTN
 GetFspmUpdDataAddress (
   VOID
   )
 {
   if (PcdGet64 (PcdFspmUpdDataAddress64) != 0) {
-    return (UINTN) PcdGet64 (PcdFspmUpdDataAddress64);
+    return (UINTN)PcdGet64 (PcdFspmUpdDataAddress64);
   } else {
-    return (UINTN) PcdGet32 (PcdFspmUpdDataAddress);
+    return (UINTN)PcdGet32 (PcdFspmUpdDataAddress);
   }
 }
 
@@ -97,7 +96,7 @@ PeiFspMemoryInit (
     //
     // External UPD is ready, get the buffer from PCD pointer.
     //
-    FspmUpdDataPtr = (FSPM_UPD_COMMON *) GetFspmUpdDataAddress();
+    FspmUpdDataPtr = (FSPM_UPD_COMMON *)GetFspmUpdDataAddress ();
     ASSERT (FspmUpdDataPtr != NULL);
   }
 

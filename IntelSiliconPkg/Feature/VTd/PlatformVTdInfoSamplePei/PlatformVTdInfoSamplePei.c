@@ -29,33 +29,35 @@
 #define R_SA_MCHBAR_VTD1_OFFSET  0x5400  ///< HW UNIT for IGD
 #define R_SA_MCHBAR_VTD2_OFFSET  0x5410  ///< HW UNIT for all other - PEG, USB, SATA etc
 
-EFI_GUID gEdkiiSiliconInitializedPpiGuid = {0x82a72dc8, 0x61ec, 0x403e, {0xb1, 0x5a, 0x8d, 0x7a, 0x3a, 0x71, 0x84, 0x98}};
+EFI_GUID  gEdkiiSiliconInitializedPpiGuid = {
+  0x82a72dc8, 0x61ec, 0x403e, { 0xb1, 0x5a, 0x8d, 0x7a, 0x3a, 0x71, 0x84, 0x98 }
+};
 
 typedef struct {
-  EFI_ACPI_DMAR_HEADER                         DmarHeader;
+  EFI_ACPI_DMAR_HEADER                           DmarHeader;
   //
   // VTd engine 1 - integrated graphic
   //
-  EFI_ACPI_DMAR_DRHD_HEADER                    Drhd1;
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  Drhd11;
-  EFI_ACPI_DMAR_PCI_PATH                       Drhd111;
+  EFI_ACPI_DMAR_DRHD_HEADER                      Drhd1;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER    Drhd11;
+  EFI_ACPI_DMAR_PCI_PATH                         Drhd111;
   //
   // VTd engine 2 - all rest
   //
-  EFI_ACPI_DMAR_DRHD_HEADER                    Drhd2;
+  EFI_ACPI_DMAR_DRHD_HEADER                      Drhd2;
   //
   // RMRR 1 - integrated graphic
   //
-  EFI_ACPI_DMAR_RMRR_HEADER                    Rmrr1;
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  Rmrr11;
-  EFI_ACPI_DMAR_PCI_PATH                       Rmrr111;
+  EFI_ACPI_DMAR_RMRR_HEADER                      Rmrr1;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER    Rmrr11;
+  EFI_ACPI_DMAR_PCI_PATH                         Rmrr111;
 } MY_VTD_INFO_PPI;
 
 MY_VTD_INFO_PPI  mPlatformVTdSample = {
   { // DmarHeader
     { // Header
       EFI_ACPI_4_0_DMA_REMAPPING_TABLE_SIGNATURE,
-      sizeof(MY_VTD_INFO_PPI),
+      sizeof (MY_VTD_INFO_PPI),
       EFI_ACPI_DMAR_REVISION,
     },
     0x26, // HostAddressWidth
@@ -64,84 +66,84 @@ MY_VTD_INFO_PPI  mPlatformVTdSample = {
   { // Drhd1
     { // Header
       EFI_ACPI_DMAR_TYPE_DRHD,
-      sizeof(EFI_ACPI_DMAR_DRHD_HEADER) +
-        sizeof(EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
-        sizeof(EFI_ACPI_DMAR_PCI_PATH)
+      sizeof (EFI_ACPI_DMAR_DRHD_HEADER) +
+      sizeof (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
+      sizeof (EFI_ACPI_DMAR_PCI_PATH)
     },
-    0, // Flags
-    0, // Reserved
-    0, // SegmentNumber
+    0,         // Flags
+    0,         // Reserved
+    0,         // SegmentNumber
     0xFED90000 // RegisterBaseAddress -- TO BE PATCHED
   },
   { // Drhd11
     EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT,
-    sizeof(EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
-      sizeof(EFI_ACPI_DMAR_PCI_PATH),
+    sizeof (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
+    sizeof (EFI_ACPI_DMAR_PCI_PATH),
     0, // Reserved2
     0, // EnumerationId
     0  // StartBusNumber
   },
-  { // Drhd111
-    2,  // Device
-    0   // Function
+  {    // Drhd111
+    2, // Device
+    0  // Function
   },
 
   { // Drhd2
     { // Header
       EFI_ACPI_DMAR_TYPE_DRHD,
-      sizeof(EFI_ACPI_DMAR_DRHD_HEADER)
+      sizeof (EFI_ACPI_DMAR_DRHD_HEADER)
     },
     EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL, // Flags
-    0, // Reserved
-    0, // SegmentNumber
-    0xFED91000 // RegisterBaseAddress -- TO BE PATCHED
+    0,                                        // Reserved
+    0,                                        // SegmentNumber
+    0xFED91000                                // RegisterBaseAddress -- TO BE PATCHED
   },
 
   { // Rmrr1
     { // Header
       EFI_ACPI_DMAR_TYPE_RMRR,
-      sizeof(EFI_ACPI_DMAR_RMRR_HEADER) +
-        sizeof(EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
-        sizeof(EFI_ACPI_DMAR_PCI_PATH)
+      sizeof (EFI_ACPI_DMAR_RMRR_HEADER) +
+      sizeof (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
+      sizeof (EFI_ACPI_DMAR_PCI_PATH)
     },
-    {0}, // Reserved
-    0, // SegmentNumber
-    0x0, // ReservedMemoryRegionBaseAddress -- TO BE PATCHED
-    0x0 // ReservedMemoryRegionLimitAddress -- TO BE PATCHED
+    { 0 }, // Reserved
+    0,     // SegmentNumber
+    0x0,   // ReservedMemoryRegionBaseAddress -- TO BE PATCHED
+    0x0    // ReservedMemoryRegionLimitAddress -- TO BE PATCHED
   },
   { // Rmrr11
     EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT,
-    sizeof(EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
-      sizeof(EFI_ACPI_DMAR_PCI_PATH),
+    sizeof (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
+    sizeof (EFI_ACPI_DMAR_PCI_PATH),
     0, // Reserved2
     0, // EnumerationId
     0  // StartBusNumber
   },
-  { // Rmrr111
-    2,  // Device
-    0   // Function
+  {    // Rmrr111
+    2, // Device
+    0  // Function
   },
 };
 
-EFI_PEI_PPI_DESCRIPTOR mPlatformVTdInfoSampleDesc = {
+EFI_PEI_PPI_DESCRIPTOR  mPlatformVTdInfoSampleDesc = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEdkiiVTdInfoPpiGuid,
   &mPlatformVTdSample
 };
 
 typedef struct {
-  EFI_ACPI_DMAR_HEADER                         DmarHeader;
+  EFI_ACPI_DMAR_HEADER         DmarHeader;
   //
   // VTd engine 2 - all rest
   //
-  EFI_ACPI_DMAR_DRHD_HEADER                    Drhd2;
+  EFI_ACPI_DMAR_DRHD_HEADER    Drhd2;
 } MY_VTD_INFO_NO_IGD_PPI;
 
 MY_VTD_INFO_NO_IGD_PPI  mPlatformVTdNoIgdSample = {
   { // DmarHeader
     { // Header
       EFI_ACPI_4_0_DMA_REMAPPING_TABLE_SIGNATURE,
-      sizeof(MY_VTD_INFO_NO_IGD_PPI),
+      sizeof (MY_VTD_INFO_NO_IGD_PPI),
       EFI_ACPI_DMAR_REVISION,
     },
     0x26, // HostAddressWidth
@@ -150,25 +152,25 @@ MY_VTD_INFO_NO_IGD_PPI  mPlatformVTdNoIgdSample = {
   { // Drhd2
     { // Header
       EFI_ACPI_DMAR_TYPE_DRHD,
-      sizeof(EFI_ACPI_DMAR_DRHD_HEADER)
+      sizeof (EFI_ACPI_DMAR_DRHD_HEADER)
     },
     EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL, // Flags
-    0, // Reserved
-    0, // SegmentNumber
-    0xFED91000 // RegisterBaseAddress -- TO BE PATCHED
+    0,                                        // Reserved
+    0,                                        // SegmentNumber
+    0xFED91000                                // RegisterBaseAddress -- TO BE PATCHED
   },
 };
 
-EFI_PEI_PPI_DESCRIPTOR mPlatformVTdNoIgdInfoSampleDesc = {
+EFI_PEI_PPI_DESCRIPTOR  mPlatformVTdNoIgdInfoSampleDesc = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEdkiiVTdInfoPpiGuid,
   &mPlatformVTdNoIgdSample
 };
 
 // BIOS uses TE with a null root entry table to block VT-d engine access to block any DMA traffic in pre-memory phase.
-EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI mNullRootEntryTable = 0xFED20000;
+EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI  mNullRootEntryTable = 0xFED20000;
 
-EFI_PEI_PPI_DESCRIPTOR mPlatformNullRootEntryTableDesc = {
+EFI_PEI_PPI_DESCRIPTOR  mPlatformNullRootEntryTableDesc = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEdkiiVTdNullRootEntryTableGuid,
   &mNullRootEntryTable
@@ -183,12 +185,12 @@ InitGlobalVtd (
   VOID
   )
 {
-  UINT32              MchBar;
+  UINT32  MchBar;
 
   DEBUG ((DEBUG_INFO, "InitGlobalVtd\n"));
 
-  MchBar = PciRead32 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_MCHBAR)) & ~BIT0;
-  PciWrite32 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_MCHBAR), 0xFED10000 | BIT0);
+  MchBar = PciRead32 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_MCHBAR)) & ~BIT0;
+  PciWrite32 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_MCHBAR), 0xFED10000 | BIT0);
   DEBUG ((DEBUG_INFO, "MchBar - %x\n", MchBar));
 
   MmioWrite32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET, (UINT32)mPlatformVTdSample.Drhd2.RegisterBaseAddress | 1);
@@ -215,17 +217,17 @@ PatchDmar (
 
   DEBUG ((DEBUG_INFO, "PatchDmar\n"));
 
-  if (PciRead16 (PCI_LIB_ADDRESS(0, 2, 0, 0)) != 0xFFFF) {
-    PlatformVTdSample = AllocateCopyPool (sizeof(MY_VTD_INFO_PPI), &mPlatformVTdSample);
-    ASSERT(PlatformVTdSample != NULL);
-    PlatformVTdInfoSampleDesc = AllocateCopyPool (sizeof(EFI_PEI_PPI_DESCRIPTOR), &mPlatformVTdInfoSampleDesc);
-    ASSERT(PlatformVTdInfoSampleDesc != NULL);
+  if (PciRead16 (PCI_LIB_ADDRESS (0, 2, 0, 0)) != 0xFFFF) {
+    PlatformVTdSample = AllocateCopyPool (sizeof (MY_VTD_INFO_PPI), &mPlatformVTdSample);
+    ASSERT (PlatformVTdSample != NULL);
+    PlatformVTdInfoSampleDesc = AllocateCopyPool (sizeof (EFI_PEI_PPI_DESCRIPTOR), &mPlatformVTdInfoSampleDesc);
+    ASSERT (PlatformVTdInfoSampleDesc != NULL);
     PlatformVTdInfoSampleDesc->Ppi = PlatformVTdSample;
 
     ///
     /// Calculate IGD memsize
     ///
-    IgdMode = ((PciRead16 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_GGC)) & B_SKL_SA_GGC_GMS_MASK) >> N_SKL_SA_GGC_GMS_OFFSET) & 0xFF;
+    IgdMode = ((PciRead16 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_GGC)) & B_SKL_SA_GGC_GMS_MASK) >> N_SKL_SA_GGC_GMS_OFFSET) & 0xFF;
     if (IgdMode < 0xF0) {
       IgdMemSize = IgdMode * 32 * (1024) * (1024);
     } else {
@@ -236,24 +238,25 @@ PatchDmar (
     /// Calculate GTT mem size
     ///
     GttMemSize = 0;
-    GttMode = (PciRead16 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_GGC)) & B_SKL_SA_GGC_GGMS_MASK) >> N_SKL_SA_GGC_GGMS_OFFSET;
+    GttMode    = (PciRead16 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_GGC)) & B_SKL_SA_GGC_GGMS_MASK) >> N_SKL_SA_GGC_GGMS_OFFSET;
     if (GttMode <= V_SKL_SA_GGC_GGMS_8MB) {
       GttMemSize = (1 << GttMode) * (1024) * (1024);
     }
 
-    PlatformVTdSample->Rmrr1.ReservedMemoryRegionBaseAddress  = (PciRead32 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_TOLUD)) & ~(0x01)) - IgdMemSize - GttMemSize;
+    PlatformVTdSample->Rmrr1.ReservedMemoryRegionBaseAddress  = (PciRead32 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_TOLUD)) & ~(0x01)) - IgdMemSize - GttMemSize;
     PlatformVTdSample->Rmrr1.ReservedMemoryRegionLimitAddress = PlatformVTdSample->Rmrr1.ReservedMemoryRegionBaseAddress + IgdMemSize + GttMemSize - 1;
 
     ///
     /// Update DRHD structures of DmarTable
     ///
-    MchBar = PciRead32 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_MCHBAR)) & ~BIT0;
+    MchBar = PciRead32 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_MCHBAR)) & ~BIT0;
 
     if ((MmioRead32 (MchBar + R_SA_MCHBAR_VTD1_OFFSET) &~1) != 0) {
       PlatformVTdSample->Drhd1.RegisterBaseAddress = (MmioRead32 (MchBar + R_SA_MCHBAR_VTD1_OFFSET) &~1);
     } else {
       MmioWrite32 (MchBar + R_SA_MCHBAR_VTD1_OFFSET, (UINT32)PlatformVTdSample->Drhd1.RegisterBaseAddress | 1);
     }
+
     DEBUG ((DEBUG_INFO, "VTd1 - %x\n", (MmioRead32 (MchBar + R_SA_MCHBAR_VTD1_OFFSET))));
 
     if ((MmioRead32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET) &~1) != 0) {
@@ -261,26 +264,28 @@ PatchDmar (
     } else {
       MmioWrite32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET, (UINT32)PlatformVTdSample->Drhd2.RegisterBaseAddress | 1);
     }
+
     DEBUG ((DEBUG_INFO, "VTd2 - %x\n", (MmioRead32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET))));
 
     return PlatformVTdInfoSampleDesc;
   } else {
-    PlatformVTdNoIgdSample = AllocateCopyPool (sizeof(MY_VTD_INFO_NO_IGD_PPI), &mPlatformVTdNoIgdSample);
-    ASSERT(PlatformVTdNoIgdSample != NULL);
-    PlatformVTdNoIgdInfoSampleDesc = AllocateCopyPool (sizeof(EFI_PEI_PPI_DESCRIPTOR), &mPlatformVTdNoIgdInfoSampleDesc);
-    ASSERT(PlatformVTdNoIgdInfoSampleDesc != NULL);
+    PlatformVTdNoIgdSample = AllocateCopyPool (sizeof (MY_VTD_INFO_NO_IGD_PPI), &mPlatformVTdNoIgdSample);
+    ASSERT (PlatformVTdNoIgdSample != NULL);
+    PlatformVTdNoIgdInfoSampleDesc = AllocateCopyPool (sizeof (EFI_PEI_PPI_DESCRIPTOR), &mPlatformVTdNoIgdInfoSampleDesc);
+    ASSERT (PlatformVTdNoIgdInfoSampleDesc != NULL);
     PlatformVTdNoIgdInfoSampleDesc->Ppi = PlatformVTdNoIgdSample;
 
     ///
     /// Update DRHD structures of DmarTable
     ///
-    MchBar = PciRead32 (PCI_LIB_ADDRESS(0, 0, 0, R_SA_MCHBAR)) & ~BIT0;
+    MchBar = PciRead32 (PCI_LIB_ADDRESS (0, 0, 0, R_SA_MCHBAR)) & ~BIT0;
 
     if ((MmioRead32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET) &~1) != 0) {
       PlatformVTdNoIgdSample->Drhd2.RegisterBaseAddress = (MmioRead32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET) &~1);
     } else {
       MmioWrite32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET, (UINT32)PlatformVTdNoIgdSample->Drhd2.RegisterBaseAddress | 1);
     }
+
     DEBUG ((DEBUG_INFO, "VTd2 - %x\n", (MmioRead32 (MchBar + R_SA_MCHBAR_VTD2_OFFSET))));
 
     return PlatformVTdNoIgdInfoSampleDesc;
@@ -305,8 +310,8 @@ SiliconInitializedPpiNotifyCallback (
   IN VOID                       *Ppi
   )
 {
-  EFI_STATUS               Status;
-  EFI_PEI_PPI_DESCRIPTOR   *PpiDesc;
+  EFI_STATUS              Status;
+  EFI_PEI_PPI_DESCRIPTOR  *PpiDesc;
 
   PpiDesc = PatchDmar ();
 
@@ -315,10 +320,10 @@ SiliconInitializedPpiNotifyCallback (
   return EFI_SUCCESS;
 }
 
-EFI_PEI_NOTIFY_DESCRIPTOR mSiliconInitializedNotifyList = {
+EFI_PEI_NOTIFY_DESCRIPTOR  mSiliconInitializedNotifyList = {
   (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEdkiiSiliconInitializedPpiGuid,
-  (EFI_PEIM_NOTIFY_ENTRY_POINT) SiliconInitializedPpiNotifyCallback
+  (EFI_PEIM_NOTIFY_ENTRY_POINT)SiliconInitializedPpiNotifyCallback
 };
 
 /**
@@ -336,10 +341,10 @@ PlatformVTdInfoSampleInitialize (
   IN CONST EFI_PEI_SERVICES     **PeiServices
   )
 {
-  EFI_STATUS               Status;
-  BOOLEAN                  SiliconInitialized;
-  VOID                     *SiliconInitializedPpi;
-  EFI_PEI_PPI_DESCRIPTOR   *PpiDesc;
+  EFI_STATUS              Status;
+  BOOLEAN                 SiliconInitialized;
+  VOID                    *SiliconInitializedPpi;
+  EFI_PEI_PPI_DESCRIPTOR  *PpiDesc;
 
   SiliconInitialized = FALSE;
   //
@@ -351,7 +356,7 @@ PlatformVTdInfoSampleInitialize (
              NULL,
              &SiliconInitializedPpi
              );
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     SiliconInitialized = TRUE;
   }
 

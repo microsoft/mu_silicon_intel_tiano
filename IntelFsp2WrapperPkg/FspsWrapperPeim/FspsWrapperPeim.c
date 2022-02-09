@@ -186,16 +186,15 @@ FspSiliconInitDoneGetFspHobList (
 
   @return FSP-S UPD Data Address
 **/
-
 UINTN
 GetFspsUpdDataAddress (
   VOID
   )
 {
   if (PcdGet64 (PcdFspsUpdDataAddress64) != 0) {
-    return (UINTN) PcdGet64 (PcdFspsUpdDataAddress64);
+    return (UINTN)PcdGet64 (PcdFspsUpdDataAddress64);
   } else {
-    return (UINTN) PcdGet32 (PcdFspsUpdDataAddress);
+    return (UINTN)PcdGet32 (PcdFspsUpdDataAddress);
   }
 }
 
@@ -310,7 +309,7 @@ PeiMemoryDiscoveredNotify (
     SourceData = (UINTN *)((UINTN)FspsHeaderPtr->ImageBase + (UINTN)FspsHeaderPtr->CfgRegionOffset);
     CopyMem (FspsUpdDataPtr, SourceData, (UINTN)FspsHeaderPtr->CfgRegionSize);
   } else {
-    FspsUpdDataPtr = (FSPS_UPD_COMMON *) GetFspsUpdDataAddress();
+    FspsUpdDataPtr = (FSPS_UPD_COMMON *)GetFspsUpdDataAddress ();
     ASSERT (FspsUpdDataPtr != NULL);
   }
 

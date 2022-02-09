@@ -10,15 +10,16 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "SpiFvbServiceCommon.h"
 
-#define FIRMWARE_BLOCK_SIZE         0x10000
-#define FVB_MEDIA_BLOCK_SIZE        FIRMWARE_BLOCK_SIZE
+#define FIRMWARE_BLOCK_SIZE   0x10000
+#define FVB_MEDIA_BLOCK_SIZE  FIRMWARE_BLOCK_SIZE
 typedef struct {
-  EFI_PHYSICAL_ADDRESS        BaseAddress;
-  EFI_FIRMWARE_VOLUME_HEADER  FvbInfo;
-  EFI_FV_BLOCK_MAP_ENTRY      End[1];
+  EFI_PHYSICAL_ADDRESS          BaseAddress;
+  EFI_FIRMWARE_VOLUME_HEADER    FvbInfo;
+  EFI_FV_BLOCK_MAP_ENTRY        End[1];
 } EFI_FVB2_MEDIA_INFO;
 
 // MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
+
 /**
   Returns FVB media information for NV variable storage.
 
@@ -30,7 +31,7 @@ typedef struct {
 typedef
 EFI_STATUS
 (*FVB_MEDIA_INFO_GENERATOR)(
-  OUT EFI_FVB2_MEDIA_INFO     *FvbMediaInfo
+  OUT EFI_FVB2_MEDIA_INFO  *FvbMediaInfo
   );
 
 /**
@@ -43,7 +44,7 @@ EFI_STATUS
 **/
 EFI_STATUS
 GenerateNvStorageFvbMediaInfo (
-  OUT EFI_FVB2_MEDIA_INFO     *FvbMediaInfo
+  OUT EFI_FVB2_MEDIA_INFO  *FvbMediaInfo
   )
 {
   EFI_STATUS                  Status;
@@ -51,21 +52,21 @@ GenerateNvStorageFvbMediaInfo (
   UINT64                      TotalNvVariableStorageSize;
   EFI_PHYSICAL_ADDRESS        NvStorageBaseAddress;
   EFI_FIRMWARE_VOLUME_HEADER  FvbInfo = {
-                                          {0,},                                   //ZeroVector[16]
-                                          EFI_SYSTEM_NV_DATA_FV_GUID,             //FileSystemGuid
-                                          0,                                      //FvLength
-                                          EFI_FVH_SIGNATURE,                      //Signature
-                                          0x0004feff,                             //Attributes
-                                          sizeof (EFI_FIRMWARE_VOLUME_HEADER) +   //HeaderLength
-                                            sizeof (EFI_FV_BLOCK_MAP_ENTRY),
-                                          0,                                      //Checksum
-                                          0,                                      //ExtHeaderOffset
-                                          {0,},                                   //Reserved[1]
-                                          2,                                      //Revision
-                                          {                                       //BlockMap[1]
-                                            {0,0}
-                                          }
-                                        };
+    { 0,   },                                                                     // ZeroVector[16]
+    EFI_SYSTEM_NV_DATA_FV_GUID,                                                   // FileSystemGuid
+    0,                                                                            // FvLength
+    EFI_FVH_SIGNATURE,                                                            // Signature
+    0x0004feff,                                                                   // Attributes
+    sizeof (EFI_FIRMWARE_VOLUME_HEADER) +                                         // HeaderLength
+    sizeof (EFI_FV_BLOCK_MAP_ENTRY),
+    0,                                                                            // Checksum
+    0,                                                                            // ExtHeaderOffset
+    { 0,   },                                                                     // Reserved[1]
+    2,                                                                            // Revision
+    {                                                                             // BlockMap[1]
+      { 0, 0 }
+    }
+  };
 
   if (FvbMediaInfo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -84,9 +85,9 @@ GenerateNvStorageFvbMediaInfo (
     return EFI_UNSUPPORTED;
   }
 
-  FvbInfo.FvLength = (UINT64)(NvBlockNum * FVB_MEDIA_BLOCK_SIZE);
+  FvbInfo.FvLength              = (UINT64)(NvBlockNum * FVB_MEDIA_BLOCK_SIZE);
   FvbInfo.BlockMap[0].NumBlocks = NvBlockNum;
-  FvbInfo.BlockMap[0].Length = FVB_MEDIA_BLOCK_SIZE;
+  FvbInfo.BlockMap[0].Length    = FVB_MEDIA_BLOCK_SIZE;
 
   FvbMediaInfo->BaseAddress = NvStorageBaseAddress;
   CopyMem (&FvbMediaInfo->FvbInfo, &FvbInfo, sizeof (FvbInfo));
@@ -94,20 +95,20 @@ GenerateNvStorageFvbMediaInfo (
   return EFI_SUCCESS;
 }
 
-FVB_MEDIA_INFO_GENERATOR mFvbMediaInfoGenerators[] = {
+FVB_MEDIA_INFO_GENERATOR  mFvbMediaInfoGenerators[] = {
   GenerateNvStorageFvbMediaInfo
 };
 // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
 
 EFI_STATUS
 GetFvbInfo (
-  IN  EFI_PHYSICAL_ADDRESS         FvBaseAddress,
-  OUT EFI_FIRMWARE_VOLUME_HEADER   **FvbInfo
+  IN  EFI_PHYSICAL_ADDRESS        FvBaseAddress,
+  OUT EFI_FIRMWARE_VOLUME_HEADER  **FvbInfo
   )
 {
   // MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
-  EFI_STATUS                  Status;
-  EFI_FVB2_MEDIA_INFO         FvbMediaInfo;
+  EFI_STATUS           Status;
+  EFI_FVB2_MEDIA_INFO  FvbMediaInfo;
   // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
   UINTN                       Index;
   EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
@@ -118,11 +119,11 @@ GetFvbInfo (
     ASSERT_EFI_ERROR (Status);
     if (!EFI_ERROR (Status) && (FvbMediaInfo.BaseAddress == FvBaseAddress)) {
       FvHeader = &FvbMediaInfo.FvbInfo;
-  // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
+      // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
       //
       // Update the checksum value of FV header.
       //
-      FvHeader->Checksum = CalculateCheckSum16 ( (UINT16 *) FvHeader, FvHeader->HeaderLength);
+      FvHeader->Checksum = CalculateCheckSum16 ((UINT16 *)FvHeader, FvHeader->HeaderLength);
 
       *FvbInfo = FvHeader;
 
@@ -138,5 +139,6 @@ GetFvbInfo (
       return EFI_SUCCESS;
     }
   }
+
   return EFI_NOT_FOUND;
 }
