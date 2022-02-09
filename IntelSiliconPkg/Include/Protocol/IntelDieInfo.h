@@ -5,22 +5,23 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
+
 #ifndef _DIE_INFO_PROTOCOL_H_
 #define _DIE_INFO_PROTOCOL_H_
 
 typedef struct _EDKII_INTEL_DIE_INFO_PROTOCOL  EDKII_INTEL_DIE_INFO_PROTOCOL;
-typedef EDKII_INTEL_DIE_INFO_PROTOCOL  EDKII_INTEL_DIE_INFO_PPI;
+typedef EDKII_INTEL_DIE_INFO_PROTOCOL          EDKII_INTEL_DIE_INFO_PPI;
 
-extern EFI_GUID gIntelDieInfoProtocolGuid;
-extern EFI_GUID gIntelDieInfoPpiGuid;
+extern EFI_GUID  gIntelDieInfoProtocolGuid;
+extern EFI_GUID  gIntelDieInfoPpiGuid;
 
-extern EFI_GUID gIntelDieInfoPchGuid;
-extern EFI_GUID gIntelDieInfoSocGuid;
-extern EFI_GUID gIntelDieInfoIoGuid;
-extern EFI_GUID gIntelDieInfoCpuGuid;
-extern EFI_GUID gIntelDieInfoGfxGuid;
+extern EFI_GUID  gIntelDieInfoPchGuid;
+extern EFI_GUID  gIntelDieInfoSocGuid;
+extern EFI_GUID  gIntelDieInfoIoGuid;
+extern EFI_GUID  gIntelDieInfoCpuGuid;
+extern EFI_GUID  gIntelDieInfoGfxGuid;
 
-#define DIE_INFO_PROTOCOL_REVISION 1
+#define DIE_INFO_PROTOCOL_REVISION  1
 
 /**
   Returns pointer to constant string representing die name.
@@ -30,8 +31,8 @@ extern EFI_GUID gIntelDieInfoGfxGuid;
   @retval Pointer to the const string
 **/
 typedef
-CONST CHAR8*
-(EFIAPI *EDKII_INTEL_DIE_INFO_GET_DIE_NAME_STR) (
+CONST CHAR8 *
+(EFIAPI *EDKII_INTEL_DIE_INFO_GET_DIE_NAME_STR)(
   IN EDKII_INTEL_DIE_INFO_PROTOCOL  *This
   );
 
@@ -42,8 +43,8 @@ CONST CHAR8*
   @retval Pointer to the const string
 **/
 typedef
-CONST CHAR8*
-(EFIAPI *EDKII_INTEL_DIE_INFO_GET_STEPPING_STR) (
+CONST CHAR8 *
+(EFIAPI *EDKII_INTEL_DIE_INFO_GET_STEPPING_STR)(
   IN EDKII_INTEL_DIE_INFO_PROTOCOL  *This
   );
 
@@ -54,8 +55,8 @@ CONST CHAR8*
   @retval Pointer to the const string
 **/
 typedef
-CONST CHAR8*
-(EFIAPI *EDKII_INTEL_DIE_INFO_GET_SKU_STR) (
+CONST CHAR8 *
+(EFIAPI *EDKII_INTEL_DIE_INFO_GET_SKU_STR)(
   IN EDKII_INTEL_DIE_INFO_PROTOCOL  *This
   );
 
@@ -68,27 +69,31 @@ CONST CHAR8*
    - Initial version.
 **/
 struct _EDKII_INTEL_DIE_INFO_PROTOCOL {
-  UINT32                                 Revision; ///< Current protocol revision
+  UINT32                                   Revision; ///< Current protocol revision
+
   /**
     Type of the die that particular instance is reffering to.
   **/
-  EFI_GUID                               Type;
+  EFI_GUID                                 Type;
+
   /**
     Index of the die in the package.
   **/
-  UINT32                                 DieIndex;
+  UINT32                                   DieIndex;
+
   /**
     Unique ID specific to the die and the associated generation.
   **/
-  UINT64                                 DieId;
+  UINT64                                   DieId;
+
   /**
     Generation and die specific stepping ID.
   **/
-  UINT32                                 SteppingId;
+  UINT32                                   SteppingId;
 
-  EDKII_INTEL_DIE_INFO_GET_DIE_NAME_STR  GetNameStr;
-  EDKII_INTEL_DIE_INFO_GET_STEPPING_STR  GetSteppingStr;
-  EDKII_INTEL_DIE_INFO_GET_SKU_STR       GetSkuStr;
+  EDKII_INTEL_DIE_INFO_GET_DIE_NAME_STR    GetNameStr;
+  EDKII_INTEL_DIE_INFO_GET_STEPPING_STR    GetSteppingStr;
+  EDKII_INTEL_DIE_INFO_GET_SKU_STR         GetSkuStr;
 };
 
 #endif // _DIE_INFO_PROTOCOL_H_

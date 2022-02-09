@@ -17,11 +17,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // This library was designed with advanced unit-test features.
 // This define handles the configuration.
 #ifdef INTERNAL_UNIT_TEST
-#undef STATIC
+  #undef STATIC
 #define STATIC    // Nothing...
 #endif
 
-#define     MIN_FIT_ADDRESS        (UINT32)0xFF000000      // This is just a sanity check to make sure the FIT is in top 16MB
+#define     MIN_FIT_ADDRESS  (UINT32)0xFF000000            // This is just a sanity check to make sure the FIT is in top 16MB
 
 /**
   Internal helper that uses the FIT_POINTER_ADDRESS to locate the base
@@ -31,14 +31,15 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 STATIC
-CONST FIRMWARE_INTERFACE_TABLE_ENTRY*
+CONST FIRMWARE_INTERFACE_TABLE_ENTRY *
 InternalGetFitBase (
   VOID
   )
 {
-  UINT32    *FitBase;
-  FitBase = (UINT32*)(UINTN)FIT_POINTER_ADDRESS;
-  return (FIRMWARE_INTERFACE_TABLE_ENTRY*)(UINTN)*FitBase;
+  UINT32  *FitBase;
+
+  FitBase = (UINT32 *)(UINTN)FIT_POINTER_ADDRESS;
+  return (FIRMWARE_INTERFACE_TABLE_ENTRY *)(UINTN)*FitBase;
 }
 
 /**
@@ -55,10 +56,10 @@ InternalGetFitBase (
 STATIC
 EFI_STATUS
 InternalGetFitRecord (
-  IN CONST FIRMWARE_INTERFACE_TABLE_ENTRY   *FitBase,
-  IN UINT8                                  RecordType,
-  IN UINT16                                 RecordIndex,
-  OUT FIT_QUERY_RESULT                      *Result
+  IN CONST FIRMWARE_INTERFACE_TABLE_ENTRY  *FitBase,
+  IN UINT8                                 RecordType,
+  IN UINT16                                RecordIndex,
+  OUT FIT_QUERY_RESULT                     *Result
   )
 {
   EFI_STATUS  Status;
@@ -67,12 +68,12 @@ InternalGetFitRecord (
 
   // Check some quick parameters.
   ASSERT (FitBase != NULL);
-  if (Result == NULL || FitBase == NULL) {
+  if ((Result == NULL) || (FitBase == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   // Check to make sure the requested record type is valid.
-  if (RecordType < FIT_TYPE_PLAT_MIN || RecordType > FIT_TYPE_PLAT_MAX) {
+  if ((RecordType < FIT_TYPE_PLAT_MIN) || (RecordType > FIT_TYPE_PLAT_MAX)) {
     switch (RecordType) {
       case FIT_TYPE_00_HEADER:
       case FIT_TYPE_01_MICROCODE:
@@ -98,15 +99,15 @@ InternalGetFitRecord (
   }
 
   // Iterate through the list and find the requested data.
-  Index = 0;
-  Count = GET_SIZE_FROM_FIT_ENTRY (FitBase[Index]);   // For the header entry, the size IS the count.
+  Index  = 0;
+  Count  = GET_SIZE_FROM_FIT_ENTRY (FitBase[Index]);  // For the header entry, the size IS the count.
   Status = EFI_NOT_FOUND;
-  for (; Index < Count; Index++) {
+  for ( ; Index < Count; Index++) {
     if (FitBase[Index].Type == RecordType) {
       if (RecordIndex == 0) {
         Result->BaseAddress = FitBase[Index].Address;
-        Result->Size = GET_SIZE_FROM_FIT_ENTRY (FitBase[Index]);
-        Status = EFI_SUCCESS;
+        Result->Size        = GET_SIZE_FROM_FIT_ENTRY (FitBase[Index]);
+        Status              = EFI_SUCCESS;
         break;
       } else {
         RecordIndex -= 1;
@@ -136,15 +137,15 @@ InternalGetFitRecord (
 EFI_STATUS
 EFIAPI
 GetFitRecord (
-  IN UINT8                  RecordType,
-  IN UINT16                 RecordIndex,
-  OUT FIT_QUERY_RESULT      *Result
+  IN UINT8              RecordType,
+  IN UINT16             RecordIndex,
+  OUT FIT_QUERY_RESULT  *Result
   )
 {
-  CONST FIRMWARE_INTERFACE_TABLE_ENTRY    *FitBase;
-  
+  CONST FIRMWARE_INTERFACE_TABLE_ENTRY  *FitBase;
+
   FitBase = InternalGetFitBase ();
-  if ((UINT32)(UINTN)FitBase < MIN_FIT_ADDRESS || (UINTN)FitBase > FIT_POINTER_ADDRESS) {
+  if (((UINT32)(UINTN)FitBase < MIN_FIT_ADDRESS) || ((UINTN)FitBase > FIT_POINTER_ADDRESS)) {
     return EFI_COMPROMISED_DATA;
   }
 

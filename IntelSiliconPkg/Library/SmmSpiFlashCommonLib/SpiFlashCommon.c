@@ -10,14 +10,14 @@
 #include <Library/IoLib.h>
 #include <Protocol/Spi2.h>
 
-PCH_SPI2_PROTOCOL       *mSpi2Protocol;
+PCH_SPI2_PROTOCOL  *mSpi2Protocol;
 
 //
 // Variables for boottime and runtime usage.
 //
-UINTN mBiosAreaBaseAddress = 0;
-UINTN mBiosSize            = 0;
-UINTN mBiosOffset          = 0;
+UINTN  mBiosAreaBaseAddress = 0;
+UINTN  mBiosSize            = 0;
+UINTN  mBiosOffset          = 0;
 
 /**
   Enable block protection on the Serial Flash device.
@@ -51,9 +51,9 @@ SpiFlashLock (
 EFI_STATUS
 EFIAPI
 SpiFlashRead (
-  IN     UINTN                        Address,
-  IN OUT UINT32                       *NumBytes,
-     OUT UINT8                        *Buffer
+  IN     UINTN   Address,
+  IN OUT UINT32  *NumBytes,
+  OUT UINT8      *Buffer
   )
 {
   ASSERT ((NumBytes != NULL) && (Buffer != NULL));
@@ -66,7 +66,7 @@ SpiFlashRead (
   // at which the SPI device is memory mapped for read. So this
   // function just do a memory copy for Spi Flash Read.
   //
-  CopyMem (Buffer, (VOID *) Address, *NumBytes);
+  CopyMem (Buffer, (VOID *)Address, *NumBytes);
 
   return EFI_SUCCESS;
 }
@@ -88,15 +88,15 @@ SpiFlashRead (
 EFI_STATUS
 EFIAPI
 SpiFlashWrite (
-  IN     UINTN                      Address,
-  IN OUT UINT32                     *NumBytes,
-  IN     UINT8                      *Buffer
+  IN     UINTN   Address,
+  IN OUT UINT32  *NumBytes,
+  IN     UINT8   *Buffer
   )
 {
-  EFI_STATUS                Status;
-  UINTN                     Offset;
-  UINT32                    Length;
-  UINT32                    RemainingBytes;
+  EFI_STATUS  Status;
+  UINTN       Offset;
+  UINT32      Length;
+  UINT32      RemainingBytes;
 
   ASSERT ((NumBytes != NULL) && (Buffer != NULL));
   if ((NumBytes == NULL) || (Buffer == NULL)) {
@@ -115,9 +115,8 @@ SpiFlashWrite (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = EFI_SUCCESS;
+  Status         = EFI_SUCCESS;
   RemainingBytes = *NumBytes;
-
 
   while (RemainingBytes > 0) {
     if (RemainingBytes > SECTOR_SIZE_4KB) {
@@ -125,19 +124,21 @@ SpiFlashWrite (
     } else {
       Length = RemainingBytes;
     }
+
     Status = mSpi2Protocol->FlashWrite (
                               mSpi2Protocol,
                               &gFlashRegionBiosGuid,
-                              (UINT32) Offset,
+                              (UINT32)Offset,
                               Length,
                               Buffer
                               );
     if (EFI_ERROR (Status)) {
       break;
     }
+
     RemainingBytes -= Length;
-    Offset += Length;
-    Buffer += Length;
+    Offset         += Length;
+    Buffer         += Length;
   }
 
   //
@@ -165,13 +166,13 @@ SpiFlashWrite (
 EFI_STATUS
 EFIAPI
 SpiFlashBlockErase (
-  IN    UINTN                     Address,
-  IN    UINTN                     *NumBytes
+  IN    UINTN  Address,
+  IN    UINTN  *NumBytes
   )
 {
-  EFI_STATUS          Status;
-  UINTN               Offset;
-  UINTN               RemainingBytes;
+  EFI_STATUS  Status;
+  UINTN       Offset;
+  UINTN       RemainingBytes;
 
   ASSERT (NumBytes != NULL);
   if (NumBytes == NULL) {
@@ -195,15 +196,14 @@ SpiFlashBlockErase (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = EFI_SUCCESS;
+  Status         = EFI_SUCCESS;
   RemainingBytes = *NumBytes;
-
 
   Status = mSpi2Protocol->FlashErase (
                             mSpi2Protocol,
                             &gFlashRegionBiosGuid,
-                            (UINT32) Offset,
-                            (UINT32) RemainingBytes
+                            (UINT32)Offset,
+                            (UINT32)RemainingBytes
                             );
   return Status;
 }
