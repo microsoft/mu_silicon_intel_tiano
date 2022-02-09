@@ -20,9 +20,8 @@
 // Null root entry table address is a fixed silicon reserved address,
 //   which is used to block the DMA transfer.
 //
-typedef UINT64  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI;
+typedef UINT64 EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI;
 
-extern EFI_GUID gEdkiiVTdNullRootEntryTableGuid;
+extern EFI_GUID  gEdkiiVTdNullRootEntryTableGuid;
 
 #endif
-

@@ -19,7 +19,8 @@
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
 
-#define SECTOR_SIZE_4KB   0x1000      // Common 4kBytes sector size
+#define SECTOR_SIZE_4KB  0x1000       // Common 4kBytes sector size
+
 /**
   Enable block protection on the Serial Flash device.
 
@@ -49,9 +50,9 @@ SpiFlashLock (
 EFI_STATUS
 EFIAPI
 SpiFlashRead (
-  IN     UINTN                        Address,
-  IN OUT UINT32                       *NumBytes,
-     OUT UINT8                        *Buffer
+  IN     UINTN   Address,
+  IN OUT UINT32  *NumBytes,
+  OUT UINT8      *Buffer
   );
 
 /**
@@ -70,9 +71,9 @@ SpiFlashRead (
 EFI_STATUS
 EFIAPI
 SpiFlashWrite (
-  IN     UINTN                      Address,
-  IN OUT UINT32                     *NumBytes,
-  IN     UINT8                      *Buffer
+  IN     UINTN   Address,
+  IN OUT UINT32  *NumBytes,
+  IN     UINT8   *Buffer
   );
 
 /**
@@ -91,8 +92,8 @@ SpiFlashWrite (
 EFI_STATUS
 EFIAPI
 SpiFlashBlockErase (
-  IN    UINTN                     Address,
-  IN    UINTN                     *NumBytes
+  IN    UINTN  Address,
+  IN    UINTN  *NumBytes
   );
 
 #endif

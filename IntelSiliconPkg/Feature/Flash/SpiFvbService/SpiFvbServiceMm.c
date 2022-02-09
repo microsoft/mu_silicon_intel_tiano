@@ -197,7 +197,6 @@ FvbInitialize (
           }
           continue;
         }
-
         BytesWritten         = FvHeader->HeaderLength;
         ExpectedBytesWritten = BytesWritten;
         if (BaseAddress != NvStorageBaseAddress) {

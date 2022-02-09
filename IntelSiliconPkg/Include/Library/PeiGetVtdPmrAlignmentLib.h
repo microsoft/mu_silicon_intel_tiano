@@ -5,6 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
+
 #ifndef __GET_VTD_PMR_ALIGN_LIB_H__
 #define __GET_VTD_PMR_ALIGN_LIB_H__
 #include <Library/BaseLib.h>
@@ -16,6 +17,6 @@
 UINTN
 EFIAPI
 GetGlobalVtdPmrAlignment (
-);
+  );
 
 #endif // __GET_VTD_PMR_ALIGN_LIB_H__
