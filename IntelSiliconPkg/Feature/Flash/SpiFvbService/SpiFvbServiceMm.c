@@ -25,12 +25,12 @@
 **/
 VOID
 InstallFvbProtocol (
-  IN  EFI_FVB_INSTANCE               *FvbInstance
+  IN  EFI_FVB_INSTANCE  *FvbInstance
   )
 {
-  EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
-  EFI_STATUS                            Status;
-  EFI_HANDLE                            FvbHandle;
+  EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
+  EFI_STATUS                  Status;
+  EFI_HANDLE                  FvbHandle;
 
   ASSERT (FvbInstance != NULL);
   if (FvbInstance == NULL) {
@@ -52,19 +52,21 @@ InstallFvbProtocol (
     //
     // FV does not contains extension header, then produce MEMMAP_DEVICE_PATH
     //
-    FvbInstance->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) AllocateRuntimeCopyPool (sizeof (FV_MEMMAP_DEVICE_PATH), &mFvMemmapDevicePathTemplate);
+    FvbInstance->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)AllocateRuntimeCopyPool (sizeof (FV_MEMMAP_DEVICE_PATH), &mFvMemmapDevicePathTemplate);
     if (FvbInstance->DevicePath == NULL) {
       DEBUG ((DEBUG_INFO, "SpiFvbServiceSmm.c: Memory allocation for MEMMAP_DEVICE_PATH failed\n"));
       return;
     }
-    ((FV_MEMMAP_DEVICE_PATH *) FvbInstance->DevicePath)->MemMapDevPath.StartingAddress = FvbInstance->FvBase;
-    ((FV_MEMMAP_DEVICE_PATH *) FvbInstance->DevicePath)->MemMapDevPath.EndingAddress   = FvbInstance->FvBase + FvHeader->FvLength - 1;
+
+    ((FV_MEMMAP_DEVICE_PATH *)FvbInstance->DevicePath)->MemMapDevPath.StartingAddress = FvbInstance->FvBase;
+    ((FV_MEMMAP_DEVICE_PATH *)FvbInstance->DevicePath)->MemMapDevPath.EndingAddress   = FvbInstance->FvBase + FvHeader->FvLength - 1;
   } else {
-    FvbInstance->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) AllocateRuntimeCopyPool (sizeof (FV_PIWG_DEVICE_PATH), &mFvPIWGDevicePathTemplate);
+    FvbInstance->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)AllocateRuntimeCopyPool (sizeof (FV_PIWG_DEVICE_PATH), &mFvPIWGDevicePathTemplate);
     if (FvbInstance->DevicePath == NULL) {
       DEBUG ((DEBUG_INFO, "SpiFvbServiceSmm.c: Memory allocation for FV_PIWG_DEVICE_PATH failed\n"));
       return;
     }
+
     CopyGuid (
       &((FV_PIWG_DEVICE_PATH *)FvbInstance->DevicePath)->FvDevPath.FvName,
       (GUID *)(UINTN)(FvbInstance->FvBase + FvHeader->ExtHeaderOffset)
@@ -103,25 +105,25 @@ FvbInitialize (
   VOID
   )
 {
-  EFI_FVB_INSTANCE                      *FvbInstance;
-  EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
-  EFI_FV_BLOCK_MAP_ENTRY                *PtrBlockMapEntry;
-  EFI_PHYSICAL_ADDRESS                  BaseAddress;
-  EFI_STATUS                            Status;
-  UINTN                                 BufferSize;
-  UINTN                                 Idx;
-  UINT32                                MaxLbaSize;
-  UINT32                                BytesWritten;
-  UINTN                                 BytesErased;
+  EFI_FVB_INSTANCE            *FvbInstance;
+  EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
+  EFI_FV_BLOCK_MAP_ENTRY      *PtrBlockMapEntry;
+  EFI_PHYSICAL_ADDRESS        BaseAddress;
+  EFI_STATUS                  Status;
+  UINTN                       BufferSize;
+  UINTN                       Idx;
+  UINT32                      MaxLbaSize;
+  UINT32                      BytesWritten;
+  UINTN                       BytesErased;
 
-  mPlatformFvBaseAddress[0].FvBase = PcdGet32(PcdFlashNvStorageVariableBase);
-  mPlatformFvBaseAddress[0].FvSize = PcdGet32(PcdFlashNvStorageVariableSize);
-  mPlatformFvBaseAddress[1].FvBase = PcdGet32(PcdFlashMicrocodeFvBase);
-  mPlatformFvBaseAddress[1].FvSize = PcdGet32(PcdFlashMicrocodeFvSize);
-  mPlatformDefaultBaseAddress[0].FvBase = PcdGet32(PcdFlashNvStorageVariableBase);
-  mPlatformDefaultBaseAddress[0].FvSize = PcdGet32(PcdFlashNvStorageVariableSize);
-  mPlatformDefaultBaseAddress[1].FvBase = PcdGet32(PcdFlashMicrocodeFvBase);
-  mPlatformDefaultBaseAddress[1].FvSize = PcdGet32(PcdFlashMicrocodeFvSize);
+  mPlatformFvBaseAddress[0].FvBase      = PcdGet32 (PcdFlashNvStorageVariableBase);
+  mPlatformFvBaseAddress[0].FvSize      = PcdGet32 (PcdFlashNvStorageVariableSize);
+  mPlatformFvBaseAddress[1].FvBase      = PcdGet32 (PcdFlashMicrocodeFvBase);
+  mPlatformFvBaseAddress[1].FvSize      = PcdGet32 (PcdFlashMicrocodeFvSize);
+  mPlatformDefaultBaseAddress[0].FvBase = PcdGet32 (PcdFlashNvStorageVariableBase);
+  mPlatformDefaultBaseAddress[0].FvSize = PcdGet32 (PcdFlashNvStorageVariableSize);
+  mPlatformDefaultBaseAddress[1].FvBase = PcdGet32 (PcdFlashMicrocodeFvBase);
+  mPlatformDefaultBaseAddress[1].FvSize = PcdGet32 (PcdFlashMicrocodeFvSize);
 
   //
   // We will only continue with FVB installation if the
@@ -131,59 +133,65 @@ FvbInitialize (
     //
     // Make sure all FVB are valid and/or fix if possible
     //
-    for (Idx = 0;; Idx++) {
-      if (mPlatformFvBaseAddress[Idx].FvSize == 0 && mPlatformFvBaseAddress[Idx].FvBase == 0) {
+    for (Idx = 0; ; Idx++) {
+      if ((mPlatformFvBaseAddress[Idx].FvSize == 0) && (mPlatformFvBaseAddress[Idx].FvBase == 0)) {
         break;
       }
 
       BaseAddress = mPlatformFvBaseAddress[Idx].FvBase;
-      FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
+      FvHeader    = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)BaseAddress;
 
       if (!IsFvHeaderValid (BaseAddress, FvHeader)) {
         BytesWritten = 0;
-        BytesErased = 0;
+        BytesErased  = 0;
         DEBUG ((DEBUG_ERROR, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
         Status = GetFvbInfo (BaseAddress, &FvHeader);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - Can't recovery FV header at 0x%x.  GetFvbInfo Status %r\n", BaseAddress, Status));
           continue;
         }
+
         DEBUG ((DEBUG_INFO, "Rewriting FV header at 0x%X with static data\n", BaseAddress));
         //
         // Spi erase
         //
-        BytesErased = (UINTN) FvHeader->BlockMap->Length;
-        Status = SpiFlashBlockErase( (UINTN) BaseAddress, &BytesErased);
+        BytesErased = (UINTN)FvHeader->BlockMap->Length;
+        Status      = SpiFlashBlockErase ((UINTN)BaseAddress, &BytesErased);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashBlockErase Error  %r\n", Status));
           continue;
         }
+
         if (BytesErased != FvHeader->BlockMap->Length) {
           DEBUG ((DEBUG_WARN, "ERROR - BytesErased != FvHeader->BlockMap->Length\n"));
           DEBUG ((DEBUG_INFO, " BytesErased = 0x%X\n Length = 0x%X\n", BytesErased, FvHeader->BlockMap->Length));
           continue;
         }
+
         BytesWritten = FvHeader->HeaderLength;
-        Status = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, (UINT8*)FvHeader);
+        Status       = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, (UINT8 *)FvHeader);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashWrite Error  %r\n", Status));
           continue;
         }
+
         if (BytesWritten != FvHeader->HeaderLength) {
           DEBUG ((DEBUG_WARN, "ERROR - BytesWritten != HeaderLength\n"));
           DEBUG ((DEBUG_INFO, " BytesWritten = 0x%X\n HeaderLength = 0x%X\n", BytesWritten, FvHeader->HeaderLength));
           continue;
         }
+
         Status = SpiFlashLock ();
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashLock Error  %r\n", Status));
           continue;
         }
+
         DEBUG ((DEBUG_INFO, "FV Header @ 0x%X restored with static data\n", BaseAddress));
         //
         // Clear cache for this range.
         //
-        WriteBackInvalidateDataCacheRange ( (VOID *) (UINTN) BaseAddress, FvHeader->BlockMap->Length);
+        WriteBackInvalidateDataCacheRange ((VOID *)(UINTN)BaseAddress, FvHeader->BlockMap->Length);
       }
     }
 
@@ -192,11 +200,12 @@ FvbInitialize (
     //
     BufferSize = 0;
     for (Idx = 0; ; Idx++) {
-      if (mPlatformFvBaseAddress[Idx].FvSize == 0 && mPlatformFvBaseAddress[Idx].FvBase == 0) {
+      if ((mPlatformFvBaseAddress[Idx].FvSize == 0) && (mPlatformFvBaseAddress[Idx].FvBase == 0)) {
         break;
       }
+
       BaseAddress = mPlatformFvBaseAddress[Idx].FvBase;
-      FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
+      FvHeader    = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)BaseAddress;
 
       if (!IsFvHeaderValid (BaseAddress, FvHeader)) {
         DEBUG ((DEBUG_WARN, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
@@ -204,27 +213,28 @@ FvbInitialize (
       }
 
       BufferSize += (FvHeader->HeaderLength +
-                    sizeof (EFI_FVB_INSTANCE) -
-                    sizeof (EFI_FIRMWARE_VOLUME_HEADER)
-                    );
+                     sizeof (EFI_FVB_INSTANCE) -
+                     sizeof (EFI_FIRMWARE_VOLUME_HEADER)
+                     );
     }
 
-    mFvbModuleGlobal.FvbInstance =  (EFI_FVB_INSTANCE *) AllocateRuntimeZeroPool (BufferSize);
+    mFvbModuleGlobal.FvbInstance =  (EFI_FVB_INSTANCE *)AllocateRuntimeZeroPool (BufferSize);
     if (mFvbModuleGlobal.FvbInstance == NULL) {
       ASSERT (FALSE);
       return;
     }
 
-    MaxLbaSize      = 0;
-    FvbInstance     = mFvbModuleGlobal.FvbInstance;
-    mFvbModuleGlobal.NumFv   = 0;
+    MaxLbaSize             = 0;
+    FvbInstance            = mFvbModuleGlobal.FvbInstance;
+    mFvbModuleGlobal.NumFv = 0;
 
     for (Idx = 0; ; Idx++) {
-      if (mPlatformFvBaseAddress[Idx].FvSize == 0 && mPlatformFvBaseAddress[Idx].FvBase == 0) {
+      if ((mPlatformFvBaseAddress[Idx].FvSize == 0) && (mPlatformFvBaseAddress[Idx].FvBase == 0)) {
         break;
       }
+
       BaseAddress = mPlatformFvBaseAddress[Idx].FvBase;
-      FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
+      FvHeader    = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)BaseAddress;
 
       if (!IsFvHeaderValid (BaseAddress, FvHeader)) {
         DEBUG ((DEBUG_WARN, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
@@ -234,22 +244,24 @@ FvbInitialize (
       FvbInstance->Signature = FVB_INSTANCE_SIGNATURE;
       CopyMem (&(FvbInstance->FvHeader), FvHeader, FvHeader->HeaderLength);
 
-      FvHeader = &(FvbInstance->FvHeader);
+      FvHeader            = &(FvbInstance->FvHeader);
       FvbInstance->FvBase = (UINTN)BaseAddress;
 
       //
       // Process the block map for each FV
       //
-      FvbInstance->NumOfBlocks   = 0;
+      FvbInstance->NumOfBlocks = 0;
       for (PtrBlockMapEntry = FvHeader->BlockMap;
            PtrBlockMapEntry->NumBlocks != 0;
-           PtrBlockMapEntry++) {
+           PtrBlockMapEntry++)
+      {
         //
         // Get the maximum size of a block.
         //
         if (MaxLbaSize < PtrBlockMapEntry->Length) {
-          MaxLbaSize  = PtrBlockMapEntry->Length;
+          MaxLbaSize = PtrBlockMapEntry->Length;
         }
+
         FvbInstance->NumOfBlocks += PtrBlockMapEntry->NumBlocks;
       }
 
@@ -262,10 +274,9 @@ FvbInitialize (
       //
       // Move on to the next FvbInstance
       //
-      FvbInstance = (EFI_FVB_INSTANCE *) ((UINTN)((UINT8 *)FvbInstance) +
-                                            FvHeader->HeaderLength +
-                                            (sizeof (EFI_FVB_INSTANCE) - sizeof (EFI_FIRMWARE_VOLUME_HEADER)));
-
+      FvbInstance = (EFI_FVB_INSTANCE *)((UINTN)((UINT8 *)FvbInstance) +
+                                         FvHeader->HeaderLength +
+                                         (sizeof (EFI_FVB_INSTANCE) - sizeof (EFI_FIRMWARE_VOLUME_HEADER)));
     }
   }
 }

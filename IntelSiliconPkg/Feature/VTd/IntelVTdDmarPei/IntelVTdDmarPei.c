@@ -23,21 +23,21 @@
 #include <Guid/VtdPmrInfoHob.h>
 #include "IntelVTdDmarPei.h"
 
-EFI_GUID mVTdInfoGuid = {
+EFI_GUID  mVTdInfoGuid = {
   0x222f5e30, 0x5cd, 0x49c6, { 0x8a, 0xc, 0x36, 0xd6, 0x58, 0x41, 0xe0, 0x82 }
 };
 
-EFI_GUID mDmaBufferInfoGuid = {
+EFI_GUID  mDmaBufferInfoGuid = {
   0x7b624ec7, 0xfb67, 0x4f9c, { 0xb6, 0xb0, 0x4d, 0xfa, 0x9c, 0x88, 0x20, 0x39 }
 };
 
 #define MAP_INFO_SIGNATURE  SIGNATURE_32 ('D', 'M', 'A', 'P')
 typedef struct {
-  UINT32                        Signature;
-  EDKII_IOMMU_OPERATION         Operation;
-  UINTN                         NumberOfBytes;
-  EFI_PHYSICAL_ADDRESS          HostAddress;
-  EFI_PHYSICAL_ADDRESS          DeviceAddress;
+  UINT32                   Signature;
+  EDKII_IOMMU_OPERATION    Operation;
+  UINTN                    NumberOfBytes;
+  EFI_PHYSICAL_ADDRESS     HostAddress;
+  EFI_PHYSICAL_ADDRESS     DeviceAddress;
 } MAP_INFO;
 
 /**
@@ -68,18 +68,18 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 PeiIoMmuSetAttribute (
-  IN EDKII_IOMMU_PPI            *This,
-  IN VOID                       *Mapping,
-  IN UINT64                     IoMmuAccess
+  IN EDKII_IOMMU_PPI  *This,
+  IN VOID             *Mapping,
+  IN UINT64           IoMmuAccess
   )
 {
-  VOID                        *Hob;
-  DMA_BUFFER_INFO             *DmaBufferInfo;
+  VOID             *Hob;
+  DMA_BUFFER_INFO  *DmaBufferInfo;
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuSetAttribute:\n"));
 
-  Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
-  DmaBufferInfo = GET_GUID_HOB_DATA(Hob);
+  Hob           = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
 
   if (DmaBufferInfo->DmaBufferCurrentTop == 0) {
     DEBUG ((DEBUG_INFO, "PeiIoMmuSetAttribute: DmaBufferCurrentTop == 0\n"));
@@ -121,13 +121,13 @@ PeiIoMmuMap (
   OUT    VOID                   **Mapping
   )
 {
-  MAP_INFO                      *MapInfo;
-  UINTN                         Length;
-  VOID                          *Hob;
-  DMA_BUFFER_INFO               *DmaBufferInfo;
+  MAP_INFO         *MapInfo;
+  UINTN            Length;
+  VOID             *Hob;
+  DMA_BUFFER_INFO  *DmaBufferInfo;
 
-  Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
-  DmaBufferInfo = GET_GUID_HOB_DATA(Hob);
+  Hob           = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuMap - HostAddress - 0x%x, NumberOfBytes - %x\n", HostAddress, *NumberOfBytes));
   DEBUG ((DEBUG_INFO, "  DmaBufferCurrentTop - %x\n", DmaBufferInfo->DmaBufferCurrentTop));
@@ -138,10 +138,11 @@ PeiIoMmuMap (
     return EFI_NOT_AVAILABLE_YET;
   }
 
-  if (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer ||
-      Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64) {
+  if ((Operation == EdkiiIoMmuOperationBusMasterCommonBuffer) ||
+      (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64))
+  {
     *DeviceAddress = (UINTN)HostAddress;
-    *Mapping = NULL;
+    *Mapping       = NULL;
     return EFI_SUCCESS;
   }
 
@@ -152,28 +153,29 @@ PeiIoMmuMap (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  *DeviceAddress = DmaBufferInfo->DmaBufferCurrentBottom;
+  *DeviceAddress                         = DmaBufferInfo->DmaBufferCurrentBottom;
   DmaBufferInfo->DmaBufferCurrentBottom += Length;
 
-  MapInfo = (VOID *) (UINTN) (*DeviceAddress + *NumberOfBytes);
+  MapInfo                = (VOID *)(UINTN)(*DeviceAddress + *NumberOfBytes);
   MapInfo->Signature     = MAP_INFO_SIGNATURE;
   MapInfo->Operation     = Operation;
   MapInfo->NumberOfBytes = *NumberOfBytes;
-  MapInfo->HostAddress   = (UINTN) HostAddress;
+  MapInfo->HostAddress   = (UINTN)HostAddress;
   MapInfo->DeviceAddress = *DeviceAddress;
-  *Mapping = MapInfo;
-  DEBUG ((DEBUG_INFO, "  Op(%x):DeviceAddress - %x, Mapping - %x\n", Operation, (UINTN) *DeviceAddress, MapInfo));
+  *Mapping               = MapInfo;
+  DEBUG ((DEBUG_INFO, "  Op(%x):DeviceAddress - %x, Mapping - %x\n", Operation, (UINTN)*DeviceAddress, MapInfo));
 
   //
   // If this is a read operation from the Bus Master's point of view,
   // then copy the contents of the real buffer into the mapped buffer
   // so the Bus Master can read the contents of the real buffer.
   //
-  if (Operation == EdkiiIoMmuOperationBusMasterRead ||
-      Operation == EdkiiIoMmuOperationBusMasterRead64) {
+  if ((Operation == EdkiiIoMmuOperationBusMasterRead) ||
+      (Operation == EdkiiIoMmuOperationBusMasterRead64))
+  {
     CopyMem (
-      (VOID *) (UINTN) MapInfo->DeviceAddress,
-      (VOID *) (UINTN) MapInfo->HostAddress,
+      (VOID *)(UINTN)MapInfo->DeviceAddress,
+      (VOID *)(UINTN)MapInfo->HostAddress,
       MapInfo->NumberOfBytes
       );
   }
@@ -196,17 +198,17 @@ PeiIoMmuMap (
 EFI_STATUS
 EFIAPI
 PeiIoMmuUnmap (
-  IN  EDKII_IOMMU_PPI           *This,
-  IN  VOID                      *Mapping
+  IN  EDKII_IOMMU_PPI  *This,
+  IN  VOID             *Mapping
   )
 {
-  MAP_INFO                      *MapInfo;
-  UINTN                         Length;
-  VOID                          *Hob;
-  DMA_BUFFER_INFO               *DmaBufferInfo;
+  MAP_INFO         *MapInfo;
+  UINTN            Length;
+  VOID             *Hob;
+  DMA_BUFFER_INFO  *DmaBufferInfo;
 
-  Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
-  DmaBufferInfo = GET_GUID_HOB_DATA(Hob);
+  Hob           = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuUnmap - Mapping - %x\n", Mapping));
   DEBUG ((DEBUG_INFO, "  DmaBufferCurrentTop - %x\n", DmaBufferInfo->DmaBufferCurrentTop));
@@ -222,18 +224,19 @@ PeiIoMmuUnmap (
 
   MapInfo = Mapping;
   ASSERT (MapInfo->Signature == MAP_INFO_SIGNATURE);
-  DEBUG ((DEBUG_INFO, "  Op(%x):DeviceAddress - %x, NumberOfBytes - %x\n", MapInfo->Operation, (UINTN) MapInfo->DeviceAddress, MapInfo->NumberOfBytes));
+  DEBUG ((DEBUG_INFO, "  Op(%x):DeviceAddress - %x, NumberOfBytes - %x\n", MapInfo->Operation, (UINTN)MapInfo->DeviceAddress, MapInfo->NumberOfBytes));
 
   //
   // If this is a write operation from the Bus Master's point of view,
   // then copy the contents of the mapped buffer into the real buffer
   // so the processor can read the contents of the real buffer.
   //
-  if (MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite ||
-      MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite64) {
+  if ((MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite) ||
+      (MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite64))
+  {
     CopyMem (
-      (VOID *) (UINTN) MapInfo->HostAddress,
-      (VOID *) (UINTN) MapInfo->DeviceAddress,
+      (VOID *)(UINTN)MapInfo->HostAddress,
+      (VOID *)(UINTN)MapInfo->DeviceAddress,
       MapInfo->NumberOfBytes
       );
   }
@@ -269,19 +272,19 @@ PeiIoMmuUnmap (
 EFI_STATUS
 EFIAPI
 PeiIoMmuAllocateBuffer (
-  IN     EDKII_IOMMU_PPI        *This,
-  IN     EFI_MEMORY_TYPE        MemoryType,
-  IN     UINTN                  Pages,
-  IN OUT VOID                   **HostAddress,
-  IN     UINT64                 Attributes
+  IN     EDKII_IOMMU_PPI  *This,
+  IN     EFI_MEMORY_TYPE  MemoryType,
+  IN     UINTN            Pages,
+  IN OUT VOID             **HostAddress,
+  IN     UINT64           Attributes
   )
 {
-  UINTN                         Length;
-  VOID                          *Hob;
-  DMA_BUFFER_INFO               *DmaBufferInfo;
+  UINTN            Length;
+  VOID             *Hob;
+  DMA_BUFFER_INFO  *DmaBufferInfo;
 
-  Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
-  DmaBufferInfo = GET_GUID_HOB_DATA(Hob);
+  Hob           = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuAllocateBuffer - page - %x\n", Pages));
   DEBUG ((DEBUG_INFO, "  DmaBufferCurrentTop - %x\n", DmaBufferInfo->DmaBufferCurrentTop));
@@ -297,7 +300,8 @@ PeiIoMmuAllocateBuffer (
     ASSERT (FALSE);
     return EFI_OUT_OF_RESOURCES;
   }
-  *HostAddress = (VOID *) (UINTN) (DmaBufferInfo->DmaBufferCurrentTop - Length);
+
+  *HostAddress                        = (VOID *)(UINTN)(DmaBufferInfo->DmaBufferCurrentTop - Length);
   DmaBufferInfo->DmaBufferCurrentTop -= Length;
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuAllocateBuffer - allocate - %x\n", *HostAddress));
@@ -320,16 +324,16 @@ PeiIoMmuAllocateBuffer (
 EFI_STATUS
 EFIAPI
 PeiIoMmuFreeBuffer (
-  IN  EDKII_IOMMU_PPI           *This,
-  IN  UINTN                     Pages,
-  IN  VOID                      *HostAddress
+  IN  EDKII_IOMMU_PPI  *This,
+  IN  UINTN            Pages,
+  IN  VOID             *HostAddress
   )
 {
-  UINTN                         Length;
-  VOID                          *Hob;
-  DMA_BUFFER_INFO               *DmaBufferInfo;
+  UINTN            Length;
+  VOID             *Hob;
+  DMA_BUFFER_INFO  *DmaBufferInfo;
 
-  Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  Hob           = GetFirstGuidHob (&mDmaBufferInfoGuid);
   DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuFreeBuffer - page - %x, HostAddr - %x\n", Pages, HostAddress));
@@ -348,7 +352,7 @@ PeiIoMmuFreeBuffer (
   return EFI_SUCCESS;
 }
 
-EDKII_IOMMU_PPI mIoMmuPpi = {
+EDKII_IOMMU_PPI  mIoMmuPpi = {
   EDKII_IOMMU_PPI_REVISION,
   PeiIoMmuSetAttribute,
   PeiIoMmuMap,
@@ -357,10 +361,10 @@ EDKII_IOMMU_PPI mIoMmuPpi = {
   PeiIoMmuFreeBuffer,
 };
 
-CONST EFI_PEI_PPI_DESCRIPTOR mIoMmuPpiList = {
+CONST EFI_PEI_PPI_DESCRIPTOR  mIoMmuPpiList = {
   EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST,
   &gEdkiiIoMmuPpiGuid,
-  (VOID *) &mIoMmuPpi
+  (VOID *)&mIoMmuPpi
 };
 
 /**
@@ -370,39 +374,39 @@ CONST EFI_PEI_PPI_DESCRIPTOR mIoMmuPpiList = {
 **/
 VOID
 ReleaseVTdInfo (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   )
 {
-  UINTN                         Index;
+  UINTN  Index;
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
     DEBUG ((DEBUG_INFO, "Release momery in VTdInfo[%d]\n", Index));
 
     if (VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry, 1);
+      FreePages ((VOID *)(UINTN)VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry, 1);
       VTdInfo->VtdUnitInfo[Index].FixedSecondLevelPagingEntry = 0;
     }
 
     if (VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry, 1);
+      FreePages ((VOID *)(UINTN)VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry, 1);
       VTdInfo->VtdUnitInfo[Index].RmrrSecondLevelPagingEntry = 0;
     }
 
     if (VTdInfo->VtdUnitInfo[Index].RootEntryTable) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].RootEntryTable, VTdInfo->VtdUnitInfo[Index].RootEntryTablePageSize);
+      FreePages ((VOID *)(UINTN)VTdInfo->VtdUnitInfo[Index].RootEntryTable, VTdInfo->VtdUnitInfo[Index].RootEntryTablePageSize);
       VTdInfo->VtdUnitInfo[Index].RootEntryTable = 0;
     }
 
     if (VTdInfo->VtdUnitInfo[Index].ExtRootEntryTable) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].ExtRootEntryTable, VTdInfo->VtdUnitInfo[Index].ExtRootEntryTablePageSize);
+      FreePages ((VOID *)(UINTN)VTdInfo->VtdUnitInfo[Index].ExtRootEntryTable, VTdInfo->VtdUnitInfo[Index].ExtRootEntryTablePageSize);
       VTdInfo->VtdUnitInfo[Index].RootEntryTable = 0;
     }
 
     if (VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData) {
-      FreePages ((VOID *) (UINTN) VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData, VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataPageSize);
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataPageSize = 0;
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData = 0;
-      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataNumber = 0;
+      FreePages ((VOID *)(UINTN)VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData, VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataPageSize);
+      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataPageSize  = 0;
+      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceData          = 0;
+      VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataNumber    = 0;
       VTdInfo->VtdUnitInfo[Index].PciDeviceInfo.PciDeviceDataMaxNumber = 0;
     }
   }
@@ -419,11 +423,11 @@ InitVTdInfo (
   VOID
   )
 {
-  EFI_STATUS                    Status;
-  EFI_ACPI_DMAR_HEADER          *AcpiDmarTable;
-  VOID                          *Hob;
-  VTD_INFO                      *VTdInfo;
-  UINT64                        EngineMask;
+  EFI_STATUS            Status;
+  EFI_ACPI_DMAR_HEADER  *AcpiDmarTable;
+  VOID                  *Hob;
+  VTD_INFO              *VTdInfo;
+  UINT64                EngineMask;
 
   Status = PeiServicesLocatePpi (
              &gEdkiiVTdInfoPpiGuid,
@@ -442,21 +446,21 @@ InitVTdInfo (
   if (Hob != NULL) {
     DEBUG ((DEBUG_INFO, " Find Hob : mVTdInfoGuid - 0x%x\n", Hob));
 
-    VTdInfo = GET_GUID_HOB_DATA(Hob);
+    VTdInfo    = GET_GUID_HOB_DATA (Hob);
     EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
     EnableVTdTranslationProtectionAll (VTdInfo, EngineMask);
 
     ReleaseVTdInfo (VTdInfo);
     VTdInfo->VTdEngineCount = 0;
 
-    ZeroMem (&((EFI_HOB_GUID_TYPE *) Hob)->Name, sizeof (EFI_GUID));
+    ZeroMem (&((EFI_HOB_GUID_TYPE *)Hob)->Name, sizeof (EFI_GUID));
   }
 
   //
   // Get DMAR information to local VTdInfo
   //
   Status = ParseDmarAcpiTableDrhd (AcpiDmarTable);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, " ParseDmarAcpiTableDrhd : %r\n", Status));
     return Status;
   }
@@ -479,17 +483,18 @@ InitVTdDmarForAll (
   VOID
   )
 {
-  VOID                          *Hob;
-  VTD_INFO                      *VTdInfo;
-  UINT64                        EngineMask;
-  EFI_STATUS                    Status;
+  VOID        *Hob;
+  VTD_INFO    *VTdInfo;
+  UINT64      EngineMask;
+  EFI_STATUS  Status;
 
   Hob = GetFirstGuidHob (&mVTdInfoGuid);
   if (Hob == NULL) {
     DEBUG ((DEBUG_ERROR, "Fail to get VTdInfo Hob.\n"));
     return RETURN_NOT_READY;
   }
-  VTdInfo = GET_GUID_HOB_DATA (Hob);
+
+  VTdInfo    = GET_GUID_HOB_DATA (Hob);
   EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
 
   DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
@@ -512,20 +517,20 @@ InitVTdDmarForAll (
   @retval EFI_OUT_OF_RESOURCES  Can't initialize DMA buffer.
 **/
 EFI_STATUS
-InitDmaBuffer(
+InitDmaBuffer (
   VOID
   )
 {
-  DMA_BUFFER_INFO               *DmaBufferInfo;
-  VOID                          *Hob;
-  VOID                          *VtdPmrHobPtr;
-  VTD_PMR_INFO_HOB              *VtdPmrHob;
+  DMA_BUFFER_INFO   *DmaBufferInfo;
+  VOID              *Hob;
+  VOID              *VtdPmrHobPtr;
+  VTD_PMR_INFO_HOB  *VtdPmrHob;
 
   DEBUG ((DEBUG_INFO, "InitDmaBuffer :\n"));
 
-  Hob = GetFirstGuidHob (&mDmaBufferInfoGuid);
+  Hob           = GetFirstGuidHob (&mDmaBufferInfoGuid);
   DmaBufferInfo = GET_GUID_HOB_DATA (Hob);
-  VtdPmrHobPtr = GetFirstGuidHob (&gVtdPmrInfoDataHobGuid);
+  VtdPmrHobPtr  = GetFirstGuidHob (&gVtdPmrInfoDataHobGuid);
 
   /**
   When gVtdPmrInfoDataHobGuid exists, it means:
@@ -539,7 +544,6 @@ InitDmaBuffer(
     2. Dma buffer is reserved by AllocateAlignedPages()
   **/
 
-
   if (DmaBufferInfo->DmaBufferSize == 0) {
     DEBUG ((DEBUG_INFO, " DmaBufferSize is 0\n"));
     return EFI_INVALID_PARAMETER;
@@ -549,22 +553,24 @@ InitDmaBuffer(
     //
     // Allocate memory for DMA buffer
     //
-    DmaBufferInfo->DmaBufferBase = (UINT64) (UINTN) AllocateAlignedPages (EFI_SIZE_TO_PAGES ((UINTN) DmaBufferInfo->DmaBufferSize), 0);
+    DmaBufferInfo->DmaBufferBase = (UINT64)(UINTN)AllocateAlignedPages (EFI_SIZE_TO_PAGES ((UINTN)DmaBufferInfo->DmaBufferSize), 0);
     if (DmaBufferInfo->DmaBufferBase == 0) {
       DEBUG ((DEBUG_ERROR, " InitDmaBuffer : OutOfResource\n"));
       return EFI_OUT_OF_RESOURCES;
     }
+
     DmaBufferInfo->DmaBufferLimit = DmaBufferInfo->DmaBufferBase + DmaBufferInfo->DmaBufferSize;
     DEBUG ((DEBUG_INFO, "Alloc DMA buffer success.\n"));
   } else {
     //
     // Get the PMR ranges information for the VTd PMR hob
     //
-    VtdPmrHob = GET_GUID_HOB_DATA (VtdPmrHobPtr);
-    DmaBufferInfo->DmaBufferBase = VtdPmrHob->ProtectedLowLimit;
+    VtdPmrHob                     = GET_GUID_HOB_DATA (VtdPmrHobPtr);
+    DmaBufferInfo->DmaBufferBase  = VtdPmrHob->ProtectedLowLimit;
     DmaBufferInfo->DmaBufferLimit = VtdPmrHob->ProtectedHighBase;
   }
-  DmaBufferInfo->DmaBufferCurrentTop = DmaBufferInfo->DmaBufferBase + DmaBufferInfo->DmaBufferSize;
+
+  DmaBufferInfo->DmaBufferCurrentTop    = DmaBufferInfo->DmaBufferBase + DmaBufferInfo->DmaBufferSize;
   DmaBufferInfo->DmaBufferCurrentBottom = DmaBufferInfo->DmaBufferBase;
 
   DEBUG ((DEBUG_INFO, " DmaBufferSize          : 0x%lx\n", DmaBufferInfo->DmaBufferSize));
@@ -588,13 +594,13 @@ InitVTdDmarForDma (
   VOID
   )
 {
-  VOID                          *Hob;
-  VTD_INFO                      *VTdInfo;
-  EFI_STATUS                    Status;
-  EFI_PEI_PPI_DESCRIPTOR        *OldDescriptor;
-  EDKII_IOMMU_PPI               *OldIoMmuPpi;
+  VOID                    *Hob;
+  VTD_INFO                *VTdInfo;
+  EFI_STATUS              Status;
+  EFI_PEI_PPI_DESCRIPTOR  *OldDescriptor;
+  EDKII_IOMMU_PPI         *OldIoMmuPpi;
 
-  Hob = GetFirstGuidHob (&mVTdInfoGuid);
+  Hob     = GetFirstGuidHob (&mVTdInfoGuid);
   VTdInfo = GET_GUID_HOB_DATA (Hob);
 
   DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
@@ -624,7 +630,7 @@ InitVTdDmarForDma (
   ParseDmarAcpiTableRmrr (VTdInfo);
 
   DEBUG ((DEBUG_INFO, "EnableVtdDmar\n"));
-  Status = EnableVTdTranslationProtection(VTdInfo);
+  Status = EnableVTdTranslationProtection (VTdInfo);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -638,13 +644,14 @@ InitVTdDmarForDma (
              &gEdkiiIoMmuPpiGuid,
              0,
              &OldDescriptor,
-             (VOID **) &OldIoMmuPpi
+             (VOID **)&OldIoMmuPpi
              );
   if (!EFI_ERROR (Status)) {
     Status = PeiServicesReInstallPpi (OldDescriptor, &mIoMmuPpiList);
   } else {
     Status = PeiServicesInstallPpi (&mIoMmuPpiList);
   }
+
   ASSERT_EFI_ERROR (Status);
 
   return Status;
@@ -662,32 +669,34 @@ InitVTdDmarForDma (
 **/
 EFI_STATUS
 EFIAPI
-S3EndOfPeiNotify(
+S3EndOfPeiNotify (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDesc,
   IN VOID                       *Ppi
   )
 {
-  VOID                          *Hob;
-  VTD_INFO                      *VTdInfo;
-  UINT64                        EngineMask;
+  VOID      *Hob;
+  VTD_INFO  *VTdInfo;
+  UINT64    EngineMask;
 
-  DEBUG((DEBUG_INFO, "VTd DMAR PEI S3EndOfPeiNotify\n"));
+  DEBUG ((DEBUG_INFO, "VTd DMAR PEI S3EndOfPeiNotify\n"));
 
-  if ((PcdGet8(PcdVTdPolicyPropertyMask) & BIT1) == 0) {
+  if ((PcdGet8 (PcdVTdPolicyPropertyMask) & BIT1) == 0) {
     Hob = GetFirstGuidHob (&mVTdInfoGuid);
     if (Hob == NULL) {
       return EFI_SUCCESS;
     }
-    VTdInfo = GET_GUID_HOB_DATA(Hob);
+
+    VTdInfo = GET_GUID_HOB_DATA (Hob);
 
     EngineMask = LShiftU64 (1, VTdInfo->VTdEngineCount) - 1;
     DisableVTdTranslationProtection (VTdInfo, EngineMask);
   }
+
   return EFI_SUCCESS;
 }
 
-EFI_PEI_NOTIFY_DESCRIPTOR mS3EndOfPeiNotifyDesc = {
+EFI_PEI_NOTIFY_DESCRIPTOR  mS3EndOfPeiNotifyDesc = {
   (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEfiEndOfPeiSignalPpiGuid,
   S3EndOfPeiNotify
@@ -711,9 +720,9 @@ VTdInfoNotify (
   IN VOID                       *Ppi
   )
 {
-  EFI_STATUS                    Status;
-  VOID                          *MemoryDiscovered;
-  BOOLEAN                       MemoryInitialized;
+  EFI_STATUS  Status;
+  VOID        *MemoryDiscovered;
+  BOOLEAN     MemoryInitialized;
 
   DEBUG ((DEBUG_INFO, "VTdInfoNotify\n"));
 
@@ -721,13 +730,13 @@ VTdInfoNotify (
   // Check if memory is initialized.
   //
   MemoryInitialized = FALSE;
-  Status = PeiServicesLocatePpi (
-             &gEfiPeiMemoryDiscoveredPpiGuid,
-             0,
-             NULL,
-             &MemoryDiscovered
-             );
-  if (!EFI_ERROR(Status)) {
+  Status            = PeiServicesLocatePpi (
+                        &gEfiPeiMemoryDiscoveredPpiGuid,
+                        0,
+                        NULL,
+                        &MemoryDiscovered
+                        );
+  if (!EFI_ERROR (Status)) {
     MemoryInitialized = TRUE;
   }
 
@@ -750,7 +759,7 @@ VTdInfoNotify (
     // Install PPI.
     //
     Status = PeiServicesInstallPpi (&mIoMmuPpiList);
-    ASSERT_EFI_ERROR(Status);
+    ASSERT_EFI_ERROR (Status);
   } else {
     //
     // If the memory is initialized,
@@ -758,7 +767,7 @@ VTdInfoNotify (
     //
 
     Status = InitDmaBuffer ();
-    ASSERT_EFI_ERROR(Status);
+    ASSERT_EFI_ERROR (Status);
 
     InitVTdDmarForDma ();
   }
@@ -766,7 +775,7 @@ VTdInfoNotify (
   return EFI_SUCCESS;
 }
 
-EFI_PEI_NOTIFY_DESCRIPTOR mVTdInfoNotifyDesc = {
+EFI_PEI_NOTIFY_DESCRIPTOR  mVTdInfoNotifyDesc = {
   (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEdkiiVTdInfoPpiGuid,
   VTdInfoNotify
@@ -784,25 +793,26 @@ EFI_PEI_NOTIFY_DESCRIPTOR mVTdInfoNotifyDesc = {
 EFI_STATUS
 EFIAPI
 IntelVTdDmarInitialize (
-  IN EFI_PEI_FILE_HANDLE        FileHandle,
-  IN CONST EFI_PEI_SERVICES     **PeiServices
+  IN EFI_PEI_FILE_HANDLE     FileHandle,
+  IN CONST EFI_PEI_SERVICES  **PeiServices
   )
 {
-  EFI_STATUS                    Status;
-  EFI_BOOT_MODE                 BootMode;
-  DMA_BUFFER_INFO               *DmaBufferInfo;
+  EFI_STATUS       Status;
+  EFI_BOOT_MODE    BootMode;
+  DMA_BUFFER_INFO  *DmaBufferInfo;
 
   DEBUG ((DEBUG_INFO, "IntelVTdDmarInitialize\n"));
 
-  if ((PcdGet8(PcdVTdPolicyPropertyMask) & BIT0) == 0) {
+  if ((PcdGet8 (PcdVTdPolicyPropertyMask) & BIT0) == 0) {
     return EFI_UNSUPPORTED;
   }
 
   DmaBufferInfo = BuildGuidHob (&mDmaBufferInfoGuid, sizeof (DMA_BUFFER_INFO));
-  ASSERT(DmaBufferInfo != NULL);
+  ASSERT (DmaBufferInfo != NULL);
   if (DmaBufferInfo == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
+
   ZeroMem (DmaBufferInfo, sizeof (DMA_BUFFER_INFO));
 
   PeiServicesGetBootMode (&BootMode);
@@ -826,4 +836,3 @@ IntelVTdDmarInitialize (
 
   return EFI_SUCCESS;
 }
-

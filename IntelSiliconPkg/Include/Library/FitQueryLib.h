@@ -8,7 +8,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-
 #ifndef _FIT_QUERY_LIB_H_
 #define _FIT_QUERY_LIB_H_
 
@@ -16,14 +15,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma pack(push, 1)
 typedef struct _FIT_QUERY_RESULT {
-    UINT64      BaseAddress;
-    UINT32      Size;
+  UINT64    BaseAddress;
+  UINT32    Size;
 } FIT_QUERY_RESULT;
 #pragma pack(pop)
 
-typedef UINT8                           FIT_ENTRY_TYPE;
-#define FIT_TYPE_PLAT_MIN               (FIT_ENTRY_TYPE)(0x30)
-#define FIT_TYPE_PLAT_MAX               (FIT_ENTRY_TYPE)(0x70)
+typedef UINT8 FIT_ENTRY_TYPE;
+#define FIT_TYPE_PLAT_MIN  (FIT_ENTRY_TYPE)(0x30)
+#define FIT_TYPE_PLAT_MAX  (FIT_ENTRY_TYPE)(0x70)
 
 #define GET_SIZE_FROM_FIT_ENTRY(FitEntry) \
     ((*((UINT32*)(&FitEntry.Size))) & 0x00FFFFFF)
@@ -46,9 +45,9 @@ typedef UINT8                           FIT_ENTRY_TYPE;
 EFI_STATUS
 EFIAPI
 GetFitRecord (
-  IN UINT8                  RecordType,
-  IN UINT16                 RecordIndex,
-  OUT FIT_QUERY_RESULT      *Result
+  IN UINT8              RecordType,
+  IN UINT16             RecordIndex,
+  OUT FIT_QUERY_RESULT  *Result
   );
 
 #endif // _FIT_QUERY_LIB_H_

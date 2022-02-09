@@ -9,56 +9,56 @@
 #ifndef __DMA_ACCESS_LIB_H__
 #define __DMA_ACCESS_LIB_H__
 
-#define MAX_VTD_PCI_DATA_NUMBER             0x100
+#define MAX_VTD_PCI_DATA_NUMBER  0x100
 
-#define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
+#define VTD_64BITS_ADDRESS(Lo, Hi)  (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
 
 typedef struct {
-  UINT8                            DeviceType;
-  VTD_SOURCE_ID                    PciSourceId;
+  UINT8            DeviceType;
+  VTD_SOURCE_ID    PciSourceId;
 } PEI_PCI_DEVICE_DATA;
 
 typedef struct {
-  BOOLEAN                          IncludeAllFlag;
-  UINT32                           PciDeviceDataNumber;
-  UINT32                           PciDeviceDataMaxNumber;
-  UINT32                           PciDeviceDataPageSize;
-  UINT32                           PciDeviceData;
+  BOOLEAN    IncludeAllFlag;
+  UINT32     PciDeviceDataNumber;
+  UINT32     PciDeviceDataMaxNumber;
+  UINT32     PciDeviceDataPageSize;
+  UINT32     PciDeviceData;
 } PEI_PCI_DEVICE_INFORMATION;
 
 typedef struct {
-  UINT32                           VtdUnitBaseAddress;
-  UINT16                           Segment;
-  VTD_VER_REG                      VerReg;
-  VTD_CAP_REG                      CapReg;
-  VTD_ECAP_REG                     ECapReg;
-  BOOLEAN                          Is5LevelPaging;
-  UINT32                           FixedSecondLevelPagingEntry;
-  UINT32                           RmrrSecondLevelPagingEntry;
-  UINT32                           RootEntryTable;
-  UINT32                           ExtRootEntryTable;
-  UINT16                           RootEntryTablePageSize;
-  UINT16                           ExtRootEntryTablePageSize;
-  PEI_PCI_DEVICE_INFORMATION       PciDeviceInfo;
-  UINT8                            EnableQueuedInvalidation;
-  UINT16                           QiDescLength;
-  QI_DESC                          *QiDesc;
-  UINT16                           QiFreeHead;
+  UINT32                        VtdUnitBaseAddress;
+  UINT16                        Segment;
+  VTD_VER_REG                   VerReg;
+  VTD_CAP_REG                   CapReg;
+  VTD_ECAP_REG                  ECapReg;
+  BOOLEAN                       Is5LevelPaging;
+  UINT32                        FixedSecondLevelPagingEntry;
+  UINT32                        RmrrSecondLevelPagingEntry;
+  UINT32                        RootEntryTable;
+  UINT32                        ExtRootEntryTable;
+  UINT16                        RootEntryTablePageSize;
+  UINT16                        ExtRootEntryTablePageSize;
+  PEI_PCI_DEVICE_INFORMATION    PciDeviceInfo;
+  UINT8                         EnableQueuedInvalidation;
+  UINT16                        QiDescLength;
+  QI_DESC                       *QiDesc;
+  UINT16                        QiFreeHead;
 } VTD_UNIT_INFO;
 
 typedef struct {
-  UINT32                           AcpiDmarTable;
-  UINT8                            HostAddressWidth;
-  UINT32                           VTdEngineCount;
-  VTD_UNIT_INFO                    VtdUnitInfo[1];
+  UINT32           AcpiDmarTable;
+  UINT8            HostAddressWidth;
+  UINT32           VTdEngineCount;
+  VTD_UNIT_INFO    VtdUnitInfo[1];
 } VTD_INFO;
 
 typedef struct {
-  UINT64                            DmaBufferBase;
-  UINT64                            DmaBufferSize;
-  UINT64                            DmaBufferLimit;
-  UINT64                            DmaBufferCurrentTop;
-  UINT64                            DmaBufferCurrentBottom;
+  UINT64    DmaBufferBase;
+  UINT64    DmaBufferSize;
+  UINT64    DmaBufferLimit;
+  UINT64    DmaBufferCurrentTop;
+  UINT64    DmaBufferCurrentBottom;
 } DMA_BUFFER_INFO;
 
 /**
@@ -69,8 +69,8 @@ typedef struct {
 **/
 VOID
 EnableVTdTranslationProtectionAll (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT64                     EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -83,7 +83,7 @@ EnableVTdTranslationProtectionAll (
 **/
 EFI_STATUS
 EnableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -94,8 +94,8 @@ EnableVTdTranslationProtection (
 **/
 VOID
 DisableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT64                     EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -107,7 +107,7 @@ DisableVTdTranslationProtection (
 **/
 EFI_STATUS
 ParseDmarAcpiTableDrhd (
-  IN EFI_ACPI_DMAR_HEADER       *AcpiDmarTable
+  IN EFI_ACPI_DMAR_HEADER  *AcpiDmarTable
   );
 
 /**
@@ -117,7 +117,7 @@ ParseDmarAcpiTableDrhd (
 **/
 VOID
 ParseDmarAcpiTableRmrr (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -127,7 +127,7 @@ ParseDmarAcpiTableRmrr (
 **/
 VOID
 DumpAcpiDMAR (
-  IN EFI_ACPI_DMAR_HEADER       *Dmar
+  IN EFI_ACPI_DMAR_HEADER  *Dmar
   );
 
 /**
@@ -139,7 +139,7 @@ DumpAcpiDMAR (
 **/
 EFI_STATUS
 PrepareVtdCacheInvalidationConfig (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -151,7 +151,7 @@ PrepareVtdCacheInvalidationConfig (
 **/
 EFI_STATUS
 PrepareVtdConfig (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -164,7 +164,7 @@ PrepareVtdConfig (
 **/
 EFI_STATUS
 SetupTranslationTable (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -178,9 +178,9 @@ SetupTranslationTable (
 **/
 VOID
 FlushPageTableMemory (
-  IN VTD_UNIT_INFO              *VTdUnitInfo,
-  IN UINTN                      Base,
-  IN UINTN                      Size
+  IN VTD_UNIT_INFO  *VTdUnitInfo,
+  IN UINTN          Base,
+  IN UINTN          Size
   );
 
 /**
@@ -194,7 +194,7 @@ FlushPageTableMemory (
 VOID *
 EFIAPI
 AllocateZeroPages (
-  IN UINTN                      Pages
+  IN UINTN  Pages
   );
 
 /**
@@ -209,9 +209,9 @@ AllocateZeroPages (
 **/
 UINTN
 GetPciDataIndex (
-  IN VTD_UNIT_INFO              *VTdUnitInfo,
-  IN UINT16                     Segment,
-  IN VTD_SOURCE_ID              SourceId
+  IN VTD_UNIT_INFO  *VTdUnitInfo,
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId
   );
 
 /**
@@ -228,16 +228,15 @@ GetPciDataIndex (
 **/
 EFI_STATUS
 EnableRmrrPageAttribute (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT16                     Segment,
-  IN VTD_SOURCE_ID              SourceId,
-  IN UINT64                     MemoryBase,
-  IN UINT64                     MemoryLimit,
-  IN UINT64                     IoMmuAccess
+  IN VTD_INFO       *VTdInfo,
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId,
+  IN UINT64         MemoryBase,
+  IN UINT64         MemoryLimit,
+  IN UINT64         IoMmuAccess
   );
 
-extern EFI_GUID mVTdInfoGuid;
-extern EFI_GUID mDmaBufferInfoGuid;
+extern EFI_GUID  mVTdInfoGuid;
+extern EFI_GUID  mDmaBufferInfoGuid;
 
 #endif
-

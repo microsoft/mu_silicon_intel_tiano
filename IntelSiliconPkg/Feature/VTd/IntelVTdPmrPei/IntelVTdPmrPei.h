@@ -10,11 +10,11 @@
 #define __DMA_ACCESS_LIB_H__
 
 typedef struct {
-  EFI_ACPI_DMAR_HEADER                    *AcpiDmarTable;
-  UINT64                                  EngineMask;
-  UINT8                                   HostAddressWidth;
-  UINTN                                   VTdEngineCount;
-  UINT64                                  VTdEngineAddress[1];
+  EFI_ACPI_DMAR_HEADER    *AcpiDmarTable;
+  UINT64                  EngineMask;
+  UINT8                   HostAddressWidth;
+  UINTN                   VTdEngineCount;
+  UINT64                  VTdEngineAddress[1];
 } VTD_INFO;
 
 /**
@@ -32,12 +32,12 @@ typedef struct {
 **/
 EFI_STATUS
 SetDmaProtectedRange (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask,
-  IN UINT32        LowMemoryBase,
-  IN UINT32        LowMemoryLength,
-  IN UINT64        HighMemoryBase,
-  IN UINT64        HighMemoryLength
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask,
+  IN UINT32    LowMemoryBase,
+  IN UINT32    LowMemoryLength,
+  IN UINT64    HighMemoryBase,
+  IN UINT64    HighMemoryLength
   );
 
 /**
@@ -50,8 +50,8 @@ SetDmaProtectedRange (
 **/
 EFI_STATUS
 DisableDmaProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -65,8 +65,8 @@ DisableDmaProtection (
 **/
 UINT64
 GetDmaProtectionEnabledEngineMask (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -79,8 +79,8 @@ GetDmaProtectionEnabledEngineMask (
 **/
 UINT32
 GetLowMemoryAlignment (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -93,8 +93,8 @@ GetLowMemoryAlignment (
 **/
 UINT64
 GetHighMemoryAlignment (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -108,8 +108,8 @@ GetHighMemoryAlignment (
 **/
 EFI_STATUS
 PreMemoryEnableVTdTranslationProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -120,8 +120,8 @@ PreMemoryEnableVTdTranslationProtection (
 **/
 VOID
 EnableVTdTranslationProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -132,8 +132,8 @@ EnableVTdTranslationProtection (
 **/
 VOID
 DisableVTdTranslationProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   );
 
 /**
@@ -145,7 +145,7 @@ DisableVTdTranslationProtection (
 **/
 EFI_STATUS
 ParseDmarAcpiTableDrhd (
-  IN EFI_ACPI_DMAR_HEADER                    *AcpiDmarTable
+  IN EFI_ACPI_DMAR_HEADER  *AcpiDmarTable
   );
 
 /**
@@ -155,7 +155,7 @@ ParseDmarAcpiTableDrhd (
 **/
 VOID
 ParseDmarAcpiTableRmrr (
-  IN VTD_INFO                    *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -168,7 +168,6 @@ DumpAcpiDMAR (
   IN EFI_ACPI_DMAR_HEADER  *Dmar
   );
 
-extern EFI_GUID mVTdInfoGuid;
+extern EFI_GUID  mVTdInfoGuid;
 
 #endif
-
