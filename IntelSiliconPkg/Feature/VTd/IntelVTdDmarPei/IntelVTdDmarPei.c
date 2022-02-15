@@ -434,7 +434,7 @@ GetVTdInfoHob (
 VOID
 ProcessDhrdPreMemory (
   IN OUT VOID                       *Context,
-  IN     UINT32                     VTdIndex,
+  IN     UINTN                      VTdIndex,
   IN     EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
   )
 {
@@ -454,7 +454,7 @@ ProcessDhrdPreMemory (
 VOID
 ProcessDrhdPostMemory (
   IN OUT VOID                       *Context,
-  IN     UINT32                     VTdIndex,
+  IN     UINTN                      VTdIndex,
   IN     EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
   )
 {

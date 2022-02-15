@@ -49,7 +49,7 @@ typedef
 VOID
 (*PROCESS_DRHD_CALLBACK_FUNC) (
   IN OUT VOID                       *Context,
-  IN     UINT32                     VTdIndex,
+  IN     UINTN                      VTdIndex,
   IN     EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
   );
 
