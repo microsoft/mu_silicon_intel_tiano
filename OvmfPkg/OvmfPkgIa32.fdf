@@ -161,13 +161,7 @@ INF  OvmfPkg/SmmAccess/SmmAccessPei.inf
 !endif
 INF  UefiCpuPkg/CpuMpPei/CpuMpPei.inf
 
-!if $(TPM_ENABLE) == TRUE
-INF  OvmfPkg/Tcg/TpmMmioSevDecryptPei/TpmMmioSevDecryptPei.inf
-INF  OvmfPkg/Tcg/Tcg2Config/Tcg2ConfigPei.inf
-INF  SecurityPkg/Tcg/TcgPei/TcgPei.inf
-INF  SecurityPkg/Tcg/Tcg2Pei/Tcg2Pei.inf
-INF  SecurityPkg/Tcg/Tcg2PlatformPei/Tcg2PlatformPei.inf
-!endif
+!include OvmfPkg/OvmfTpmPei.fdf.inc
 
 ################################################################################
 
@@ -255,7 +249,6 @@ INF  MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
 INF  MdeModulePkg/Application/UiApp/UiApp.inf
 INF  OvmfPkg/QemuKernelLoaderFsDxe/QemuKernelLoaderFsDxe.inf
 INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
-INF  MdeModulePkg/Universal/PrintDxe/PrintDxe.inf
 INF  MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
 INF  MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
 INF  MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
@@ -281,7 +274,7 @@ INF  MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
 INF  OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe.inf
 
 INF  MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
-INF  OvmfPkg/AcpiPlatformDxe/QemuFwCfgAcpiPlatformDxe.inf
+INF  OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf
 INF  MdeModulePkg/Universal/Acpi/S3SaveStateDxe/S3SaveStateDxe.inf
 INF  MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
 INF  MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
@@ -361,14 +354,7 @@ INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 #
 # TPM support
 #
-!if $(TPM_ENABLE) == TRUE
-INF  SecurityPkg/Tcg/TcgDxe/TcgDxe.inf
-INF  SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.inf
-INF  SecurityPkg/Tcg/Tcg2PlatformDxe/Tcg2PlatformDxe.inf
-!if $(TPM_CONFIG_ENABLE) == TRUE
-INF  SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf
-!endif
-!endif
+!include OvmfPkg/OvmfTpmDxe.fdf.inc
 
 !if $(LOAD_X64_ON_IA32_ENABLE) == TRUE
 INF  OvmfPkg/CompatImageLoaderDxe/CompatImageLoaderDxe.inf

@@ -149,10 +149,12 @@ STATIC CONST CM_OBJ_PARSER  CmArmGenericWatchdogInfoParser[] = {
 /** A parser for EArmObjPciConfigSpaceInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmArmPciConfigSpaceInfoParser[] = {
-  { "BaseAddress",           8, "0x%llx", NULL },
-  { "PciSegmentGroupNumber", 2, "0x%x",   NULL },
-  { "StartBusNumber",        1, "0x%x",   NULL },
-  { "EndBusNumber",          1, "0x%x",   NULL }
+  { "BaseAddress",           8,                        "0x%llx", NULL },
+  { "PciSegmentGroupNumber", 2,                        "0x%x",   NULL },
+  { "StartBusNumber",        1,                        "0x%x",   NULL },
+  { "EndBusNumber",          1,                        "0x%x",   NULL },
+  { "AddressMapToken",       sizeof (CM_OBJECT_TOKEN), "0x%p",   NULL },
+  { "InterruptMapToken",     sizeof (CM_OBJECT_TOKEN), "0x%p",   NULL },
 };
 
 /** A parser for EArmObjHypervisorVendorIdentity.
@@ -401,6 +403,26 @@ STATIC CONST CM_OBJ_PARSER  CmArmLpiInfoParser[] = {
   { "StateName",                16,                                              "0x%a",   NULL },
 };
 
+/** A parser for EArmObjPciAddressMapInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmPciAddressMapInfoParser[] = {
+  { "SpaceCode",   1, "%d",     NULL },
+  { "PciAddress",  8, "0x%llx", NULL },
+  { "CpuAddress",  8, "0x%llx", NULL },
+  { "AddressSize", 8, "0x%llx", NULL },
+};
+
+/** A parser for EArmObjPciInterruptMapInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmPciInterruptMapInfoParser[] = {
+  { "PciBus",        1,                                 "0x%x", NULL },
+  { "PciDevice",     1,                                 "0x%x", NULL },
+  { "PciInterrupt",  1,                                 "0x%x", NULL },
+  { "IntcInterrupt", sizeof (CM_ARM_GENERIC_INTERRUPT),
+    NULL, NULL, CmArmGenericInterruptParser,
+    ARRAY_SIZE (CmArmGenericInterruptParser) },
+};
+
 /** A parser for Arm namespace objects.
 */
 STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
@@ -475,6 +497,10 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
     ARRAY_SIZE (CmArmCmn600InfoParser) },
   { "EArmObjLpiInfo",                      CmArmLpiInfoParser,
     ARRAY_SIZE (CmArmLpiInfoParser) },
+  { "EArmObjPciAddressMapInfo",            CmArmPciAddressMapInfoParser,
+    ARRAY_SIZE (CmArmPciAddressMapInfoParser) },
+  { "EArmObjPciInterruptMapInfo",          CmPciInterruptMapInfoParser,
+    ARRAY_SIZE (CmPciInterruptMapInfoParser) },
   { "EArmObjMax",                          NULL,                                  0                                },
 };
 
@@ -662,6 +688,7 @@ ParseCmObjDesc (
   UINT32                      ObjIndex;
   UINT32                      ObjectCount;
   INTN                        RemainingSize;
+  INTN                        Offset;
   CONST  CM_OBJ_PARSER_ARRAY  *ParserArray;
 
   if ((CmObjDesc == NULL) || (CmObjDesc->Data == NULL)) {
@@ -696,6 +723,7 @@ ParseCmObjDesc (
 
   ObjectCount   = CmObjDesc->Count;
   RemainingSize = CmObjDesc->Size;
+  Offset        = 0;
 
   for (ObjIndex = 0; ObjIndex < ObjectCount; ObjIndex++) {
     DEBUG ((
@@ -707,11 +735,21 @@ ParseCmObjDesc (
       ObjectCount
       ));
     PrintCmObjDesc (
-      CmObjDesc->Data,
+      (VOID *)((UINTN)CmObjDesc->Data + Offset),
       ParserArray->Parser,
       ParserArray->ItemCount,
       &RemainingSize,
       1
       );
+    if ((RemainingSize > CmObjDesc->Size) ||
+        (RemainingSize < 0))
+    {
+      ASSERT (0);
+      return;
+    }
+
+    Offset = CmObjDesc->Size - RemainingSize;
   } // for
+
+  ASSERT (RemainingSize == 0);
 }
