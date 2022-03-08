@@ -9,68 +9,61 @@
 #ifndef __DMA_ACCESS_LIB_H__
 #define __DMA_ACCESS_LIB_H__
 
-#define MAX_VTD_PCI_DATA_NUMBER             0x100
-
 #define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
 
 typedef struct {
-  UINT8                            DeviceType;
-  VTD_SOURCE_ID                    PciSourceId;
-} PEI_PCI_DEVICE_DATA;
-
-typedef struct {
-  BOOLEAN                          IncludeAllFlag;
-  UINT32                           PciDeviceDataNumber;
-  UINT32                           PciDeviceDataMaxNumber;
-  UINT32                           PciDeviceDataPageSize;
-  UINT32                           PciDeviceData;
-} PEI_PCI_DEVICE_INFORMATION;
-
-typedef struct {
-  UINT32                           VtdUnitBaseAddress;
+  BOOLEAN                          Done;
+  UINTN                            VtdUnitBaseAddress;
   UINT16                           Segment;
+  UINT8                            Flags;
   VTD_VER_REG                      VerReg;
   VTD_CAP_REG                      CapReg;
   VTD_ECAP_REG                     ECapReg;
   BOOLEAN                          Is5LevelPaging;
-  UINT32                           FixedSecondLevelPagingEntry;
-  UINT32                           RmrrSecondLevelPagingEntry;
-  UINT32                           RootEntryTable;
-  UINT32                           ExtRootEntryTable;
-  UINT16                           RootEntryTablePageSize;
-  UINT16                           ExtRootEntryTablePageSize;
-  PEI_PCI_DEVICE_INFORMATION       PciDeviceInfo;
   UINT8                            EnableQueuedInvalidation;
-  UINT16                           QiDescLength;
+  UINT16                           QueueSize;
   QI_DESC                          *QiDesc;
   UINT16                           QiFreeHead;
+  UINTN                            FixedSecondLevelPagingEntry;
+  UINTN                            RootEntryTable;
+  UINTN                            ExtRootEntryTable;
+  UINTN                            RootEntryTablePageSize;
+  UINTN                            ExtRootEntryTablePageSize;
 } VTD_UNIT_INFO;
 
 typedef struct {
-  UINT32                           AcpiDmarTable;
+  EFI_ACPI_DMAR_HEADER             *AcpiDmarTable;
   UINT8                            HostAddressWidth;
-  UINT32                           VTdEngineCount;
-  VTD_UNIT_INFO                    VtdUnitInfo[1];
+  UINTN                            VTdEngineCount;
+  VTD_UNIT_INFO                    *VtdUnitInfo;
 } VTD_INFO;
 
 typedef struct {
-  UINT64                            DmaBufferBase;
-  UINT64                            DmaBufferSize;
-  UINT64                            DmaBufferLimit;
-  UINT64                            DmaBufferCurrentTop;
-  UINT64                            DmaBufferCurrentBottom;
+  UINTN                            DmaBufferBase;
+  UINTN                            DmaBufferSize;
+  UINTN                            DmaBufferCurrentTop;
+  UINTN                            DmaBufferCurrentBottom;
 } DMA_BUFFER_INFO;
 
-/**
-  Enable VTd translation table protection.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  EngineMask        The mask of the VTd engine to be accessed.
-**/
+typedef
 VOID
-EnableVTdTranslationProtectionAll (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT64                     EngineMask
+(*PROCESS_DRHD_CALLBACK_FUNC) (
+  IN OUT VOID                       *Context,
+  IN     UINT32                     VTdIndex,
+  IN     EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
+  );
+
+/**
+  Enable VTd translation table protection for block DMA
+
+  @param[in] VtdUnitBaseAddress The base address of the VTd engine.
+
+  @retval EFI_SUCCESS           DMAR translation is enabled.
+  @retval EFI_DEVICE_ERROR      DMAR translation is not enabled.
+**/
+EFI_STATUS
+EnableVTdTranslationProtectionBlockDma (
+  IN UINTN                      VtdUnitBaseAddress
   );
 
 /**
@@ -90,34 +83,27 @@ EnableVTdTranslationProtection (
   Disable VTd translation table protection.
 
   @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  EngineMask        The mask of the VTd engine to be accessed.
 **/
 VOID
 DisableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT64                     EngineMask
+  IN VTD_INFO                   *VTdInfo
   );
 
 /**
   Parse DMAR DRHD table.
 
   @param[in]  AcpiDmarTable     DMAR ACPI table
+  @param[in]  Callback          Callback function for handle DRHD
+  @param[in]  Context           Callback function Context
 
-  @return EFI_SUCCESS           The DMAR DRHD table is parsed.
+  @return the VTd engine number.
+
 **/
-EFI_STATUS
+UINTN
 ParseDmarAcpiTableDrhd (
-  IN EFI_ACPI_DMAR_HEADER       *AcpiDmarTable
-  );
-
-/**
-  Parse DMAR DRHD table.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-**/
-VOID
-ParseDmarAcpiTableRmrr (
-  IN VTD_INFO                   *VTdInfo
+  IN EFI_ACPI_DMAR_HEADER               *AcpiDmarTable,
+  IN PROCESS_DRHD_CALLBACK_FUNC         Callback,
+  IN VOID                               *Context
   );
 
 /**
@@ -214,30 +200,7 @@ GetPciDataIndex (
   IN VTD_SOURCE_ID              SourceId
   );
 
-/**
-  Always enable the VTd page attribute for the device.
-
-  @param[in]  VTdInfo           The VTd engine context information.
-  @param[in]  Segment           The Segment used to identify a VTd engine.
-  @param[in]  SourceId          The SourceId used to identify a VTd engine and table entry.
-  @param[in]  MemoryBase        The base of the memory.
-  @param[in]  MemoryLimit       The limit of the memory.
-  @param[in]  IoMmuAccess       The IOMMU access.
-
-  @retval EFI_SUCCESS           The VTd entry is updated to always enable all DMA access for the specific device.
-**/
-EFI_STATUS
-EnableRmrrPageAttribute (
-  IN VTD_INFO                   *VTdInfo,
-  IN UINT16                     Segment,
-  IN VTD_SOURCE_ID              SourceId,
-  IN UINT64                     MemoryBase,
-  IN UINT64                     MemoryLimit,
-  IN UINT64                     IoMmuAccess
-  );
-
 extern EFI_GUID mVTdInfoGuid;
 extern EFI_GUID mDmaBufferInfoGuid;
 
 #endif
-
