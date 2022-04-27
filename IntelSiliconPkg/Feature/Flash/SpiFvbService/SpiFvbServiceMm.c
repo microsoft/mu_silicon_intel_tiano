@@ -115,10 +115,16 @@ FvbInitialize (
   UINT32                      MaxLbaSize;
   UINT32                      BytesWritten;
   UINTN                       BytesErased;
-  UINT64                      NvStorageFvSize;            // MU_CHANGE - TCBZ3479 - Add Variable Flash Information HOB
+  UINT64                      NvStorageFvSize;
 
-  // MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
-  GetVariableFlashInfo (&BaseAddress, (UINT32 *)&NvStorageFvSize);
+  Status = GetVariableFlashNvStorageInfo (&BaseAddress, &NvStorageFvSize);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    DEBUG ((DEBUG_ERROR, "[%a] - An error ocurred getting variable info - %r.\n", __FUNCTION__, Status));
+    return;
+  }
+
+  // Stay within the current UINT32 size assumptions in the variable stack.
   Status = SafeUint64ToUint32 (BaseAddress, &mPlatformFvBaseAddress[0].FvBase);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
@@ -129,13 +135,12 @@ FvbInitialize (
   Status = SafeUint64ToUint32 (NvStorageFvSize, &mPlatformFvBaseAddress[0].FvSize);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
-    DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage base size not supported.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage size not supported.\n", __FUNCTION__));
     return;
   }
 
   mPlatformFvBaseAddress[1].FvBase = PcdGet32 (PcdFlashMicrocodeFvBase);
   mPlatformFvBaseAddress[1].FvSize = PcdGet32 (PcdFlashMicrocodeFvSize);
-  // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
 
   //
   // We will only continue with FVB installation if the

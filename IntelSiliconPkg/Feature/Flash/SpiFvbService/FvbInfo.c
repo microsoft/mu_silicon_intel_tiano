@@ -18,8 +18,6 @@ typedef struct {
   EFI_FV_BLOCK_MAP_ENTRY        End[1];
 } EFI_FVB2_MEDIA_INFO;
 
-// MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
-
 /**
   Returns FVB media information for NV variable storage.
 
@@ -47,9 +45,8 @@ GenerateNvStorageFvbMediaInfo (
   OUT EFI_FVB2_MEDIA_INFO  *FvbMediaInfo
   )
 {
-  EFI_STATUS                  Status;
   UINT32                      NvBlockNum;
-  UINT64                      TotalNvVariableStorageSize;
+  UINT32                      TotalNvVariableStorageSize;
   EFI_PHYSICAL_ADDRESS        NvStorageBaseAddress;
   EFI_FIRMWARE_VOLUME_HEADER  FvbInfo = {
     { 0,   },                                                                     // ZeroVector[16]
@@ -74,16 +71,12 @@ GenerateNvStorageFvbMediaInfo (
 
   ZeroMem (FvbMediaInfo, sizeof (*FvbMediaInfo));
 
-  GetVariableFlashInfo (&NvStorageBaseAddress, (UINT32 *)&TotalNvVariableStorageSize);
+  GetVariableFvInfo (&NvStorageBaseAddress, &TotalNvVariableStorageSize);
   if ((NvStorageBaseAddress == 0) || (TotalNvVariableStorageSize == 0)) {
     return EFI_UNSUPPORTED;
   }
 
-  Status = SafeUint64ToUint32 (TotalNvVariableStorageSize / FVB_MEDIA_BLOCK_SIZE, &NvBlockNum);
-  ASSERT_EFI_ERROR (Status);
-  if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
-  }
+  NvBlockNum = TotalNvVariableStorageSize / FVB_MEDIA_BLOCK_SIZE;
 
   FvbInfo.FvLength              = (UINT64)(NvBlockNum * FVB_MEDIA_BLOCK_SIZE);
   FvbInfo.BlockMap[0].NumBlocks = NvBlockNum;
@@ -98,7 +91,6 @@ GenerateNvStorageFvbMediaInfo (
 FVB_MEDIA_INFO_GENERATOR  mFvbMediaInfoGenerators[] = {
   GenerateNvStorageFvbMediaInfo
 };
-// MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
 
 EFI_STATUS
 GetFvbInfo (
@@ -106,20 +98,17 @@ GetFvbInfo (
   OUT EFI_FIRMWARE_VOLUME_HEADER  **FvbInfo
   )
 {
-  // MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
-  EFI_STATUS           Status;
-  EFI_FVB2_MEDIA_INFO  FvbMediaInfo;
-  // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
+  EFI_STATUS                  Status;
+  EFI_FVB2_MEDIA_INFO         FvbMediaInfo;
   UINTN                       Index;
   EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
 
-  // MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
   for (Index = 0; Index < ARRAY_SIZE (mFvbMediaInfoGenerators); Index++) {
     Status = mFvbMediaInfoGenerators[Index](&FvbMediaInfo);
     ASSERT_EFI_ERROR (Status);
     if (!EFI_ERROR (Status) && (FvbMediaInfo.BaseAddress == FvBaseAddress)) {
       FvHeader = &FvbMediaInfo.FvbInfo;
-      // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
+
       //
       // Update the checksum value of FV header.
       //

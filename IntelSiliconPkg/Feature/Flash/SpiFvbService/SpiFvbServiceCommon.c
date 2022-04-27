@@ -3,6 +3,7 @@
   which are compliant with the Intel(R) Serial Flash Interface Compatibility Specification.
 
 Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -528,30 +529,27 @@ FvbSetVolumeAttributes (
   return EFI_SUCCESS;
 }
 
-// MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
-
 /**
-  Get the HOB that contains variable flash information.
+  Get the total size of the firmware volume on flash used for variable store operations.
 
-  @param[out] BaseAddress         Base address of the variable store.
-  @param[out] Length              Length in bytes of the firmware volume used for
-                                  variable store operations.
+  @param[out] BaseAddress         Base address of the variable store firmware volume.
+  @param[out] Length              Length in bytes of the firmware volume used for variable store operations.
 
 **/
 VOID
-GetVariableFlashInfo (
+GetVariableFvInfo (
   OUT EFI_PHYSICAL_ADDRESS  *BaseAddress,
   OUT UINT32                *Length
   )
 {
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  NvBaseAddress;
+  EFI_PHYSICAL_ADDRESS  NvVariableBaseAddress;
+  UINT64                Length64;
   UINT32                NvStoreLength;
   UINT32                FtwSpareLength;
   UINT32                FtwWorkingLength;
   UINT32                TotalLength;
-  EFI_HOB_GUID_TYPE     *GuidHob;
-  VARIABLE_FLASH_INFO   *VariableFlashInfo;
 
   TotalLength = 0;
   Status      = EFI_SUCCESS;
@@ -564,37 +562,38 @@ GetVariableFlashInfo (
   *BaseAddress = 0;
   *Length      = 0;
 
-  GuidHob = GetFirstGuidHob (&gVariableFlashInfoHobGuid);
-  if (GuidHob != NULL) {
-    DEBUG ((DEBUG_INFO, "[%a] - Variable Flash Info HOB found.\n", __FUNCTION__));
-    VariableFlashInfo = GET_GUID_HOB_DATA (GuidHob);
-    NvBaseAddress     = VariableFlashInfo->BaseAddress;
+  Status = GetVariableFlashNvStorageInfo (&NvBaseAddress, &Length64);
+  if (!EFI_ERROR (Status)) {
+    NvVariableBaseAddress = NvBaseAddress;
     // Stay within the current UINT32 size assumptions in the variable stack.
-    Status = SafeUint64ToUint32 (VariableFlashInfo->Length, &NvStoreLength);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      return;
-    }
-
-    Status = SafeUint64ToUint32 (VariableFlashInfo->FtwSpareLength, &FtwSpareLength);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      return;
-    }
-
-    Status = SafeUint64ToUint32 (VariableFlashInfo->FtwWorkingLength, &FtwWorkingLength);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      return;
-    }
+    Status = SafeUint64ToUint32 (Length64, &NvStoreLength);
   }
 
-  if ((GuidHob == NULL) || EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "[%a] - Unable to use Variable Flash Info HOB. Using PCD values.\n", __FUNCTION__));
-    NvBaseAddress    = (EFI_PHYSICAL_ADDRESS)PcdGet32 (PcdFlashNvStorageVariableBase);
-    NvStoreLength    = PcdGet32 (PcdFlashNvStorageVariableSize);
-    FtwSpareLength   = PcdGet32 (PcdFlashNvStorageFtwSpareSize);
-    FtwWorkingLength = PcdGet32 (PcdFlashNvStorageFtwWorkingSize);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  Status = GetVariableFlashFtwSpareInfo (&NvBaseAddress, &Length64);
+  if (!EFI_ERROR (Status)) {
+    // Stay within the current UINT32 size assumptions in the variable stack.
+    Status = SafeUint64ToUint32 (Length64, &FtwSpareLength);
+  }
+
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  Status = GetVariableFlashFtwWorkingInfo (&NvBaseAddress, &Length64);
+  if (!EFI_ERROR (Status)) {
+    // Stay within the current UINT32 size assumptions in the variable stack.
+    Status = SafeUint64ToUint32 (Length64, &FtwWorkingLength);
+  }
+
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
   }
 
   Status = SafeUint32Add (NvStoreLength, FtwSpareLength, &TotalLength);
@@ -609,22 +608,9 @@ GetVariableFlashInfo (
     return;
   }
 
-  *BaseAddress = NvBaseAddress;
+  *BaseAddress = NvVariableBaseAddress;
   *Length      = TotalLength;
-
-  //
-  // Assert if more than one variable flash information HOB is present.
-  //
-  DEBUG_CODE (
-    if ((GuidHob != NULL) && (GetNextGuidHob (&gVariableFlashInfoHobGuid, GET_NEXT_HOB (GuidHob)) != NULL)) {
-    DEBUG ((DEBUG_ERROR, "ERROR: Found two variable flash information HOBs\n"));
-    ASSERT (FALSE);
-  }
-
-    );
 }
-
-// MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
 
 /**
   Check the integrity of firmware volume header
@@ -641,14 +627,12 @@ IsFvHeaderValid (
   IN CONST EFI_FIRMWARE_VOLUME_HEADER  *FvHeader
   )
 {
-  // MU_CHANGE - START - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
   EFI_PHYSICAL_ADDRESS  NvStorageFvBaseAddress;
   UINT32                NvStorageSize;
 
-  GetVariableFlashInfo (&NvStorageFvBaseAddress, &NvStorageSize);
+  GetVariableFvInfo (&NvStorageFvBaseAddress, &NvStorageSize);
 
   if (FvBase == NvStorageFvBaseAddress) {
-    // MU_CHANGE - END - TCBZ3478 - Add Dynamic Variable Store and Microcode Support
     if (CompareMem (&FvHeader->FileSystemGuid, &gEfiSystemNvDataFvGuid, sizeof (EFI_GUID)) != 0 ) {
       return FALSE;
     }

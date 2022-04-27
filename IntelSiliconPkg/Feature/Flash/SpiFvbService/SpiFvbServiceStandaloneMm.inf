@@ -28,13 +28,13 @@
   BaseMemoryLib
   CacheMaintenanceLib
   DebugLib
-  HobLib                    # MU_CHANGE TCBZ3478 - Add Dynamic Variable Store and Microcode Support
   MemoryAllocationLib
   PcdLib
   MmServicesTableLib
-  SafeIntLib                # MU_CHANGE TCBZ3478 - Add Dynamic Variable Store and Microcode Support
+  SafeIntLib
   SpiFlashCommonLib
   StandaloneMmDriverEntryPoint
+  VariableFlashInfoLib
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -42,10 +42,6 @@
   IntelSiliconPkg/IntelSiliconPkg.dec
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase   ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize   ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize   ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvBase         ## CONSUMES
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvSize         ## CONSUMES
 
@@ -64,7 +60,6 @@
 [Guids]
   gEfiFirmwareFileSystem2Guid                   ## CONSUMES
   gEfiSystemNvDataFvGuid                        ## CONSUMES
-  gVariableFlashInfoHobGuid                     ## CONSUMES  # MU_CHANGE TCBZ3478 - Add Dynamic Variable Store and Microcode Support
 
 [Depex]
   TRUE
