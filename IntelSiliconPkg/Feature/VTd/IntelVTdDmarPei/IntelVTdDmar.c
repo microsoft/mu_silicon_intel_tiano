@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2020 - 2021, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2020 - 2022, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -570,10 +570,12 @@ EnableVTdTranslationProtectionBlockDma (
 
   DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtectionBlockDma - 0x%08x\n", VtdUnitBaseAddress));
 
-  ECapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_ECAP_REG);
-  DEBUG ((DEBUG_INFO, "ECapReg : 0%016lx\n", ECapReg.Uint64));
+  DEBUG ((DEBUG_INFO, "PcdVTdSupportAbortDmaMode : %d\n", FixedPcdGetBool (PcdVTdSupportAbortDmaMode)));
 
-  if (ECapReg.Bits.ADMS == 1) {
+  ECapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_ECAP_REG);
+  DEBUG ((DEBUG_INFO, "ECapReg.ADMS : %d\n", ECapReg.Bits.ADMS));
+
+  if ((ECapReg.Bits.ADMS == 1) && FixedPcdGetBool (PcdVTdSupportAbortDmaMode)) {
     //
     // Use Abort DMA Mode
     //
@@ -594,6 +596,7 @@ EnableVTdTranslationProtectionBlockDma (
       ASSERT (FALSE);
       return EFI_DEVICE_ERROR;
     }
+    DEBUG ((DEBUG_INFO, "Block All DMA by TE.\n"));
     Status = EnableDmarPreMem (VtdUnitBaseAddress, (UINT64) (*RootEntryTable));
   }
 

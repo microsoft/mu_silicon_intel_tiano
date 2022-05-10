@@ -4,7 +4,7 @@
 # This driver initializes VTd engine based upon EDKII_VTD_INFO_PPI
 # and provide DMA protection in PEI.
 #
-# Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2022, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -55,6 +55,7 @@
   gIntelSiliconPkgTokenSpaceGuid.PcdVTdPolicyPropertyMask   ## CONSUMES
   gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiDmaBufferSize     ## CONSUMES
   gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiDmaBufferSizeS3   ## CONSUMES
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdSupportAbortDmaMode  ## CONSUMES
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid AND
