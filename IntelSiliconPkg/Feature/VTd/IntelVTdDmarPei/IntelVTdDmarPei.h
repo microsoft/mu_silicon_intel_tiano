@@ -21,7 +21,7 @@ typedef struct {
   VTD_ECAP_REG                     ECapReg;
   BOOLEAN                          Is5LevelPaging;
   UINT8                            EnableQueuedInvalidation;
-  UINT16                           QueueSize;
+  UINT16                           QiDescLength;
   QI_DESC                          *QiDesc;
   UINT16                           QiFreeHead;
   UINTN                            FixedSecondLevelPagingEntry;

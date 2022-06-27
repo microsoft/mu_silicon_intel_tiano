@@ -72,7 +72,7 @@ PerpareCacheInvalidationInterface (
   UINT64  Reg64;
   UINT32  Reg32;
 
-  if (mVtdUnitInformation[VtdIndex].VerReg.Bits.Major <= 6) {
+  if (mVtdUnitInformation[VtdIndex].VerReg.Bits.Major <= 5) {
     mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation = 0;
     DEBUG ((DEBUG_INFO, "Use Register-based Invalidation Interface for engine [%d]\n", VtdIndex));
     return EFI_SUCCESS;

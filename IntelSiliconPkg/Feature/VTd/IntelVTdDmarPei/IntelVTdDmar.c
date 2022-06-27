@@ -79,7 +79,7 @@ PerpareCacheInvalidationInterface (
   IN VTD_UNIT_INFO *VTdUnitInfo
   )
 {
-  UINT16         QiDescLength;
+  UINT16         QueueSize;
   UINT64         Reg64;
   UINT32         Reg32;
   VTD_ECAP_REG   ECapReg;
@@ -122,18 +122,18 @@ PerpareCacheInvalidationInterface (
   // Setup the IQ address, size and descriptor width through the Invalidation Queue Address Register
   //
   if (VTdUnitInfo->QiDesc == NULL) {
-    VTdUnitInfo->QueueSize = 0;
-    QiDescLength = 1 << (VTdUnitInfo->QueueSize + 8);
-    VTdUnitInfo->QiDesc = (QI_DESC *) AllocatePages (EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * QiDescLength));
+    QueueSize = 0;
+    VTdUnitInfo->QiDescLength = 1 << (QueueSize + 8);
+    VTdUnitInfo->QiDesc = (QI_DESC *) AllocatePages (EFI_SIZE_TO_PAGES (sizeof (QI_DESC) * VTdUnitInfo->QiDescLength));
     if (VTdUnitInfo->QiDesc == NULL) {
       DEBUG ((DEBUG_ERROR,"Could not Alloc Invalidation Queue Buffer.\n"));
       return EFI_OUT_OF_RESOURCES;
     }
   }
 
-  DEBUG ((DEBUG_INFO, "Invalidation Queue Length : %d\n", QiDescLength));
+  DEBUG ((DEBUG_INFO, "Invalidation Queue Length : %d\n", VTdUnitInfo->QiDescLength));
   Reg64 = (UINT64) (UINTN) VTdUnitInfo->QiDesc;
-  Reg64 |= VTdUnitInfo->QueueSize;
+  Reg64 |= QueueSize;
   MmioWrite64 (VtdUnitBaseAddress + R_IQA_REG, Reg64);
 
   //
@@ -164,7 +164,6 @@ DisableQueuedInvalidationInterface (
   )
 {
   UINT32         Reg32;
-  UINT16         QiDescLength;
 
   if (VTdUnitInfo->EnableQueuedInvalidation != 0) {
     Reg32 = MmioRead32 (VTdUnitInfo->VtdUnitBaseAddress + R_GSTS_REG);
@@ -176,10 +175,9 @@ DisableQueuedInvalidationInterface (
     } while ((Reg32 & B_GSTS_REG_QIES) != 0);
 
     if (VTdUnitInfo->QiDesc != NULL) {
-      QiDescLength = 1 << (VTdUnitInfo->QueueSize + 8);
-      FreePages(VTdUnitInfo->QiDesc, EFI_SIZE_TO_PAGES(sizeof(QI_DESC) * QiDescLength));
+      FreePages(VTdUnitInfo->QiDesc, EFI_SIZE_TO_PAGES (sizeof (QI_DESC) * VTdUnitInfo->QiDescLength));
       VTdUnitInfo->QiDesc = NULL;
-      VTdUnitInfo->QueueSize = 0;
+      VTdUnitInfo->QiDescLength = 0;
     }
 
     VTdUnitInfo->EnableQueuedInvalidation = 0;
@@ -239,10 +237,10 @@ SubmitQueuedInvalidationDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  QiDescLength = 1 << (VTdUnitInfo->QueueSize + 8);
+  QiDescLength = VTdUnitInfo->QiDescLength;
   BaseDesc = VTdUnitInfo->QiDesc;
 
-  DEBUG((DEBUG_INFO, "[0x%x] Submit QI Descriptor [0x%08x, 0x%08x]\n", VTdUnitInfo->VtdUnitBaseAddress, Desc->Low, Desc->High));
+  DEBUG((DEBUG_INFO, "[0x%x] Submit QI Descriptor [0x%016lx, 0x%016lx]\n", VTdUnitInfo->VtdUnitBaseAddress, Desc->Low, Desc->High));
 
   BaseDesc[VTdUnitInfo->QiFreeHead].Low = Desc->Low;
   BaseDesc[VTdUnitInfo->QiFreeHead].High = Desc->High;
@@ -251,7 +249,6 @@ SubmitQueuedInvalidationDescriptor (
   DEBUG((DEBUG_INFO,"QI Free Head=0x%x\n", VTdUnitInfo->QiFreeHead));
   VTdUnitInfo->QiFreeHead = (VTdUnitInfo->QiFreeHead + 1) % QiDescLength;
 
-  Reg64Iqh = MmioRead64 (VTdUnitInfo->VtdUnitBaseAddress + R_IQH_REG);
   //
   // Update the HW tail register indicating the presence of new descriptors.
   //
@@ -328,6 +325,7 @@ InvalidateIOTLB (
 {
   UINT64                        Reg64;
   VTD_ECAP_REG                  ECapReg;
+  VTD_CAP_REG                   CapReg;
   QI_DESC                       QiDesc;
 
   if (VTdUnitInfo->EnableQueuedInvalidation == 0) {
@@ -353,8 +351,8 @@ InvalidateIOTLB (
     //
     // Queued Invalidation
     //
-    ECapReg.Uint64 = MmioRead64 (VTdUnitInfo->VtdUnitBaseAddress + R_ECAP_REG);
-    QiDesc.Low = QI_IOTLB_DID(0) | QI_IOTLB_DR(CAP_READ_DRAIN(ECapReg.Uint64)) | QI_IOTLB_DW(CAP_WRITE_DRAIN(ECapReg.Uint64)) | QI_IOTLB_GRAN(1) | QI_IOTLB_TYPE;
+    CapReg.Uint64 = MmioRead64 (VTdUnitInfo->VtdUnitBaseAddress + R_CAP_REG);
+    QiDesc.Low = QI_IOTLB_DID(0) | QI_IOTLB_DR(CAP_READ_DRAIN(CapReg.Uint64)) | QI_IOTLB_DW(CAP_WRITE_DRAIN(CapReg.Uint64)) | QI_IOTLB_GRAN(1) | QI_IOTLB_TYPE;
     QiDesc.High = QI_IOTLB_ADDR(0) | QI_IOTLB_IH(0) | QI_IOTLB_AM(0);
 
     return SubmitQueuedInvalidationDescriptor(VTdUnitInfo, &QiDesc);
@@ -364,7 +362,7 @@ InvalidateIOTLB (
 }
 
 /**
-  Enable DMAR translation inpre-mem phase.
+  Enable DMAR translation in pre-mem phase.
 
   @param[in]  VtdUnitBaseAddress  The base address of the VTd engine.
   @param[in]  RtaddrRegValue      The value of RTADDR_REG.
@@ -400,7 +398,7 @@ EnableDmarPreMem (
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_FEDATA_REG);
 
   //
-  // Write Buffer Flush before invalidation
+  // Write Buffer Flush
   //
   FlushWriteBuffer (VtdUnitBaseAddress);
 
