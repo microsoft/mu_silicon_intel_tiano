@@ -35,9 +35,12 @@ EFI_STATUS
 /**
   Returns FVB media information for NV variable storage.
 
-  @return       FvbMediaInfo          A pointer to an instance of FVB media info produced by this function.
-                                      The buffer is allocated internally to this function and it is the caller's
-                                      responsibility to free the memory
+  @param[out]   FvbMediaInfo          A pointer to an instance of FVB media info produced by this function.
+
+  @retval       EFI_SUCCESS           A structure was successfully written to the FvbMediaInfo buffer.
+  @retval       EFI_INVALID_PARAMETER The FvbMediaInfo parameter is NULL.
+  @retval       EFI_UNSUPPORTED       An error occurred retrieving variable FV information.
+  @retval       EFI_BAD_BUFFER_SIZE   An overflow or underflow of the FV buffer occurred with the information found.
 
 **/
 EFI_STATUS
@@ -45,6 +48,7 @@ GenerateNvStorageFvbMediaInfo (
   OUT EFI_FVB2_MEDIA_INFO  *FvbMediaInfo
   )
 {
+  EFI_STATUS                  Status;
   UINT32                      NvBlockNum;
   UINT32                      TotalNvVariableStorageSize;
   EFI_PHYSICAL_ADDRESS        NvStorageBaseAddress;
@@ -78,7 +82,11 @@ GenerateNvStorageFvbMediaInfo (
 
   NvBlockNum = TotalNvVariableStorageSize / FVB_MEDIA_BLOCK_SIZE;
 
-  FvbInfo.FvLength              = (UINT64)(NvBlockNum * FVB_MEDIA_BLOCK_SIZE);
+  Status = SafeUint64Mult ((UINT64)NvBlockNum, FVB_MEDIA_BLOCK_SIZE, &FvbInfo.FvLength);
+  if (EFI_ERROR (Status)) {
+    return EFI_BAD_BUFFER_SIZE;
+  }
+
   FvbInfo.BlockMap[0].NumBlocks = NvBlockNum;
   FvbInfo.BlockMap[0].Length    = FVB_MEDIA_BLOCK_SIZE;
 
