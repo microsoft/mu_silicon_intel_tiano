@@ -162,7 +162,8 @@ FvbInitialize (
         BytesWritten = 0;
         BytesErased  = 0;
         DEBUG ((DEBUG_ERROR, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
-        Status = GetFvbInfo (BaseAddress, &FvHeader);
+        FvHeader = NULL;
+        Status   = GetFvbInfo (BaseAddress, &FvHeader);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - Can't recovery FV header at 0x%x.  GetFvbInfo Status %r\n", BaseAddress, Status));
           continue;
@@ -176,12 +177,20 @@ FvbInitialize (
         Status      = SpiFlashBlockErase ((UINTN)BaseAddress, &BytesErased);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashBlockErase Error  %r\n", Status));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
+
           continue;
         }
 
         if (BytesErased != FvHeader->BlockMap->Length) {
           DEBUG ((DEBUG_WARN, "ERROR - BytesErased != FvHeader->BlockMap->Length\n"));
           DEBUG ((DEBUG_INFO, " BytesErased = 0x%X\n Length = 0x%X\n", BytesErased, FvHeader->BlockMap->Length));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
+
           continue;
         }
 
@@ -189,18 +198,30 @@ FvbInitialize (
         Status       = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, (UINT8 *)FvHeader);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashWrite Error  %r\n", Status));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
+
           continue;
         }
 
         if (BytesWritten != FvHeader->HeaderLength) {
           DEBUG ((DEBUG_WARN, "ERROR - BytesWritten != HeaderLength\n"));
           DEBUG ((DEBUG_INFO, " BytesWritten = 0x%X\n HeaderLength = 0x%X\n", BytesWritten, FvHeader->HeaderLength));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
+
           continue;
         }
 
         Status = SpiFlashLock ();
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashLock Error  %r\n", Status));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
+
           continue;
         }
 
@@ -209,6 +230,9 @@ FvbInitialize (
         // Clear cache for this range.
         //
         WriteBackInvalidateDataCacheRange ((VOID *)(UINTN)BaseAddress, FvHeader->BlockMap->Length);
+        if (FvHeader != NULL) {
+          FreePool (FvHeader);
+        }
       }
     }
 
