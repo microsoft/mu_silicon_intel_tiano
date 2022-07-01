@@ -2,6 +2,7 @@
   Common source definitions used in serial flash drivers
 
 Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -12,6 +13,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/EventGroup.h>
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/SystemNvDataGuid.h>
+#include <Pi/PiFirmwareVolume.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/FirmwareVolumeBlock.h>
 
@@ -24,6 +26,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PcdLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/HobLib.h>
+#include <Library/VariableFlashInfoLib.h>
+#include <Library/SafeIntLib.h>
 
 #include <Library/SpiFlashCommonLib.h>
 
@@ -148,11 +152,23 @@ GetFvbInfo (
   OUT EFI_FIRMWARE_VOLUME_HEADER   **FvbInfo
   );
 
+/**
+  Get the total size of the firmware volume on flash used for variable store operations.
+
+  @param[out] BaseAddress         Base address of the variable store firmware volume.
+  @param[out] Length              Length in bytes of the firmware volume used for variable store operations.
+
+**/
+VOID
+GetVariableFvInfo (
+  OUT EFI_PHYSICAL_ADDRESS      *BaseAddress,
+  OUT UINT32                    *Length
+  );
+
 extern FVB_GLOBAL                         mFvbModuleGlobal;
 extern FV_MEMMAP_DEVICE_PATH              mFvMemmapDevicePathTemplate;
 extern FV_PIWG_DEVICE_PATH                mFvPIWGDevicePathTemplate;
 extern EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL mFvbProtocolTemplate;
 extern FV_INFO                            mPlatformFvBaseAddress[];
-extern FV_INFO                            mPlatformDefaultBaseAddress[];
 
 #endif

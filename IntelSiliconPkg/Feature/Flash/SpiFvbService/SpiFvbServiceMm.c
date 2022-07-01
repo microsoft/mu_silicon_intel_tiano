@@ -113,15 +113,31 @@ FvbInitialize (
   UINT32                                MaxLbaSize;
   UINT32                                BytesWritten;
   UINTN                                 BytesErased;
+  UINT64                                NvStorageFvSize;
 
-  mPlatformFvBaseAddress[0].FvBase = PcdGet32(PcdFlashNvStorageVariableBase);
-  mPlatformFvBaseAddress[0].FvSize = PcdGet32(PcdFlashNvStorageVariableSize);
+  Status = GetVariableFlashNvStorageInfo (&BaseAddress, &NvStorageFvSize);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    DEBUG ((DEBUG_ERROR, "[%a] - An error ocurred getting variable info - %r.\n", __FUNCTION__, Status));
+    return;
+  }
+
+  // Stay within the current UINT32 size assumptions in the variable stack.
+  Status = SafeUint64ToUint32 (BaseAddress, &mPlatformFvBaseAddress[0].FvBase);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage base address not supported.\n", __FUNCTION__));
+    return;
+  }
+  Status = SafeUint64ToUint32 (NvStorageFvSize, &mPlatformFvBaseAddress[0].FvSize);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage size not supported.\n", __FUNCTION__));
+    return;
+  }
+
   mPlatformFvBaseAddress[1].FvBase = PcdGet32(PcdFlashMicrocodeFvBase);
   mPlatformFvBaseAddress[1].FvSize = PcdGet32(PcdFlashMicrocodeFvSize);
-  mPlatformDefaultBaseAddress[0].FvBase = PcdGet32(PcdFlashNvStorageVariableBase);
-  mPlatformDefaultBaseAddress[0].FvSize = PcdGet32(PcdFlashNvStorageVariableSize);
-  mPlatformDefaultBaseAddress[1].FvBase = PcdGet32(PcdFlashMicrocodeFvBase);
-  mPlatformDefaultBaseAddress[1].FvSize = PcdGet32(PcdFlashMicrocodeFvSize);
 
   //
   // We will only continue with FVB installation if the
@@ -143,7 +159,8 @@ FvbInitialize (
         BytesWritten = 0;
         BytesErased = 0;
         DEBUG ((DEBUG_ERROR, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
-        Status = GetFvbInfo (BaseAddress, &FvHeader);
+        FvHeader = NULL;
+        Status   = GetFvbInfo (BaseAddress, &FvHeader);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - Can't recovery FV header at 0x%x.  GetFvbInfo Status %r\n", BaseAddress, Status));
           continue;
@@ -156,27 +173,42 @@ FvbInitialize (
         Status = SpiFlashBlockErase( (UINTN) BaseAddress, &BytesErased);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashBlockErase Error  %r\n", Status));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
           continue;
         }
         if (BytesErased != FvHeader->BlockMap->Length) {
           DEBUG ((DEBUG_WARN, "ERROR - BytesErased != FvHeader->BlockMap->Length\n"));
           DEBUG ((DEBUG_INFO, " BytesErased = 0x%X\n Length = 0x%X\n", BytesErased, FvHeader->BlockMap->Length));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
           continue;
         }
         BytesWritten = FvHeader->HeaderLength;
         Status = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, (UINT8*)FvHeader);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashWrite Error  %r\n", Status));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
           continue;
         }
         if (BytesWritten != FvHeader->HeaderLength) {
           DEBUG ((DEBUG_WARN, "ERROR - BytesWritten != HeaderLength\n"));
           DEBUG ((DEBUG_INFO, " BytesWritten = 0x%X\n HeaderLength = 0x%X\n", BytesWritten, FvHeader->HeaderLength));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
           continue;
         }
         Status = SpiFlashLock ();
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashLock Error  %r\n", Status));
+          if (FvHeader != NULL) {
+            FreePool (FvHeader);
+          }
           continue;
         }
         DEBUG ((DEBUG_INFO, "FV Header @ 0x%X restored with static data\n", BaseAddress));
@@ -184,6 +216,9 @@ FvbInitialize (
         // Clear cache for this range.
         //
         WriteBackInvalidateDataCacheRange ( (VOID *) (UINTN) BaseAddress, FvHeader->BlockMap->Length);
+        if (FvHeader != NULL) {
+          FreePool (FvHeader);
+        }
       }
     }
 

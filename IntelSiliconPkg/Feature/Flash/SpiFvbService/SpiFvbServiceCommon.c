@@ -3,6 +3,7 @@
   which are compliant with the Intel(R) Serial Flash Interface Compatibility Specification.
 
 Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -20,12 +21,6 @@ FVB_GLOBAL   mFvbModuleGlobal;
 // Now we only provide FVs on Variable region and MicorCode region for performance issue.
 //
 FV_INFO mPlatformFvBaseAddress[] = {
-  {0, 0}, // {FixedPcdGet32(PcdFlashNvStorageVariableBase), FixedPcdGet32(PcdFlashNvStorageVariableSize)},
-  {0, 0}, // {FixedPcdGet32(PcdFlashMicrocodeFvBase), FixedPcdGet32(PcdFlashMicrocodeFvSize)},
-  {0, 0}
-};
-
-FV_INFO mPlatformDefaultBaseAddress[] = {
   {0, 0}, // {FixedPcdGet32(PcdFlashNvStorageVariableBase), FixedPcdGet32(PcdFlashNvStorageVariableSize)},
   {0, 0}, // {FixedPcdGet32(PcdFlashMicrocodeFvBase), FixedPcdGet32(PcdFlashMicrocodeFvSize)},
   {0, 0}
@@ -531,6 +526,85 @@ FvbSetVolumeAttributes (
 }
 
 /**
+  Get the total size of the firmware volume on flash used for variable store operations.
+
+  @param[out] BaseAddress         Base address of the variable store firmware volume.
+  @param[out] Length              Length in bytes of the firmware volume used for variable store operations.
+
+**/
+VOID
+GetVariableFvInfo (
+  OUT EFI_PHYSICAL_ADDRESS      *BaseAddress,
+  OUT UINT32                    *Length
+  )
+{
+  EFI_STATUS                    Status;
+  EFI_PHYSICAL_ADDRESS          NvBaseAddress;
+  EFI_PHYSICAL_ADDRESS          NvVariableBaseAddress;
+  UINT64                        Length64;
+  UINT32                        NvStoreLength;
+  UINT32                        FtwSpareLength;
+  UINT32                        FtwWorkingLength;
+  UINT32                        TotalLength;
+
+  TotalLength = 0;
+  Status = EFI_SUCCESS;
+
+  if ((BaseAddress == NULL) || (Length == NULL)) {
+    ASSERT ((BaseAddress != NULL) && (Length != NULL));
+    return;
+  }
+  *BaseAddress = 0;
+  *Length = 0;
+
+  Status = GetVariableFlashNvStorageInfo (&NvBaseAddress, &Length64);
+  if (!EFI_ERROR (Status)) {
+    NvVariableBaseAddress = NvBaseAddress;
+    // Stay within the current UINT32 size assumptions in the variable stack.
+    Status = SafeUint64ToUint32 (Length64, &NvStoreLength);
+  }
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  Status = GetVariableFlashFtwSpareInfo (&NvBaseAddress, &Length64);
+  if (!EFI_ERROR (Status)) {
+    // Stay within the current UINT32 size assumptions in the variable stack.
+    Status = SafeUint64ToUint32 (Length64, &FtwSpareLength);
+  }
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  Status = GetVariableFlashFtwWorkingInfo (&NvBaseAddress, &Length64);
+  if (!EFI_ERROR (Status)) {
+    // Stay within the current UINT32 size assumptions in the variable stack.
+    Status = SafeUint64ToUint32 (Length64, &FtwWorkingLength);
+  }
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  Status = SafeUint32Add (NvStoreLength, FtwSpareLength, &TotalLength);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  Status = SafeUint32Add (TotalLength, FtwWorkingLength, &TotalLength);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
+  *BaseAddress = NvVariableBaseAddress;
+  *Length = TotalLength;
+}
+
+/**
   Check the integrity of firmware volume header
 
   @param[in]  FvHeader   A pointer to a firmware volume header
@@ -545,7 +619,12 @@ IsFvHeaderValid (
   IN CONST EFI_FIRMWARE_VOLUME_HEADER    *FvHeader
   )
 {
-  if (FvBase == PcdGet32(PcdFlashNvStorageVariableBase)) {
+  EFI_PHYSICAL_ADDRESS    NvStorageFvBaseAddress;
+  UINT32                  NvStorageSize;
+
+  GetVariableFvInfo (&NvStorageFvBaseAddress, &NvStorageSize);
+
+  if (FvBase == NvStorageFvBaseAddress) {
     if (CompareMem (&FvHeader->FileSystemGuid, &gEfiSystemNvDataFvGuid, sizeof(EFI_GUID)) != 0 ) {
       return FALSE;
     }

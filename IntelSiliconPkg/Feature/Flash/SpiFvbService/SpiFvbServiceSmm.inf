@@ -32,8 +32,10 @@
   BaseLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
+  SafeIntLib
   SpiFlashCommonLib
   MmServicesTableLib
+  VariableFlashInfoLib
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -41,10 +43,6 @@
   IntelSiliconPkg/IntelSiliconPkg.dec
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize   ## CONSUMES
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvBase         ## CONSUMES
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvSize         ## CONSUMES
 
