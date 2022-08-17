@@ -94,6 +94,10 @@ DumpDmarDeviceScopeEntry (
     DmarDeviceScopeEntry->Length
     ));
   DEBUG ((DEBUG_INFO,
+    "      Flags .............................................. 0x%02x\n",
+    DmarDeviceScopeEntry->Flags
+    ));
+  DEBUG ((DEBUG_INFO,
     "      Enumeration ID ..................................... 0x%02x\n",
     DmarDeviceScopeEntry->EnumerationId
     ));
@@ -117,6 +121,66 @@ DumpDmarDeviceScopeEntry (
 
   DEBUG ((DEBUG_INFO,
     "    *************************************************************************\n\n"
+    ));
+
+  return;
+}
+
+/**
+  Dump DMAR SIDP table.
+
+  @param[in]  Sidp  DMAR SIDP table
+**/
+VOID
+DumpDmarSidp (
+  IN EFI_ACPI_DMAR_SIDP_HEADER *Sidp
+  )
+{
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER   *DmarDeviceScopeEntry;
+  INTN                                          SidpLen;
+
+  if (Sidp == NULL) {
+    return;
+  }
+
+  DEBUG ((DEBUG_INFO,
+    "  ***************************************************************************\n"
+    ));
+  DEBUG ((DEBUG_INFO,
+    "  *       SoC Integrated Device Property Reporting Structure                *\n"
+    ));
+  DEBUG ((DEBUG_INFO,
+    "  ***************************************************************************\n"
+    ));
+  DEBUG ((DEBUG_INFO,
+    (sizeof(UINTN) == sizeof(UINT64)) ?
+    "  SIDP address ........................................... 0x%016lx\n" :
+    "  SIDP address ........................................... 0x%08x\n",
+    Sidp
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Type ................................................. 0x%04x\n",
+    Sidp->Header.Type
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Length ............................................... 0x%04x\n",
+    Sidp->Header.Length
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Segment Number ....................................... 0x%04x\n",
+    Sidp->SegmentNumber
+    ));
+
+  SidpLen  = Sidp->Header.Length - sizeof(EFI_ACPI_DMAR_SIDP_HEADER);
+  DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Sidp + 1);
+  while (SidpLen > 0) {
+    DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
+    SidpLen -= DmarDeviceScopeEntry->Length;
+    DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
+  }
+
+  DEBUG ((DEBUG_INFO,
+    "  ***************************************************************************\n\n"
     ));
 
   return;
@@ -473,6 +537,10 @@ DumpDmarDrhd (
     Drhd->Flags
     ));
   DEBUG ((DEBUG_INFO,
+    "    Size ................................................. 0x%02x\n",
+    Drhd->Size
+    ));
+  DEBUG ((DEBUG_INFO,
     "      INCLUDE_PCI_ALL .................................... 0x%02x\n",
     Drhd->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL
     ));
@@ -583,7 +651,11 @@ DumpAcpiDMAR (
     case EFI_ACPI_DMAR_TYPE_SATC:
       DumpDmarSatc ((EFI_ACPI_DMAR_SATC_HEADER *)DmarHeader);
       break;
+    case EFI_ACPI_DMAR_TYPE_SIDP:
+      DumpDmarSidp ((EFI_ACPI_DMAR_SIDP_HEADER *)DmarHeader);
+      break;
     default:
+      DEBUG ((DEBUG_INFO, "Unknown DMAR Table Type : %d\n", DmarHeader->Type));
       break;
     }
     DmarLen -= DmarHeader->Length;
