@@ -642,7 +642,7 @@ DumpVtdVerRegs (
   IN VTD_VER_REG                *VerReg
   )
 {
-  DEBUG ((DEBUG_INFO, "  VerReg:\n", VerReg->Uint32));
+  DEBUG ((DEBUG_INFO, "   VerReg - 0x%x\n", VerReg->Uint32));
   DEBUG ((DEBUG_INFO, "    Major - 0x%x\n", VerReg->Bits.Major));
   DEBUG ((DEBUG_INFO, "    Minor - 0x%x\n", VerReg->Bits.Minor));
 }
@@ -657,7 +657,7 @@ DumpVtdCapRegs (
   IN VTD_CAP_REG *CapReg
   )
 {
-  DEBUG((DEBUG_INFO, "  CapReg:\n", CapReg->Uint64));
+  DEBUG((DEBUG_INFO, "  CapReg   - 0x%x\n", CapReg->Uint64));
   DEBUG((DEBUG_INFO, "    ND     - 0x%x\n", CapReg->Bits.ND));
   DEBUG((DEBUG_INFO, "    AFL    - 0x%x\n", CapReg->Bits.AFL));
   DEBUG((DEBUG_INFO, "    RWBF   - 0x%x\n", CapReg->Bits.RWBF));
@@ -688,7 +688,7 @@ DumpVtdECapRegs (
   IN VTD_ECAP_REG *ECapReg
   )
 {
-  DEBUG((DEBUG_INFO, "  ECapReg:\n", ECapReg->Uint64));
+  DEBUG((DEBUG_INFO, "  ECapReg  - 0x%x\n", ECapReg->Uint64));
   DEBUG((DEBUG_INFO, "    C      - 0x%x\n", ECapReg->Bits.C));
   DEBUG((DEBUG_INFO, "    QI     - 0x%x\n", ECapReg->Bits.QI));
   DEBUG((DEBUG_INFO, "    DT     - 0x%x\n", ECapReg->Bits.DT));
