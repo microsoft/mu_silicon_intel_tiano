@@ -139,12 +139,6 @@
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvSize|0x000A0000|UINT32|0x0000000A
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashMicrocodeFvOffset|0x00660000|UINT32|0x0000000B
 
-  ## Indicates if VTd Abort DMA Mode is supported.<BR><BR>
-  #   TRUE  - Support VTd abort DMA mode.
-  #   FALSE - Not support VTd abort DMA mode.
-  # @Prompt VTd abort DMA mode support.
-  gIntelSiliconPkgTokenSpaceGuid.PcdVTdSupportAbortDmaMode|FALSE|BOOLEAN|0x0000000C
-
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Error code for VTd error.<BR><BR>
   #  EDKII_ERROR_CODE_VTD_ERROR = (EFI_IO_BUS_UNSPECIFIED | (EFI_OEM_SPECIFIC | 0x00000000)) = 0x02008000<BR>
@@ -185,4 +179,10 @@
   #  adjustment need by AllocateAlignedPages.
   # @Prompt The VTd PEI DMA buffer size for S3.
   gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiDmaBufferSizeS3|0x00200000|UINT32|0x00000004
+
+  ## Indicates if VTd Abort DMA Mode is supported.<BR><BR>
+  #   TRUE  - Support VTd abort DMA mode.
+  #   FALSE - Not support VTd abort DMA mode.
+  # @Prompt VTd abort DMA mode support.
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdSupportAbortDmaMode|FALSE|BOOLEAN|0x0000000C
 

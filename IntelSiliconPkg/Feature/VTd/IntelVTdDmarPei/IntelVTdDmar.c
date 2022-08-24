@@ -362,6 +362,68 @@ InvalidateIOTLB (
 }
 
 /**
+  Clear Global Command Register Bits
+
+  @param[in] VtdUnitBaseAddress The base address of the VTd engine.
+  @param[in] BitMask            Bit mask.
+**/
+VOID
+ClearGlobalCommandRegisterBits (
+  IN UINTN     VtdUnitBaseAddress,
+  IN UINT32    BitMask
+  )
+{
+  UINT32    Reg32;
+  UINT32    Status;
+  UINT32    Command;
+
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
+  Command = (Status & (~BitMask));
+  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
+
+  DEBUG((DEBUG_INFO, "Clear GCMD_REG bits 0x%x.\n", BitMask));
+
+  //
+  // Poll on Status bit of Global status register to become zero
+  //
+  do {
+    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & BitMask) == BitMask);
+}
+
+/**
+  Set Global Command Register Bits
+
+  @param[in] VtdUnitBaseAddress The base address of the VTd engine.
+  @param[in] BitMask            Bit mask.
+**/
+VOID
+SetGlobalCommandRegisterBits (
+  IN UINTN     VtdUnitBaseAddress,
+  IN UINT32    BitMask
+  )
+{
+  UINT32    Reg32;
+  UINT32    Status;
+  UINT32    Command;
+
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
+  Command = (Status | BitMask);
+  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
+
+  DEBUG((DEBUG_INFO, "Set GCMD_REG bits 0x%x.\n", BitMask));
+
+  //
+  // Poll on Status bit of Global status register to become not zero
+  //
+  do {
+    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & BitMask) == 0);
+}
+
+/**
   Enable DMAR translation in pre-mem phase.
 
   @param[in]  VtdUnitBaseAddress  The base address of the VTd engine.
@@ -383,13 +445,10 @@ EnableDmarPreMem (
   DEBUG ((DEBUG_INFO, "RTADDR_REG : 0x%016lx \n", RtaddrRegValue));
   MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, RtaddrRegValue);
 
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
-
   DEBUG ((DEBUG_INFO, "EnableDmarPreMem: waiting for RTPS bit to be set... \n"));
-  do {
-    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+  SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
+
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   DEBUG ((DEBUG_INFO, "EnableDmarPreMem: R_GSTS_REG = 0x%x \n", Reg32));
 
   //
@@ -405,12 +464,7 @@ EnableDmarPreMem (
   //
   // Enable VTd
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_TE);
-  DEBUG ((DEBUG_INFO, "EnableDmarPreMem: Waiting B_GSTS_REG_TE ...\n"));
-  do {
-    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while ((Reg32 & B_GSTS_REG_TE) == 0);
+  SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
 
   DEBUG ((DEBUG_INFO, "VTD () enabled!<<<<<<\n"));
 
@@ -434,22 +488,43 @@ EnableDmar (
 {
   UINT32                        Reg32;
   UINTN                         VtdUnitBaseAddress;
+  BOOLEAN                       TEWasEnabled;
 
   VtdUnitBaseAddress = VTdUnitInfo->VtdUnitBaseAddress;
 
   DEBUG ((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%x] \n", VtdUnitBaseAddress));
 
-  DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
-  MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) RootEntryTable);
+  //
+  // Check TE was enabled or not.
+  //
+  TEWasEnabled = ((MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG) & B_GSTS_REG_TE) == B_GSTS_REG_TE);
 
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
+  if (TEWasEnabled && (VTdUnitInfo->ECapReg.Bits.ADMS == 1) && PcdGetBool (PcdVTdSupportAbortDmaMode)) {
+    //
+    // For implementations reporting Enhanced SRTP Support (ESRTPS) field as
+    // Clear in the Capability register, software must not modify this field while
+    // DMA remapping is active (TES=1 in Global Status register).
+    //
+    if (VTdUnitInfo->CapReg.Bits.ESRTPS == 0) {
+      ClearGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
+    }
+
+    //
+    // Enable ADM
+    //
+    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) (RootEntryTable | V_RTADDR_REG_TTM_ADM));
+
+    DEBUG((DEBUG_INFO, "Enable Abort DMA Mode...\n"));
+    SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
+
+  } else {
+    DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
+    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) RootEntryTable);
+
+  }
 
   DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
-  do {
-    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while((Reg32 & B_GSTS_REG_RTPS) == 0);
-  DEBUG ((DEBUG_INFO, "EnableDmar: R_GSTS_REG = 0x%x \n", Reg32));
+  SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
 
   //
   // Init DMAr Fault Event and Data registers
@@ -471,15 +546,19 @@ EnableDmar (
   //
   InvalidateIOTLB (VTdUnitInfo);
 
+  if (TEWasEnabled && (VTdUnitInfo->ECapReg.Bits.ADMS == 1) && PcdGetBool (PcdVTdSupportAbortDmaMode)) {
+    if (VTdUnitInfo->CapReg.Bits.ESRTPS == 0) {
+      ClearGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
+    }
+
+    DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
+    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) RootEntryTable);
+  }
+
   //
   // Enable VTd
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_TE);
-  DEBUG ((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
-  do {
-    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while ((Reg32 & B_GSTS_REG_TE) == 0);
+  SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
 
   DEBUG ((DEBUG_INFO, "VTD () enabled!<<<<<<\n"));
 
@@ -500,8 +579,6 @@ DisableDmar (
   )
 {
   UINT32                        Reg32;
-  UINT32                        Status;
-  UINT32                        Command;
 
   DEBUG ((DEBUG_INFO, ">>>>>>DisableDmar() for engine [%x] \n", VtdUnitBaseAddress));
 
@@ -516,28 +593,12 @@ DisableDmar (
   //
   // Set TE (Translation Enable: BIT31) of Global command register to zero
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
-  Command = (Status & ~B_GMCD_REG_TE);
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
-
-   //
-   // Poll on TE Status bit of Global status register to become zero
-   //
-   do {
-     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-   } while ((Reg32 & B_GSTS_REG_TE) == B_GSTS_REG_TE);
+  ClearGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
 
   //
   // Set SRTP (Set Root Table Pointer: BIT30) of Global command register in order to update the root table pointerDisable VTd
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
-  Command = (Status | B_GMCD_REG_SRTP);
-  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
-  do {
-    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+  SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
 
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   DEBUG((DEBUG_INFO, "DisableDmar: GSTS_REG - 0x%08x\n", Reg32));
@@ -568,12 +629,12 @@ EnableVTdTranslationProtectionBlockDma (
 
   DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtectionBlockDma - 0x%08x\n", VtdUnitBaseAddress));
 
-  DEBUG ((DEBUG_INFO, "PcdVTdSupportAbortDmaMode : %d\n", FixedPcdGetBool (PcdVTdSupportAbortDmaMode)));
+  DEBUG ((DEBUG_INFO, "PcdVTdSupportAbortDmaMode : %d\n", PcdGetBool (PcdVTdSupportAbortDmaMode)));
 
   ECapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_ECAP_REG);
   DEBUG ((DEBUG_INFO, "ECapReg.ADMS : %d\n", ECapReg.Bits.ADMS));
 
-  if ((ECapReg.Bits.ADMS == 1) && FixedPcdGetBool (PcdVTdSupportAbortDmaMode)) {
+  if ((ECapReg.Bits.ADMS == 1) && PcdGetBool (PcdVTdSupportAbortDmaMode)) {
     //
     // Use Abort DMA Mode
     //

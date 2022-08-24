@@ -476,6 +476,92 @@ DisablePmr (
 }
 
 /**
+  Clear Global Command Register Bits
+
+  @param[in] VtdUnitBaseAddress The base address of the VTd engine.
+  @param[in] BitMask            Bit mask.
+**/
+VOID
+ClearGlobalCommandRegisterBits (
+  IN UINTN     VtdUnitBaseAddress,
+  IN UINT32    BitMask
+  )
+{
+  UINT32    Reg32;
+  UINT32    Status;
+  UINT32    Command;
+
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
+  Command = (Status & (~BitMask));
+  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
+
+  DEBUG((DEBUG_INFO, "Clear GCMD_REG bits 0x%x.\n", BitMask));
+
+  //
+  // Poll on Status bit of Global status register to become zero
+  //
+  do {
+    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & BitMask) == BitMask);
+}
+
+/**
+  Set Global Command Register Bits
+
+  @param[in] VtdUnitBaseAddress The base address of the VTd engine.
+  @param[in] BitMask            Bit mask.
+**/
+VOID
+SetGlobalCommandRegisterBits (
+  IN UINTN     VtdUnitBaseAddress,
+  IN UINT32    BitMask
+  )
+{
+  UINT32    Reg32;
+  UINT32    Status;
+  UINT32    Command;
+
+  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
+  Command = (Status | BitMask);
+  MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
+
+  DEBUG((DEBUG_INFO, "Set GCMD_REG bits 0x%x.\n", BitMask));
+
+  //
+  // Poll on Status bit of Global status register to become not zero
+  //
+  do {
+    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & BitMask) == 0);
+}
+
+/**
+  Update Root Table Address Register
+
+  @param[in]  VtdIndex          The index used to identify a VTd engine.
+  @param[in]  EnableADM         TRUE - Enable ADM in TTM bits
+**/
+VOID
+UpdateRootTableAddressRegister (
+  IN UINTN   VtdIndex,
+  IN BOOLEAN EnableADM
+  )
+{
+  UINT64 Reg64;
+
+  if (mVtdUnitInformation[VtdIndex].ExtRootEntryTable != NULL) {
+    DEBUG((DEBUG_INFO, "ExtRootEntryTable 0x%x \n", mVtdUnitInformation[VtdIndex].ExtRootEntryTable));
+    Reg64 = (UINT64)(UINTN)mVtdUnitInformation[VtdIndex].ExtRootEntryTable | (EnableADM ? V_RTADDR_REG_TTM_ADM : BIT11);
+  } else {
+    DEBUG((DEBUG_INFO, "RootEntryTable 0x%x \n", mVtdUnitInformation[VtdIndex].RootEntryTable));
+    Reg64 = (UINT64)(UINTN)mVtdUnitInformation[VtdIndex].RootEntryTable | (EnableADM ? V_RTADDR_REG_TTM_ADM : 0);
+  }
+  MmioWrite64 (mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress + R_RTADDR_REG, Reg64);
+}
+
+/**
   Enable DMAR translation.
 
   @retval EFI_SUCCESS           DMAR translation is enabled.
@@ -488,25 +574,43 @@ EnableDmar (
 {
   UINTN     Index;
   UINT32    Reg32;
+  UINTN     VtdUnitBaseAddress;
+  BOOLEAN   TEWasEnabled;
 
   for (Index = 0; Index < mVtdUnitNumber; Index++) {
-    DEBUG((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%d] \n", Index));
+    VtdUnitBaseAddress = mVtdUnitInformation[Index].VtdUnitBaseAddress;
+    DEBUG((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%d] BAR [0x%x]\n", Index, VtdUnitBaseAddress));
 
-    if (mVtdUnitInformation[Index].ExtRootEntryTable != NULL) {
-      DEBUG((DEBUG_INFO, "ExtRootEntryTable 0x%x \n", mVtdUnitInformation[Index].ExtRootEntryTable));
-      MmioWrite64 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)(UINTN)mVtdUnitInformation[Index].ExtRootEntryTable | BIT11);
+    //
+    // Check TE was enabled or not.
+    //
+    TEWasEnabled = ((MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG) & B_GSTS_REG_TE) == B_GSTS_REG_TE);
+
+    if (TEWasEnabled && (mVtdUnitInformation[Index].ECapReg.Bits.ADMS == 1) && PcdGetBool (PcdVTdSupportAbortDmaMode)) {
+      //
+      // For implementations reporting Enhanced SRTP Support (ESRTPS) field as
+      // Clear in the Capability register, software must not modify this field while
+      // DMA remapping is active (TES=1 in Global Status register).
+      //
+      if (mVtdUnitInformation[Index].CapReg.Bits.ESRTPS == 0) {
+        ClearGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
+      }
+
+      //
+      // Enable ADM
+      //
+      UpdateRootTableAddressRegister (Index, TRUE);
+
+      DEBUG((DEBUG_INFO, "Enable Abort DMA Mode...\n"));
+      SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
+
     } else {
-      DEBUG((DEBUG_INFO, "RootEntryTable 0x%x \n", mVtdUnitInformation[Index].RootEntryTable));
-      MmioWrite64 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)(UINTN)mVtdUnitInformation[Index].RootEntryTable);
+      UpdateRootTableAddressRegister (Index, FALSE);
+
     }
 
-    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_SRTP);
-
     DEBUG((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
-    do {
-      Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+    SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
 
     //
     // Init DMAr Fault Event and Data registers
@@ -528,15 +632,19 @@ EnableDmar (
     //
     InvalidateIOTLB (Index);
 
+    if (TEWasEnabled && (mVtdUnitInformation[Index].ECapReg.Bits.ADMS == 1) && PcdGetBool (PcdVTdSupportAbortDmaMode)) {
+      if (mVtdUnitInformation[Index].CapReg.Bits.ESRTPS == 0) {
+        ClearGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
+      }
+
+      UpdateRootTableAddressRegister (Index, FALSE);
+    }
+
     //
     // Enable VTd
     //
-    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, Reg32 | B_GMCD_REG_TE);
-    DEBUG((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
-    do {
-      Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    } while ((Reg32 & B_GSTS_REG_TE) == 0);
+    DEBUG ((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
+    SetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
 
     DEBUG ((DEBUG_INFO,"VTD (%d) enabled!<<<<<<\n",Index));
   }
@@ -565,8 +673,6 @@ DisableDmar (
   UINTN     Index;
   UINTN     SubIndex;
   UINT32    Reg32;
-  UINT32    Status;
-  UINT32    Command;
 
   for (Index = 0; Index < mVtdUnitNumber; Index++) {
     DEBUG((DEBUG_INFO, ">>>>>>DisableDmar() for engine [%d] \n", Index));
@@ -582,32 +688,15 @@ DisableDmar (
     //
     // Set TE (Translation Enable: BIT31) of Global command register to zero
     //
-    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
-    Command = (Status & ~B_GMCD_REG_TE);
-    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, Command);
-
-    //
-    // Poll on TE Status bit of Global status register to become zero
-    //
-    do {
-      Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    } while ((Reg32 & B_GSTS_REG_TE) == B_GSTS_REG_TE);
+    ClearGlobalCommandRegisterBits (mVtdUnitInformation[Index].VtdUnitBaseAddress, B_GMCD_REG_TE);
 
     //
     // Set SRTP (Set Root Table Pointer: BIT30) of Global command register in order to update the root table pointerDisable VTd
     //
-    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
-    Command = (Status | B_GMCD_REG_SRTP);
-    MmioWrite32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GCMD_REG, Command);
-
-    do {
-      Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+    SetGlobalCommandRegisterBits (mVtdUnitInformation[Index].VtdUnitBaseAddress, B_GSTS_REG_RTPS);
 
     Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_GSTS_REG);
-    DEBUG((DEBUG_INFO, "DisableDmar: GSTS_REG - 0x%08x\n", Reg32));
+    DEBUG ((DEBUG_INFO, "DisableDmar: GSTS_REG - 0x%08x\n", Reg32));
 
     DEBUG ((DEBUG_INFO,"VTD (%d) Disabled!<<<<<<\n",Index));
 
