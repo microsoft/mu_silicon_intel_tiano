@@ -35,6 +35,10 @@
   #
   SmmAccessLib|Include/Library/SmmAccessLib.h
 
+  ## @libraryclass Provides services to trigger SMI
+  #
+  SmmControlLib|Include/Library/SmmControlLib.h
+
   ## @libraryclass Provides services to access config block
   #
   ConfigBlockLib|Include/Library/ConfigBlockLib.h
