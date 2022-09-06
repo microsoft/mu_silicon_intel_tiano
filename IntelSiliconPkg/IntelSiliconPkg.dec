@@ -147,6 +147,10 @@
   # @Prompt Error code for VTd error.
   gIntelSiliconPkgTokenSpaceGuid.PcdErrorCodeVTdError|0x02008000|UINT32|0x00000005
 
+  ## ABase I/O address.<BR><BR>
+  # @Prompt ABase I/O address.
+  gIntelSiliconPkgTokenSpaceGuid.PcdAcpiBaseAddress|0x0|UINT16|0x0000000D
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This is the GUID of the FFS which contains the Graphics Video BIOS Table (VBT)
   # The VBT content is stored as a RAW section which is consumed by GOP PEI/UEFI driver.
