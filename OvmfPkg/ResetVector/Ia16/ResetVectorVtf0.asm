@@ -47,6 +47,39 @@ TIMES (15 - ((guidedStructureEnd - guidedStructureStart + 15) % 16)) DB 0
 ;
 guidedStructureStart:
 
+%ifdef ARCH_X64
+;
+; TDX Metadata offset block
+;
+; TdxMetadata.asm is included in ARCH_X64 because Inte TDX is only
+; available in ARCH_X64. Below block describes the offset of
+; TdxMetadata block in Ovmf image
+;
+; GUID : e47a6535-984a-4798-865e-4685a7bf8ec2
+;
+tdxMetadataOffsetStart:
+    DD      fourGigabytes - TdxMetadataGuid - 16
+    DW      tdxMetadataOffsetEnd - tdxMetadataOffsetStart
+    DB      0x35, 0x65, 0x7a, 0xe4, 0x4a, 0x98, 0x98, 0x47
+    DB      0x86, 0x5e, 0x46, 0x85, 0xa7, 0xbf, 0x8e, 0xc2
+tdxMetadataOffsetEnd:
+
+;
+; SEV metadata descriptor
+;
+; Provide the start offset of the metadata blob within the OVMF binary.
+
+; GUID : dc886566-984a-4798-A75e-5585a7bf67cc
+;
+OvmfSevMetadataOffsetStart:
+  DD      (fourGigabytes - OvmfSevMetadataGuid)
+  DW      OvmfSevMetadataOffsetEnd - OvmfSevMetadataOffsetStart
+  DB      0x66, 0x65, 0x88, 0xdc, 0x4a, 0x98, 0x98, 0x47
+  DB      0xA7, 0x5e, 0x55, 0x85, 0xa7, 0xbf, 0x67, 0xcc
+OvmfSevMetadataOffsetEnd:
+
+%endif
+
 ; SEV Hash Table Block
 ;
 ; This describes the guest ram area where the hypervisor should
@@ -158,9 +191,29 @@ resetVector:
 ;
 ; This is where the processor will begin execution
 ;
+; In IA32 we follow the standard reset vector flow. While in X64, Td guest
+; may be supported. Td guest requires the startup mode to be 32-bit
+; protected mode but the legacy VM startup mode is 16-bit real mode.
+; To make NASM generate such shared entry code that behaves correctly in
+; both 16-bit and 32-bit mode, more BITS directives are added.
+;
+%ifdef ARCH_IA32
     nop
     nop
     jmp     EarlyBspInitReal16
+
+%else
+
+    mov     eax, cr0
+    test    al, 1
+    jz      .Real
+BITS 32
+    jmp     Main32
+BITS 16
+.Real:
+    jmp     EarlyBspInitReal16
+
+%endif
 
 ALIGN   16
 

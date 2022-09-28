@@ -1,7 +1,7 @@
 /** @file
   Common header file for CPU Exception Handler Library.
 
-  Copyright (c) 2012 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012 - 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -20,21 +20,21 @@
 #include <Library/SynchronizationLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
 
-#define  CPU_EXCEPTION_NUM          32
-#define  CPU_INTERRUPT_NUM         256
-#define  HOOKAFTER_STUB_SIZE        16
+#define  CPU_EXCEPTION_NUM    32
+#define  CPU_INTERRUPT_NUM    256
+#define  HOOKAFTER_STUB_SIZE  18
 
 //
 // Exception Error Code of Page-Fault Exception
 //
-#define IA32_PF_EC_P                BIT0
-#define IA32_PF_EC_WR               BIT1
-#define IA32_PF_EC_US               BIT2
-#define IA32_PF_EC_RSVD             BIT3
-#define IA32_PF_EC_ID               BIT4
-#define IA32_PF_EC_PK               BIT5
-#define IA32_PF_EC_SS               BIT6
-#define IA32_PF_EC_SGX              BIT15
+#define IA32_PF_EC_P     BIT0
+#define IA32_PF_EC_WR    BIT1
+#define IA32_PF_EC_US    BIT2
+#define IA32_PF_EC_RSVD  BIT3
+#define IA32_PF_EC_ID    BIT4
+#define IA32_PF_EC_PK    BIT5
+#define IA32_PF_EC_SS    BIT6
+#define IA32_PF_EC_SGX   BIT15
 
 #include "ArchInterruptDefs.h"
 
@@ -47,26 +47,81 @@
 #define CPU_KNOWN_GOOD_STACK_SIZE \
   FixedPcdGet32 (PcdCpuKnownGoodStackSize)
 
-#define CPU_TSS_GDT_SIZE (SIZE_2KB + CPU_TSS_DESC_SIZE + CPU_TSS_SIZE)
+#define CPU_TSS_GDT_SIZE  (SIZE_2KB + CPU_TSS_DESC_SIZE + CPU_TSS_SIZE)
+
+typedef struct {
+  //
+  // The address of top of known good stack reserved for *ALL* exceptions
+  // listed in field StackSwitchExceptions.
+  //
+  UINTN    KnownGoodStackTop;
+  //
+  // The size of known good stack for *ONE* exception only.
+  //
+  UINTN    KnownGoodStackSize;
+  //
+  // Buffer of exception vector list for stack switch.
+  //
+  UINT8    *StackSwitchExceptions;
+  //
+  // Number of exception vectors in StackSwitchExceptions.
+  //
+  UINTN    StackSwitchExceptionNumber;
+  //
+  // Buffer of IDT table. It must be type of IA32_IDT_GATE_DESCRIPTOR.
+  // Normally there's no need to change IDT table size.
+  //
+  VOID     *IdtTable;
+  //
+  // Size of buffer for IdtTable.
+  //
+  UINTN    IdtTableSize;
+  //
+  // Buffer of GDT table. It must be type of IA32_SEGMENT_DESCRIPTOR.
+  //
+  VOID     *GdtTable;
+  //
+  // Size of buffer for GdtTable.
+  //
+  UINTN    GdtTableSize;
+  //
+  // Pointer to start address of descriptor of exception task gate in the
+  // GDT table. It must be type of IA32_TSS_DESCRIPTOR.
+  //
+  VOID     *ExceptionTssDesc;
+  //
+  // Size of buffer for ExceptionTssDesc.
+  //
+  UINTN    ExceptionTssDescSize;
+  //
+  // Buffer of task-state segment for exceptions. It must be type of
+  // IA32_TASK_STATE_SEGMENT.
+  //
+  VOID     *ExceptionTss;
+  //
+  // Size of buffer for ExceptionTss.
+  //
+  UINTN    ExceptionTssSize;
+} CPU_EXCEPTION_INIT_DATA;
 
 //
 // Record exception handler information
 //
 typedef struct {
-  UINTN ExceptionStart;
-  UINTN ExceptionStubHeaderSize;
-  UINTN HookAfterStubHeaderStart;
+  UINTN    ExceptionStart;
+  UINTN    ExceptionStubHeaderSize;
+  UINTN    HookAfterStubHeaderStart;
 } EXCEPTION_HANDLER_TEMPLATE_MAP;
 
 typedef struct {
-  UINTN                       IdtEntryCount;
-  SPIN_LOCK                   DisplayMessageSpinLock;
-  RESERVED_VECTORS_DATA       *ReservedVectors;
-  EFI_CPU_INTERRUPT_HANDLER   *ExternalInterruptHandler;
+  UINTN                        IdtEntryCount;
+  SPIN_LOCK                    DisplayMessageSpinLock;
+  RESERVED_VECTORS_DATA        *ReservedVectors;
+  EFI_CPU_INTERRUPT_HANDLER    *ExternalInterruptHandler;
 } EXCEPTION_HANDLER_DATA;
 
-extern CONST UINT32                mErrorCodeFlag;
-extern CONST UINTN                 mDoFarReturnFlag;
+extern CONST UINT32  mErrorCodeFlag;
+extern CONST UINTN   mDoFarReturnFlag;
 
 /**
   Return address map of exception handler template so that C code can generate
@@ -77,7 +132,7 @@ extern CONST UINTN                 mDoFarReturnFlag;
 VOID
 EFIAPI
 AsmGetTemplateAddressMap (
-  OUT EXCEPTION_HANDLER_TEMPLATE_MAP *AddressMap
+  OUT EXCEPTION_HANDLER_TEMPLATE_MAP  *AddressMap
   );
 
 /**
@@ -90,8 +145,8 @@ AsmGetTemplateAddressMap (
 **/
 VOID
 ArchUpdateIdtEntry (
-  OUT IA32_IDT_GATE_DESCRIPTOR       *IdtEntry,
-  IN  UINTN                          InterruptHandler
+  OUT IA32_IDT_GATE_DESCRIPTOR  *IdtEntry,
+  IN  UINTN                     InterruptHandler
   );
 
 /**
@@ -102,7 +157,7 @@ ArchUpdateIdtEntry (
 **/
 UINTN
 ArchGetIdtHandler (
-  IN IA32_IDT_GATE_DESCRIPTOR        *IdtEntry
+  IN IA32_IDT_GATE_DESCRIPTOR  *IdtEntry
   );
 
 /**
@@ -128,7 +183,7 @@ InternalPrintMessage (
 **/
 VOID
 DumpModuleImageInfo (
-  IN  UINTN              CurrentEip
+  IN  UINTN  CurrentEip
   );
 
 /**
@@ -139,8 +194,8 @@ DumpModuleImageInfo (
 **/
 VOID
 DumpImageAndCpuContent (
-  IN EFI_EXCEPTION_TYPE   ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext
+  IN EFI_EXCEPTION_TYPE  ExceptionType,
+  IN EFI_SYSTEM_CONTEXT  SystemContext
   );
 
 /**
@@ -157,8 +212,8 @@ DumpImageAndCpuContent (
 **/
 EFI_STATUS
 InitializeCpuExceptionHandlersWorker (
-  IN EFI_VECTOR_HANDOFF_INFO       *VectorInfo OPTIONAL,
-  IN OUT EXCEPTION_HANDLER_DATA    *ExceptionHandlerData
+  IN EFI_VECTOR_HANDOFF_INFO     *VectorInfo OPTIONAL,
+  IN OUT EXCEPTION_HANDLER_DATA  *ExceptionHandlerData
   );
 
 /**
@@ -180,9 +235,9 @@ InitializeCpuExceptionHandlersWorker (
 **/
 EFI_STATUS
 RegisterCpuInterruptHandlerWorker (
-  IN EFI_EXCEPTION_TYPE            InterruptType,
-  IN EFI_CPU_INTERRUPT_HANDLER     InterruptHandler,
-  IN EXCEPTION_HANDLER_DATA        *ExceptionHandlerData
+  IN EFI_EXCEPTION_TYPE         InterruptType,
+  IN EFI_CPU_INTERRUPT_HANDLER  InterruptHandler,
+  IN EXCEPTION_HANDLER_DATA     *ExceptionHandlerData
   );
 
 /**
@@ -210,9 +265,9 @@ UpdateIdtTable (
 **/
 VOID
 ArchSaveExceptionContext (
-  IN UINTN                        ExceptionType,
-  IN EFI_SYSTEM_CONTEXT           SystemContext,
-  IN EXCEPTION_HANDLER_DATA       *ExceptionHandlerData
+  IN UINTN                   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT      SystemContext,
+  IN EXCEPTION_HANDLER_DATA  *ExceptionHandlerData
   );
 
 /**
@@ -224,9 +279,9 @@ ArchSaveExceptionContext (
 **/
 VOID
 ArchRestoreExceptionContext (
-  IN UINTN                        ExceptionType,
-  IN EFI_SYSTEM_CONTEXT           SystemContext,
-  IN EXCEPTION_HANDLER_DATA       *ExceptionHandlerData
+  IN UINTN                   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT      SystemContext,
+  IN EXCEPTION_HANDLER_DATA  *ExceptionHandlerData
   );
 
 /**
@@ -240,9 +295,9 @@ ArchRestoreExceptionContext (
 VOID
 EFIAPI
 AsmVectorNumFixup (
-  IN VOID    *NewVectorAddr,
-  IN UINT8   VectorNum,
-  IN VOID    *OldVectorAddr
+  IN VOID   *NewVectorAddr,
+  IN UINT8  VectorNum,
+  IN VOID   *OldVectorAddr
   );
 
 /**
@@ -258,9 +313,9 @@ AsmVectorNumFixup (
 **/
 EFI_STATUS
 ReadAndVerifyVectorInfo (
-  IN  EFI_VECTOR_HANDOFF_INFO       *VectorInfo,
-  OUT RESERVED_VECTORS_DATA         *ReservedVector,
-  IN  UINTN                         VectorCount
+  IN  EFI_VECTOR_HANDOFF_INFO  *VectorInfo,
+  OUT RESERVED_VECTORS_DATA    *ReservedVector,
+  IN  UINTN                    VectorCount
   );
 
 /**
@@ -272,7 +327,7 @@ ReadAndVerifyVectorInfo (
 **/
 CONST CHAR8 *
 GetExceptionNameStr (
-  IN EFI_EXCEPTION_TYPE          ExceptionType
+  IN EFI_EXCEPTION_TYPE  ExceptionType
   );
 
 /**
@@ -284,9 +339,9 @@ GetExceptionNameStr (
 **/
 VOID
 CommonExceptionHandlerWorker (
-  IN EFI_EXCEPTION_TYPE          ExceptionType,
-  IN EFI_SYSTEM_CONTEXT          SystemContext,
-  IN EXCEPTION_HANDLER_DATA      *ExceptionHandlerData
+  IN EFI_EXCEPTION_TYPE      ExceptionType,
+  IN EFI_SYSTEM_CONTEXT      SystemContext,
+  IN EXCEPTION_HANDLER_DATA  *ExceptionHandlerData
   );
 
 /**
@@ -301,7 +356,7 @@ CommonExceptionHandlerWorker (
 **/
 EFI_STATUS
 ArchSetupExceptionStack (
-  IN CPU_EXCEPTION_INIT_DATA        *StackSwitchData
+  IN CPU_EXCEPTION_INIT_DATA  *StackSwitchData
   );
 
 /**
@@ -318,4 +373,3 @@ AsmGetTssTemplateMap (
   );
 
 #endif
-

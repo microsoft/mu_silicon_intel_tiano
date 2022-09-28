@@ -19,8 +19,8 @@ from Common.Misc import *
 from types import *
 from Common.Expression import *
 from CommonDataClass.CommonClass import SkuInfoClass
-from Common.TargetTxtClassObject import TargetTxtDict
-from Common.ToolDefClassObject import ToolDefDict
+from Common.TargetTxtClassObject import TargetTxtDict,gDefaultTargetTxtFile
+from Common.ToolDefClassObject import ToolDefDict,gDefaultToolsDefFile
 from .MetaDataTable import *
 from .MetaFileTable import *
 from .MetaFileParser import *
@@ -97,7 +97,8 @@ PcdMakefileEnd = '''
 
 AppTarget = '''
 all: $(APPFILE)
-$(APPFILE): $(OBJECTS)
+$(APPLICATION): $(OBJECTS)
+$(APPFILE): $(APPLICATION)
 %s
 '''
 
@@ -387,6 +388,10 @@ class DscBuildData(PlatformBuildClassObject):
                 for i in range(0, len(LanguageCodes), 3):
                     LanguageList.append(LanguageCodes[i:i + 3])
                 self._ISOLanguages = LanguageList
+            elif Name == TAB_DSC_DEFINES_VPD_AUTHENTICATED_VARIABLE_STORE:
+                if TAB_DSC_DEFINES_VPD_AUTHENTICATED_VARIABLE_STORE not in gCommandLineDefines:
+                    gCommandLineDefines[TAB_DSC_DEFINES_VPD_AUTHENTICATED_VARIABLE_STORE] = Record[2].strip()
+
             elif Name == TAB_DSC_DEFINES_VPD_TOOL_GUID:
                 #
                 # try to convert GUID to a real UUID value to see whether the GUID is format
@@ -972,6 +977,7 @@ class DscBuildData(PlatformBuildClassObject):
         if (TokenSpaceGuid + '.' + PcdCName) in GlobalData.gPlatformPcds:
             if GlobalData.gPlatformPcds[TokenSpaceGuid + '.' + PcdCName] != ValueList[Index]:
                 GlobalData.gPlatformPcds[TokenSpaceGuid + '.' + PcdCName] = ValueList[Index]
+            GlobalData.gPlatformFinalPcds[TokenSpaceGuid + '.' + PcdCName] = ValueList[Index]
         return ValueList
 
     def _FilterPcdBySkuUsage(self, Pcds):
@@ -1872,6 +1878,7 @@ class DscBuildData(PlatformBuildClassObject):
                     while '[' in FieldName and not Pcd.IsArray():
                         FieldName = FieldName.rsplit('[', 1)[0]
                         CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), Array_Index + 1, FieldList[FieldName_ori][1], FieldList[FieldName_ori][2], FieldList[FieldName_ori][0])
+        flexisbale_size_statement_cache = set()
         for skuname in Pcd.SkuOverrideValues:
             if skuname == TAB_COMMON:
                 continue
@@ -1884,6 +1891,10 @@ class DscBuildData(PlatformBuildClassObject):
                         if not FieldList:
                             continue
                         for FieldName in FieldList:
+                            fieldinfo = tuple(FieldList[FieldName])
+                            if fieldinfo in flexisbale_size_statement_cache:
+                                continue
+                            flexisbale_size_statement_cache.add(fieldinfo)
                             FieldName = "." + FieldName
                             IsArray = _IsFieldValueAnArray(FieldList[FieldName.strip(".")][0])
                             if IsArray and not (FieldList[FieldName.strip(".")][0].startswith('{GUID') and FieldList[FieldName.strip(".")][0].endswith('}')):
@@ -2921,7 +2932,7 @@ class DscBuildData(PlatformBuildClassObject):
             MakeApp = MakeApp + PcdMakefileEnd
             MakeApp = MakeApp + AppTarget % ("""\tcopy $(APPLICATION) $(APPFILE) /y """)
         else:
-            MakeApp = MakeApp + AppTarget % ("""\tcp $(APPLICATION) $(APPFILE) """)
+            MakeApp = MakeApp + AppTarget % ("""\tcp -p $(APPLICATION) $(APPFILE) """)
         MakeApp = MakeApp + '\n'
         IncludeFileFullPaths = []
         for includefile in IncludeFiles:
@@ -2944,7 +2955,7 @@ class DscBuildData(PlatformBuildClassObject):
         else:
             PcdValueCommonPath = os.path.normpath(mws.join(GlobalData.gGlobalDefines["EDK_TOOLS_PATH"], "Source/C/Common/PcdValueCommon.c"))
             MakeApp = MakeApp + '%s/PcdValueCommon.c : %s\n' % (self.OutputPath, PcdValueCommonPath)
-            MakeApp = MakeApp + '\tcp -f %s %s/PcdValueCommon.c\n' % (PcdValueCommonPath, self.OutputPath)
+            MakeApp = MakeApp + '\tcp -p -f %s %s/PcdValueCommon.c\n' % (PcdValueCommonPath, self.OutputPath)
         MakeFileName = os.path.join(self.OutputPath, 'Makefile')
         MakeApp += "$(OBJECTS) : %s\n" % MakeFileName
         SaveFileOnChange(MakeFileName, MakeApp, False)
@@ -3029,7 +3040,7 @@ class DscBuildData(PlatformBuildClassObject):
             returncode, StdOut, StdErr = DscBuildData.ExecuteCommand (Command)
             EdkLogger.verbose ('%s\n%s\n%s' % (Command, StdOut, StdErr))
             if returncode != 0:
-                EdkLogger.warn('Build', COMMAND_FAILURE, 'Can not collect output from command: %s\n%s\n' % (Command, StdOut, StdErr))
+                EdkLogger.warn('Build', COMMAND_FAILURE, 'Can not collect output from command: %s\n%s\n%s\n' % (Command, StdOut, StdErr))
 
         #start update structure pcd final value
         File = open (OutputValueFile, 'r')
@@ -3526,12 +3537,11 @@ class DscBuildData(PlatformBuildClassObject):
         self._ToolChainFamily = TAB_COMPILER_MSFT
         TargetObj = TargetTxtDict()
         TargetTxt = TargetObj.Target
-        BuildConfigurationFile = os.path.normpath(os.path.join(GlobalData.gConfDirectory, "target.txt"))
+        BuildConfigurationFile = os.path.normpath(os.path.join(GlobalData.gConfDirectory, gDefaultTargetTxtFile))
         if os.path.isfile(BuildConfigurationFile) == True:
             ToolDefinitionFile = TargetTxt.TargetTxtDictionary[DataType.TAB_TAT_DEFINES_TOOL_CHAIN_CONF]
             if ToolDefinitionFile == '':
-                ToolDefinitionFile = "tools_def.txt"
-                ToolDefinitionFile = os.path.normpath(mws.join(self.WorkspaceDir, 'Conf', ToolDefinitionFile))
+                ToolDefinitionFile = os.path.normpath(mws.join(self.WorkspaceDir, 'Conf', gDefaultToolsDefFile))
             if os.path.isfile(ToolDefinitionFile) == True:
                 ToolDefObj = ToolDefDict((os.path.join(os.getenv("WORKSPACE"), "Conf")))
                 ToolDefinition = ToolDefObj.ToolDef.ToolsDefTxtDatabase

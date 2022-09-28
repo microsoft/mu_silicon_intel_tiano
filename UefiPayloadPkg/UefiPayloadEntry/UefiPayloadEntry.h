@@ -1,9 +1,9 @@
 /** @file
-*
-* Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
-*
-*  SPDX-License-Identifier: BSD-2-Clause-Patent
-*
+
+  Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
+
+  SPDX-License-Identifier: BSD-2-Clause-Patent
+
 **/
 
 #ifndef __UEFI_PAYLOAD_ENTRY_H__
@@ -23,11 +23,11 @@
 #include <Library/PeCoffLib.h>
 #include <Library/BlParseLib.h>
 #include <Library/PlatformSupportLib.h>
+#include <Library/CpuLib.h>
 #include <Library/UefiCpuLib.h>
 #include <IndustryStandard/Acpi.h>
 #include <IndustryStandard/MemoryMappedConfigurationSpaceAccessTable.h>
 #include <Guid/SerialPortInfoGuid.h>
-#include <Guid/SystemTableInfoGuid.h>
 #include <Guid/MemoryMapInfoGuid.h>
 #include <Guid/AcpiBoardInfoGuid.h>
 #include <Guid/GraphicsInfoHob.h>
@@ -35,6 +35,7 @@
 #include <UniversalPayload/AcpiTable.h>
 #include <UniversalPayload/UniversalPayload.h>
 #include <UniversalPayload/ExtraData.h>
+#include <UniversalPayload/SerialPortInfo.h>
 #include <Guid/PcdDataBaseSignatureGuid.h>
 
 #define LEGACY_8259_MASK_REGISTER_MASTER  0x21
@@ -42,15 +43,14 @@
 #define GET_OCCUPIED_SIZE(ActualSize, Alignment) \
   ((ActualSize) + (((Alignment) - ((ActualSize) & ((Alignment) - 1))) & ((Alignment) - 1)))
 
-
-#define E820_RAM       1
-#define E820_RESERVED  2
-#define E820_ACPI      3
-#define E820_NVS       4
-#define E820_UNUSABLE  5
-#define E820_DISABLED  6
-#define E820_PMEM      7
-#define E820_UNDEFINED 8
+#define E820_RAM        1
+#define E820_RESERVED   2
+#define E820_ACPI       3
+#define E820_NVS        4
+#define E820_UNUSABLE   5
+#define E820_DISABLED   6
+#define E820_PMEM       7
+#define E820_UNDEFINED  8
 
 /**
   Auto-generated function that calls the library constructors for all of the module's
@@ -75,8 +75,8 @@ ProcessLibraryConstructorList (
 VOID *
 EFIAPI
 CreateHob (
-  IN  UINT16    HobType,
-  IN  UINT16    HobLength
+  IN  UINT16  HobType,
+  IN  UINT16  HobLength
   );
 
 /**
@@ -89,8 +89,8 @@ CreateHob (
 VOID
 EFIAPI
 UpdateStackHob (
-  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
-  IN UINT64                      Length
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINT64                Length
   );
 
 /**
@@ -108,13 +108,13 @@ UpdateStackHob (
   @return   The pointer to the handoff HOB table.
 
 **/
-EFI_HOB_HANDOFF_INFO_TABLE*
+EFI_HOB_HANDOFF_INFO_TABLE *
 EFIAPI
 HobConstructor (
-  IN VOID   *EfiMemoryBottom,
-  IN VOID   *EfiMemoryTop,
-  IN VOID   *EfiFreeMemoryBottom,
-  IN VOID   *EfiFreeMemoryTop
+  IN VOID  *EfiMemoryBottom,
+  IN VOID  *EfiMemoryTop,
+  IN VOID  *EfiFreeMemoryBottom,
+  IN VOID  *EfiFreeMemoryTop
   );
 
 /**
@@ -127,7 +127,7 @@ HobConstructor (
 **/
 EFI_STATUS
 LoadDxeCore (
-  OUT PHYSICAL_ADDRESS        *DxeCoreEntryPoint
+  OUT PHYSICAL_ADDRESS  *DxeCoreEntryPoint
   );
 
 /**
@@ -141,8 +141,8 @@ LoadDxeCore (
 **/
 EFI_STATUS
 UniversalLoadDxeCore (
-  IN  EFI_FIRMWARE_VOLUME_HEADER *DxeFv,
-  OUT PHYSICAL_ADDRESS           *DxeCoreEntryPoint
+  IN  EFI_FIRMWARE_VOLUME_HEADER  *DxeFv,
+  OUT PHYSICAL_ADDRESS            *DxeCoreEntryPoint
   );
 
 /**
@@ -156,13 +156,13 @@ UniversalLoadDxeCore (
 **/
 VOID
 HandOffToDxeCore (
-  IN EFI_PHYSICAL_ADDRESS   DxeCoreEntryPoint,
-  IN EFI_PEI_HOB_POINTERS   HobList
+  IN EFI_PHYSICAL_ADDRESS  DxeCoreEntryPoint,
+  IN EFI_PEI_HOB_POINTERS  HobList
   );
 
 EFI_STATUS
 FixUpPcdDatabase (
-  IN  EFI_FIRMWARE_VOLUME_HEADER *DxeFv
+  IN  EFI_FIRMWARE_VOLUME_HEADER  *DxeFv
   );
 
 /**
@@ -179,9 +179,9 @@ FixUpPcdDatabase (
 **/
 EFI_STATUS
 FileFindSection (
-  IN EFI_FFS_FILE_HEADER        *FileHeader,
-  IN EFI_SECTION_TYPE           SectionType,
-  OUT VOID                      **SectionData
+  IN EFI_FFS_FILE_HEADER  *FileHeader,
+  IN EFI_SECTION_TYPE     SectionType,
+  OUT VOID                **SectionData
   );
 
 /**
@@ -204,4 +204,17 @@ FvFindFileByTypeGuid (
   IN  EFI_GUID                    *Guid           OPTIONAL,
   OUT EFI_FFS_FILE_HEADER         **FileHeader
   );
+
+/**
+  Build ACPI board info HOB using infomation from ACPI table
+
+  @param  AcpiTableBase      ACPI table start address in memory
+
+  @retval  A pointer to ACPI board HOB ACPI_BOARD_INFO. Null if build HOB failure.
+**/
+ACPI_BOARD_INFO *
+BuildHobFromAcpi (
+  IN   UINT64  AcpiTableBase
+  );
+
 #endif

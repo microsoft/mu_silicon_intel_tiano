@@ -24,6 +24,8 @@
 #
 
 [Sources]
+  CloudHv.c
+  EntryPoint.c
   Qemu.c
   SmbiosPlatformDxe.c
   SmbiosPlatformDxe.h
@@ -41,6 +43,7 @@
   UefiDriverEntryPoint
 
 [Pcd]
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuSmbiosValidated
 
 [Protocols]

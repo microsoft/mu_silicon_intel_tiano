@@ -4,7 +4,7 @@
   primitives (Hash Serials, HMAC, RSA, Diffie-Hellman, etc) for UEFI security
   functionality enabling.
 
-Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2022, Intel Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -17,12 +17,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///
 /// MD5 digest size in bytes
 ///
-#define MD5_DIGEST_SIZE     16
+#define MD5_DIGEST_SIZE  16
 
 ///
 /// SHA-1 digest size in bytes.
 ///
-#define SHA1_DIGEST_SIZE    20
+#define SHA1_DIGEST_SIZE  20
 
 ///
 /// SHA-256 digest size in bytes
@@ -42,17 +42,17 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///
 /// SM3 digest size in bytes
 ///
-#define SM3_256_DIGEST_SIZE 32
+#define SM3_256_DIGEST_SIZE  32
 
 ///
 /// TDES block size in bytes
 ///
-#define TDES_BLOCK_SIZE     8
+#define TDES_BLOCK_SIZE  8
 
 ///
 /// AES block size in bytes
 ///
-#define AES_BLOCK_SIZE      16
+#define AES_BLOCK_SIZE  16
 
 ///
 /// RSA Key Tags Definition used in RsaSetKey() function for key component identification.
@@ -68,11 +68,12 @@ typedef enum {
   RsaKeyQInv    ///< The CRT coefficient (== 1/q mod p)
 } RSA_KEY_TAG;
 
-//=====================================================================================
+// =====================================================================================
 //    One-Way Cryptographic Hash Primitives
-//=====================================================================================
+// =====================================================================================
 
 #ifdef ENABLE_MD5_DEPRECATED_INTERFACES
+
 /**
   Retrieves the size, in bytes, of the context buffer required for MD5 hash operations.
 
@@ -212,9 +213,11 @@ Md5HashAll (
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
   );
+
 #endif
 
 #ifndef DISABLE_SHA1_DEPRECATED_INTERFACES
+
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-1 hash operations.
 
@@ -354,6 +357,7 @@ Sha1HashAll (
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
   );
+
 #endif
 
 /**
@@ -750,6 +754,35 @@ Sha512HashAll (
   );
 
 /**
+  Parallel hash function ParallelHash256, as defined in NIST's Special Publication 800-185,
+  published December 2016.
+
+  @param[in]   Input            Pointer to the input message (X).
+  @param[in]   InputByteLen     The number(>0) of input bytes provided for the input data.
+  @param[in]   BlockSize        The size of each block (B).
+  @param[out]  Output           Pointer to the output buffer.
+  @param[in]   OutputByteLen    The desired number of output bytes (L).
+  @param[in]   Customization    Pointer to the customization string (S).
+  @param[in]   CustomByteLen    The length of the customization string in bytes.
+
+  @retval TRUE   ParallelHash256 digest computation succeeded.
+  @retval FALSE  ParallelHash256 digest computation failed.
+  @retval FALSE  This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+ParallelHash256HashAll (
+  IN CONST VOID   *Input,
+  IN       UINTN  InputByteLen,
+  IN       UINTN  BlockSize,
+  OUT      VOID   *Output,
+  IN       UINTN  OutputByteLen,
+  IN CONST VOID   *Customization,
+  IN       UINTN  CustomByteLen
+  );
+
+/**
   Retrieves the size, in bytes, of the context buffer required for SM3 hash operations.
 
   @return  The size, in bytes, of the context buffer required for SM3 hash operations.
@@ -880,9 +913,9 @@ Sm3HashAll (
   OUT  UINT8       *HashValue
   );
 
-//=====================================================================================
+// =====================================================================================
 //    MAC (Message Authentication Code) Primitive
-//=====================================================================================
+// =====================================================================================
 
 /**
   Allocates and initializes one HMAC_CTX context for subsequent HMAC-SHA256 use.
@@ -1012,9 +1045,9 @@ HmacSha256Final (
   OUT     UINT8  *HmacValue
   );
 
-//=====================================================================================
+// =====================================================================================
 //    Symmetric Cryptography Primitive
-//=====================================================================================
+// =====================================================================================
 
 /**
   Retrieves the size, in bytes, of the context buffer required for AES operations.
@@ -1139,9 +1172,9 @@ AesCbcDecrypt (
   OUT  UINT8        *Output
   );
 
-//=====================================================================================
+// =====================================================================================
 //    Asymmetric Cryptography Primitive
-//=====================================================================================
+// =====================================================================================
 
 /**
   Allocates and initializes one RSA context for subsequent use.
@@ -1550,7 +1583,7 @@ EFIAPI
 X509GetCommonName (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
-  OUT     CHAR8        *CommonName,  OPTIONAL
+  OUT     CHAR8        *CommonName   OPTIONAL,
   IN OUT  UINTN        *CommonNameSize
   );
 
@@ -1583,10 +1616,10 @@ X509GetCommonName (
 RETURN_STATUS
 EFIAPI
 X509GetOrganizationName (
-  IN      CONST UINT8   *Cert,
-  IN      UINTN         CertSize,
-  OUT     CHAR8         *NameBuffer,  OPTIONAL
-  IN OUT  UINTN         *NameBufferSize
+  IN      CONST UINT8  *Cert,
+  IN      UINTN        CertSize,
+  OUT     CHAR8        *NameBuffer   OPTIONAL,
+  IN OUT  UINTN        *NameBufferSize
   );
 
 /**
@@ -1821,8 +1854,8 @@ Pkcs1v2Encrypt (
   IN   UINTN        PublicKeySize,
   IN   UINT8        *InData,
   IN   UINTN        InDataSize,
-  IN   CONST UINT8  *PrngSeed,  OPTIONAL
-  IN   UINTN        PrngSeedSize,  OPTIONAL
+  IN   CONST UINT8  *PrngSeed   OPTIONAL,
+  IN   UINTN        PrngSeedSize   OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
   );
@@ -1851,8 +1884,8 @@ typedef struct {
 } EFI_CERT_DATA;
 
 typedef struct {
-  UINT8             CertNumber;   // Number of X.509 certificate.
-  //EFI_CERT_DATA   CertArray[];  // An array of X.509 certificate.
+  UINT8    CertNumber;            // Number of X.509 certificate.
+  // EFI_CERT_DATA   CertArray[];  // An array of X.509 certificate.
 } EFI_CERT_STACK;
 
 #pragma pack()
@@ -1905,7 +1938,7 @@ Pkcs7GetSigners (
 VOID
 EFIAPI
 Pkcs7FreeSigners (
-  IN  UINT8        *Certs
+  IN  UINT8  *Certs
   );
 
 /**
@@ -2151,9 +2184,9 @@ ImageTimestampVerify (
   OUT EFI_TIME     *SigningTime
   );
 
-//=====================================================================================
+// =====================================================================================
 //    DH Key Exchange Primitive
-//=====================================================================================
+// =====================================================================================
 
 /**
   Allocates and Initializes one Diffie-Hellman Context for subsequent use.
@@ -2316,9 +2349,9 @@ DhComputeKey (
   IN OUT  UINTN        *KeySize
   );
 
-//=====================================================================================
+// =====================================================================================
 //    Pseudo-Random Generation Primitive
-//=====================================================================================
+// =====================================================================================
 
 /**
   Sets up the seed value for the pseudorandom number generator.
@@ -2366,9 +2399,9 @@ RandomBytes (
   IN   UINTN  Size
   );
 
-//=====================================================================================
+// =====================================================================================
 //    Key Derivation Function Primitive
-//=====================================================================================
+// =====================================================================================
 
 /**
   Derive key data using HMAC-SHA256 based KDF.

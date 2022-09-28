@@ -1,7 +1,7 @@
 /** @file
   IA32 CPU Exception Handler functons.
 
-  Copyright (c) 2012 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012 - 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -18,13 +18,13 @@
 **/
 VOID
 ArchUpdateIdtEntry (
-  OUT IA32_IDT_GATE_DESCRIPTOR        *IdtEntry,
-  IN  UINTN                           InterruptHandler
+  OUT IA32_IDT_GATE_DESCRIPTOR  *IdtEntry,
+  IN  UINTN                     InterruptHandler
   )
 {
-  IdtEntry->Bits.OffsetLow   = (UINT16)(UINTN)InterruptHandler;
-  IdtEntry->Bits.OffsetHigh  = (UINT16)((UINTN)InterruptHandler >> 16);
-  IdtEntry->Bits.GateType    = IA32_IDT_GATE_TYPE_INTERRUPT_32;
+  IdtEntry->Bits.OffsetLow  = (UINT16)(UINTN)InterruptHandler;
+  IdtEntry->Bits.OffsetHigh = (UINT16)((UINTN)InterruptHandler >> 16);
+  IdtEntry->Bits.GateType   = IA32_IDT_GATE_TYPE_INTERRUPT_32;
 }
 
 /**
@@ -35,7 +35,7 @@ ArchUpdateIdtEntry (
 **/
 UINTN
 ArchGetIdtHandler (
-  IN IA32_IDT_GATE_DESCRIPTOR        *IdtEntry
+  IN IA32_IDT_GATE_DESCRIPTOR  *IdtEntry
   )
 {
   return (UINTN)IdtEntry->Bits.OffsetLow + (((UINTN)IdtEntry->Bits.OffsetHigh) << 16);
@@ -50,13 +50,13 @@ ArchGetIdtHandler (
 **/
 VOID
 ArchSaveExceptionContext (
-  IN UINTN                        ExceptionType,
-  IN EFI_SYSTEM_CONTEXT           SystemContext,
-  IN EXCEPTION_HANDLER_DATA       *ExceptionHandlerData
+  IN UINTN                   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT      SystemContext,
+  IN EXCEPTION_HANDLER_DATA  *ExceptionHandlerData
   )
 {
-  IA32_EFLAGS32           Eflags;
-  RESERVED_VECTORS_DATA   *ReservedVectors;
+  IA32_EFLAGS32          Eflags;
+  RESERVED_VECTORS_DATA  *ReservedVectors;
 
   ReservedVectors = ExceptionHandlerData->ReservedVectors;
   //
@@ -71,13 +71,13 @@ ArchSaveExceptionContext (
   //
   // Clear IF flag to avoid old IDT handler enable interrupt by IRET
   //
-  Eflags.UintN = SystemContext.SystemContextIa32->Eflags;
-  Eflags.Bits.IF = 0;
+  Eflags.UintN                            = SystemContext.SystemContextIa32->Eflags;
+  Eflags.Bits.IF                          = 0;
   SystemContext.SystemContextIa32->Eflags = Eflags.UintN;
   //
   // Modify the EIP in stack, then old IDT handler will return to HookAfterStubBegin.
   //
-  SystemContext.SystemContextIa32->Eip    = (UINTN) ReservedVectors[ExceptionType].HookAfterStubHeaderCode;
+  SystemContext.SystemContextIa32->Eip = (UINTN)ReservedVectors[ExceptionType].HookAfterStubHeaderCode;
 }
 
 /**
@@ -89,14 +89,14 @@ ArchSaveExceptionContext (
 **/
 VOID
 ArchRestoreExceptionContext (
-  IN UINTN                        ExceptionType,
-  IN EFI_SYSTEM_CONTEXT           SystemContext,
-  IN EXCEPTION_HANDLER_DATA       *ExceptionHandlerData
+  IN UINTN                   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT      SystemContext,
+  IN EXCEPTION_HANDLER_DATA  *ExceptionHandlerData
   )
 {
-  RESERVED_VECTORS_DATA   *ReservedVectors;
+  RESERVED_VECTORS_DATA  *ReservedVectors;
 
-  ReservedVectors = ExceptionHandlerData->ReservedVectors;
+  ReservedVectors                                = ExceptionHandlerData->ReservedVectors;
   SystemContext.SystemContextIa32->Eflags        = ReservedVectors[ExceptionType].OldFlags;
   SystemContext.SystemContextIa32->Cs            = ReservedVectors[ExceptionType].OldCs;
   SystemContext.SystemContextIa32->Eip           = ReservedVectors[ExceptionType].OldIp;
@@ -116,32 +116,32 @@ ArchRestoreExceptionContext (
 **/
 EFI_STATUS
 ArchSetupExceptionStack (
-  IN CPU_EXCEPTION_INIT_DATA      *StackSwitchData
+  IN CPU_EXCEPTION_INIT_DATA  *StackSwitchData
   )
 {
-  IA32_DESCRIPTOR                   Gdtr;
-  IA32_DESCRIPTOR                   Idtr;
-  IA32_IDT_GATE_DESCRIPTOR          *IdtTable;
-  IA32_TSS_DESCRIPTOR               *TssDesc;
-  IA32_TASK_STATE_SEGMENT           *Tss;
-  UINTN                             StackTop;
-  UINTN                             Index;
-  UINTN                             Vector;
-  UINTN                             TssBase;
-  UINTN                             GdtSize;
-  EXCEPTION_HANDLER_TEMPLATE_MAP    TemplateMap;
+  IA32_DESCRIPTOR                 Gdtr;
+  IA32_DESCRIPTOR                 Idtr;
+  IA32_IDT_GATE_DESCRIPTOR        *IdtTable;
+  IA32_TSS_DESCRIPTOR             *TssDesc;
+  IA32_TASK_STATE_SEGMENT         *Tss;
+  UINTN                           StackTop;
+  UINTN                           Index;
+  UINTN                           Vector;
+  UINTN                           TssBase;
+  UINTN                           GdtSize;
+  EXCEPTION_HANDLER_TEMPLATE_MAP  TemplateMap;
 
-  if (StackSwitchData == NULL ||
-      StackSwitchData->Ia32.Revision != CPU_EXCEPTION_INIT_DATA_REV ||
-      StackSwitchData->Ia32.KnownGoodStackTop == 0 ||
-      StackSwitchData->Ia32.KnownGoodStackSize == 0 ||
-      StackSwitchData->Ia32.StackSwitchExceptions == NULL ||
-      StackSwitchData->Ia32.StackSwitchExceptionNumber == 0 ||
-      StackSwitchData->Ia32.StackSwitchExceptionNumber > CPU_EXCEPTION_NUM ||
-      StackSwitchData->Ia32.GdtTable == NULL ||
-      StackSwitchData->Ia32.IdtTable == NULL ||
-      StackSwitchData->Ia32.ExceptionTssDesc == NULL ||
-      StackSwitchData->Ia32.ExceptionTss == NULL) {
+  if ((StackSwitchData == NULL) ||
+      (StackSwitchData->KnownGoodStackTop == 0) ||
+      (StackSwitchData->KnownGoodStackSize == 0) ||
+      (StackSwitchData->StackSwitchExceptions == NULL) ||
+      (StackSwitchData->StackSwitchExceptionNumber == 0) ||
+      (StackSwitchData->StackSwitchExceptionNumber > CPU_EXCEPTION_NUM) ||
+      (StackSwitchData->GdtTable == NULL) ||
+      (StackSwitchData->IdtTable == NULL) ||
+      (StackSwitchData->ExceptionTssDesc == NULL) ||
+      (StackSwitchData->ExceptionTss == NULL))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -150,16 +150,17 @@ ArchSetupExceptionStack (
   // one or newly allocated, has enough space to hold descriptors for exception
   // task-state segments.
   //
-  if (((UINTN)StackSwitchData->Ia32.GdtTable & (IA32_GDT_ALIGNMENT - 1)) != 0) {
+  if (((UINTN)StackSwitchData->GdtTable & (IA32_GDT_ALIGNMENT - 1)) != 0) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((UINTN)StackSwitchData->Ia32.ExceptionTssDesc < (UINTN)(StackSwitchData->Ia32.GdtTable)) {
+  if ((UINTN)StackSwitchData->ExceptionTssDesc < (UINTN)(StackSwitchData->GdtTable)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((UINTN)StackSwitchData->Ia32.ExceptionTssDesc + StackSwitchData->Ia32.ExceptionTssDescSize >
-      ((UINTN)(StackSwitchData->Ia32.GdtTable) + StackSwitchData->Ia32.GdtTableSize)) {
+  if ((UINTN)StackSwitchData->ExceptionTssDesc + StackSwitchData->ExceptionTssDescSize >
+      ((UINTN)(StackSwitchData->GdtTable) + StackSwitchData->GdtTableSize))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -167,17 +168,20 @@ ArchSetupExceptionStack (
   // We need one descriptor and one TSS for current task and every exception
   // specified.
   //
-  if (StackSwitchData->Ia32.ExceptionTssDescSize <
-      sizeof (IA32_TSS_DESCRIPTOR) * (StackSwitchData->Ia32.StackSwitchExceptionNumber + 1)) {
-    return EFI_INVALID_PARAMETER;
-  }
-  if (StackSwitchData->Ia32.ExceptionTssSize <
-      sizeof (IA32_TASK_STATE_SEGMENT) * (StackSwitchData->Ia32.StackSwitchExceptionNumber + 1)) {
+  if (StackSwitchData->ExceptionTssDescSize <
+      sizeof (IA32_TSS_DESCRIPTOR) * (StackSwitchData->StackSwitchExceptionNumber + 1))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
-  TssDesc = StackSwitchData->Ia32.ExceptionTssDesc;
-  Tss     = StackSwitchData->Ia32.ExceptionTss;
+  if (StackSwitchData->ExceptionTssSize <
+      sizeof (IA32_TASK_STATE_SEGMENT) * (StackSwitchData->StackSwitchExceptionNumber + 1))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  TssDesc = StackSwitchData->ExceptionTssDesc;
+  Tss     = StackSwitchData->ExceptionTss;
 
   //
   // Initialize new GDT table and/or IDT table, if any
@@ -187,19 +191,20 @@ ArchSetupExceptionStack (
 
   GdtSize = (UINTN)TssDesc +
             sizeof (IA32_TSS_DESCRIPTOR) *
-            (StackSwitchData->Ia32.StackSwitchExceptionNumber + 1) -
-            (UINTN)(StackSwitchData->Ia32.GdtTable);
-  if ((UINTN)StackSwitchData->Ia32.GdtTable != Gdtr.Base) {
-    CopyMem (StackSwitchData->Ia32.GdtTable, (VOID *)Gdtr.Base, Gdtr.Limit + 1);
-    Gdtr.Base = (UINTN)StackSwitchData->Ia32.GdtTable;
+            (StackSwitchData->StackSwitchExceptionNumber + 1) -
+            (UINTN)(StackSwitchData->GdtTable);
+  if ((UINTN)StackSwitchData->GdtTable != Gdtr.Base) {
+    CopyMem (StackSwitchData->GdtTable, (VOID *)Gdtr.Base, Gdtr.Limit + 1);
+    Gdtr.Base  = (UINTN)StackSwitchData->GdtTable;
     Gdtr.Limit = (UINT16)GdtSize - 1;
   }
 
-  if ((UINTN)StackSwitchData->Ia32.IdtTable != Idtr.Base) {
-    Idtr.Base = (UINTN)StackSwitchData->Ia32.IdtTable;
+  if ((UINTN)StackSwitchData->IdtTable != Idtr.Base) {
+    Idtr.Base = (UINTN)StackSwitchData->IdtTable;
   }
-  if (StackSwitchData->Ia32.IdtTableSize > 0) {
-    Idtr.Limit = (UINT16)(StackSwitchData->Ia32.IdtTableSize - 1);
+
+  if (StackSwitchData->IdtTableSize > 0) {
+    Idtr.Limit = (UINT16)(StackSwitchData->IdtTableSize - 1);
   }
 
   //
@@ -208,23 +213,23 @@ ArchSetupExceptionStack (
   //
   TssBase = (UINTN)Tss;
 
-  TssDesc->Uint64          = 0;
-  TssDesc->Bits.LimitLow   = sizeof(IA32_TASK_STATE_SEGMENT) - 1;
-  TssDesc->Bits.BaseLow    = (UINT16)TssBase;
-  TssDesc->Bits.BaseMid    = (UINT8)(TssBase >> 16);
-  TssDesc->Bits.Type       = IA32_GDT_TYPE_TSS;
-  TssDesc->Bits.P          = 1;
-  TssDesc->Bits.LimitHigh  = 0;
-  TssDesc->Bits.BaseHigh   = (UINT8)(TssBase >> 24);
+  TssDesc->Uint64         = 0;
+  TssDesc->Bits.LimitLow  = sizeof (IA32_TASK_STATE_SEGMENT) - 1;
+  TssDesc->Bits.BaseLow   = (UINT16)TssBase;
+  TssDesc->Bits.BaseMid   = (UINT8)(TssBase >> 16);
+  TssDesc->Bits.Type      = IA32_GDT_TYPE_TSS;
+  TssDesc->Bits.P         = 1;
+  TssDesc->Bits.LimitHigh = 0;
+  TssDesc->Bits.BaseHigh  = (UINT8)(TssBase >> 24);
 
   //
   // Fixup exception task descriptor and task-state segment
   //
   AsmGetTssTemplateMap (&TemplateMap);
-  StackTop = StackSwitchData->Ia32.KnownGoodStackTop - CPU_STACK_ALIGNMENT;
+  StackTop = StackSwitchData->KnownGoodStackTop - CPU_STACK_ALIGNMENT;
   StackTop = (UINTN)ALIGN_POINTER (StackTop, CPU_STACK_ALIGNMENT);
-  IdtTable = StackSwitchData->Ia32.IdtTable;
-  for (Index = 0; Index < StackSwitchData->Ia32.StackSwitchExceptionNumber; ++Index) {
+  IdtTable = StackSwitchData->IdtTable;
+  for (Index = 0; Index < StackSwitchData->StackSwitchExceptionNumber; ++Index) {
     TssDesc += 1;
     Tss     += 1;
 
@@ -234,7 +239,7 @@ ArchSetupExceptionStack (
     TssBase = (UINTN)Tss;
 
     TssDesc->Uint64         = 0;
-    TssDesc->Bits.LimitLow  = sizeof(IA32_TASK_STATE_SEGMENT) - 1;
+    TssDesc->Bits.LimitLow  = sizeof (IA32_TASK_STATE_SEGMENT) - 1;
     TssDesc->Bits.BaseLow   = (UINT16)TssBase;
     TssDesc->Bits.BaseMid   = (UINT8)(TssBase >> 16);
     TssDesc->Bits.Type      = IA32_GDT_TYPE_TSS;
@@ -245,15 +250,16 @@ ArchSetupExceptionStack (
     //
     // Fixup TSS
     //
-    Vector = StackSwitchData->Ia32.StackSwitchExceptions[Index];
-    if (Vector >= CPU_EXCEPTION_NUM ||
-        Vector >= (Idtr.Limit + 1) / sizeof (IA32_IDT_GATE_DESCRIPTOR)) {
+    Vector = StackSwitchData->StackSwitchExceptions[Index];
+    if ((Vector >= CPU_EXCEPTION_NUM) ||
+        (Vector >= (Idtr.Limit + 1) / sizeof (IA32_IDT_GATE_DESCRIPTOR)))
+    {
       continue;
     }
 
     ZeroMem (Tss, sizeof (*Tss));
-    Tss->EIP    = (UINT32)(TemplateMap.ExceptionStart
-                           + Vector * TemplateMap.ExceptionStubHeaderSize);
+    Tss->EIP = (UINT32)(TemplateMap.ExceptionStart
+                        + Vector * TemplateMap.ExceptionStubHeaderSize);
     Tss->EFLAGS = 0x2;
     Tss->ESP    = StackTop;
     Tss->CR3    = AsmReadCr3 ();
@@ -264,7 +270,7 @@ ArchSetupExceptionStack (
     Tss->FS     = AsmReadFs ();
     Tss->GS     = AsmReadGs ();
 
-    StackTop   -= StackSwitchData->Ia32.KnownGoodStackSize;
+    StackTop -= StackSwitchData->KnownGoodStackSize;
 
     //
     // Update IDT to use Task Gate for given exception
@@ -284,7 +290,7 @@ ArchSetupExceptionStack (
   //
   // Load current task
   //
-  AsmWriteTr ((UINT16)((UINTN)StackSwitchData->Ia32.ExceptionTssDesc - Gdtr.Base));
+  AsmWriteTr ((UINT16)((UINTN)StackSwitchData->ExceptionTssDesc - Gdtr.Base));
 
   //
   // Publish IDT
@@ -303,8 +309,8 @@ ArchSetupExceptionStack (
 VOID
 EFIAPI
 DumpCpuContext (
-  IN EFI_EXCEPTION_TYPE   ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext
+  IN EFI_EXCEPTION_TYPE  ExceptionType,
+  IN EFI_SYSTEM_CONTEXT  SystemContext
   )
 {
   InternalPrintMessage (
@@ -331,8 +337,10 @@ DumpCpuContext (
         (SystemContext.SystemContextIa32->ExceptionData & IA32_PF_EC_SGX)  != 0
         );
     }
+
     InternalPrintMessage ("\n");
   }
+
   InternalPrintMessage (
     "EIP  - %08x, CS  - %08x, EFLAGS - %08x\n",
     SystemContext.SystemContextIa32->Eip,
@@ -406,8 +414,8 @@ DumpCpuContext (
 **/
 VOID
 DumpImageAndCpuContent (
-  IN EFI_EXCEPTION_TYPE   ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext
+  IN EFI_EXCEPTION_TYPE  ExceptionType,
+  IN EFI_SYSTEM_CONTEXT  SystemContext
   )
 {
   DumpCpuContext (ExceptionType, SystemContext);
@@ -415,7 +423,8 @@ DumpImageAndCpuContent (
   // Dump module image base and module entry point by EIP
   //
   if ((ExceptionType == EXCEPT_IA32_PAGE_FAULT) &&
-      ((SystemContext.SystemContextIa32->ExceptionData & IA32_PF_EC_ID) != 0)) {
+      ((SystemContext.SystemContextIa32->ExceptionData & IA32_PF_EC_ID) != 0))
+  {
     //
     // The EIP in SystemContext could not be used
     // if it is page fault with I/D set.

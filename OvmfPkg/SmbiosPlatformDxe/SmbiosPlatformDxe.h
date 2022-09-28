@@ -19,7 +19,29 @@
 **/
 EFI_STATUS
 InstallAllStructures (
-  IN UINT8                     *TableAddress
+  IN UINT8  *TableAddress
+  );
+
+/**
+  Locates and extracts the QEMU SMBIOS data if present in fw_cfg
+
+  @return                 Address of extracted QEMU SMBIOS data
+
+**/
+UINT8 *
+GetQemuSmbiosTables (
+  VOID
+  );
+
+/**
+  Locates and extracts Cloud Hypervisor SMBIOS data
+
+  @return                 Address of extracted Cloud Hypervisor SMBIOS data
+
+**/
+UINT8 *
+GetCloudHvSmbiosTables (
+  VOID
   );
 
 #endif

@@ -34,6 +34,18 @@ BITS    32
 %define GHCB_CPUID_REGISTER_SHIFT  30
 %define CPUID_INSN_LEN              2
 
+; #VC handler offsets/sizes for accessing SNP CPUID page
+;
+%define SNP_CPUID_ENTRY_SZ         48
+%define SNP_CPUID_COUNT             0
+%define SNP_CPUID_ENTRY            16
+%define SNP_CPUID_ENTRY_EAX_IN      0
+%define SNP_CPUID_ENTRY_ECX_IN      4
+%define SNP_CPUID_ENTRY_EAX        24
+%define SNP_CPUID_ENTRY_EBX        28
+%define SNP_CPUID_ENTRY_ECX        32
+%define SNP_CPUID_ENTRY_EDX        36
+
 
 %define SEV_GHCB_MSR                0xc0010130
 %define SEV_STATUS_MSR              0xc0010131
@@ -43,6 +55,27 @@ BITS    32
 
 ; The unexpected response code
 %define TERM_UNEXPECTED_RESP_CODE   2
+
+%define PAGE_PRESENT            0x01
+%define PAGE_READ_WRITE         0x02
+%define PAGE_USER_SUPERVISOR    0x04
+%define PAGE_WRITE_THROUGH      0x08
+%define PAGE_CACHE_DISABLE     0x010
+%define PAGE_ACCESSED          0x020
+%define PAGE_DIRTY             0x040
+%define PAGE_PAT               0x080
+%define PAGE_GLOBAL           0x0100
+%define PAGE_2M_MBO            0x080
+%define PAGE_2M_PAT          0x01000
+
+%define PAGE_4K_PDE_ATTR (PAGE_ACCESSED + \
+                          PAGE_DIRTY + \
+                          PAGE_READ_WRITE + \
+                          PAGE_PRESENT)
+
+%define PAGE_PDP_ATTR (PAGE_ACCESSED + \
+                       PAGE_READ_WRITE + \
+                       PAGE_PRESENT)
 
 
 ; Macro is used to issue the MSR protocol based VMGEXIT. The caller is
@@ -117,6 +150,69 @@ BITS    32
 SevEsUnexpectedRespTerminate:
     TerminateVmgExit    TERM_UNEXPECTED_RESP_CODE
 
+%ifdef ARCH_X64
+
+; If SEV-ES is enabled then initialize and make the GHCB page shared
+SevClearPageEncMaskForGhcbPage:
+    ; Check if SEV is enabled
+    cmp       byte[WORK_AREA_GUEST_TYPE], 1
+    jnz       SevClearPageEncMaskForGhcbPageExit
+
+    ; Check if SEV-ES is enabled
+    mov       ecx, 1
+    bt        [SEV_ES_WORK_AREA_STATUS_MSR], ecx
+    jnc       SevClearPageEncMaskForGhcbPageExit
+
+    ;
+    ; The initial GHCB will live at GHCB_BASE and needs to be un-encrypted.
+    ; This requires the 2MB page for this range be broken down into 512 4KB
+    ; pages.  All will be marked encrypted, except for the GHCB.
+    ;
+    mov     ecx, (GHCB_BASE >> 21)
+    mov     eax, GHCB_PT_ADDR + PAGE_PDP_ATTR
+    mov     [ecx * 8 + PT_ADDR (0x2000)], eax
+
+    ;
+    ; Page Table Entries (512 * 4KB entries => 2MB)
+    ;
+    mov     ecx, 512
+pageTableEntries4kLoop:
+    mov     eax, ecx
+    dec     eax
+    shl     eax, 12
+    add     eax, GHCB_BASE & 0xFFE0_0000
+    add     eax, PAGE_4K_PDE_ATTR
+    mov     [ecx * 8 + GHCB_PT_ADDR - 8], eax
+    mov     [(ecx * 8 + GHCB_PT_ADDR - 8) + 4], edx
+    loop    pageTableEntries4kLoop
+
+    ;
+    ; Clear the encryption bit from the GHCB entry
+    ;
+    mov     ecx, (GHCB_BASE & 0x1F_FFFF) >> 12
+    mov     [ecx * 8 + GHCB_PT_ADDR + 4], strict dword 0
+
+SevClearPageEncMaskForGhcbPageExit:
+    OneTimeCallRet SevClearPageEncMaskForGhcbPage
+
+; Check if SEV is enabled, and get the C-bit mask above 31.
+; Modified: EDX
+;
+; The value is returned in the EDX
+GetSevCBitMaskAbove31:
+    xor       edx, edx
+
+    ; Check if SEV is enabled
+    cmp       byte[WORK_AREA_GUEST_TYPE], 1
+    jnz       GetSevCBitMaskAbove31Exit
+
+    mov       edx, dword[SEV_ES_WORK_AREA_ENC_MASK + 4]
+
+GetSevCBitMaskAbove31Exit:
+    OneTimeCallRet GetSevCBitMaskAbove31
+
+%endif
+
 ; Check if Secure Encrypted Virtualization (SEV) features are enabled.
 ;
 ; Register usage is tight in this routine, so multiple calls for the
@@ -128,12 +224,16 @@ SevEsUnexpectedRespTerminate:
 ; If SEV is disabled then EAX will be zero.
 ;
 CheckSevFeatures:
-    ; Set the first byte of the workarea to zero to communicate to the SEC
-    ; phase that SEV-ES is not enabled. If SEV-ES is enabled, the CPUID
-    ; instruction will trigger a #VC exception where the first byte of the
-    ; workarea will be set to one or, if CPUID is not being intercepted,
-    ; the MSR check below will set the first byte of the workarea to one.
-    mov     byte[SEV_ES_WORK_AREA], 0
+    ;
+    ; Clear the workarea, if SEV is enabled then later part of routine
+    ; will populate the workarea fields.
+    ;
+    mov    ecx, SEV_ES_WORK_AREA_SIZE
+    mov    eax, SEV_ES_WORK_AREA
+ClearSevEsWorkArea:
+    mov    byte [eax], 0
+    inc    eax
+    loop   ClearSevEsWorkArea
 
     ;
     ; Set up exception handlers to check for SEV-ES
@@ -171,13 +271,12 @@ CheckSevFeatures:
     bt        eax, 0
     jnc       NoSev
 
-    ; Check for SEV-ES memory encryption feature:
-    ; CPUID  Fn8000_001F[EAX] - Bit 3
-    ;   CPUID raises a #VC exception if running as an SEV-ES guest
-    mov       eax, 0x8000001f
-    cpuid
-    bt        eax, 3
-    jnc       GetSevEncBit
+    ; Set the work area header to indicate that the SEV is enabled
+    mov     byte[WORK_AREA_GUEST_TYPE], 1
+
+    ; Save the SevStatus MSR value in the workarea
+    mov     [SEV_ES_WORK_AREA_STATUS_MSR], eax
+    mov     [SEV_ES_WORK_AREA_STATUS_MSR + 4], edx
 
     ; Check if SEV-ES is enabled
     ;  MSR_0xC0010131 - Bit 1 (SEV-ES enabled)
@@ -185,10 +284,6 @@ CheckSevFeatures:
     rdmsr
     bt        eax, 1
     jnc       GetSevEncBit
-
-    ; Set the first byte of the workarea to one to communicate to the SEC
-    ; phase that SEV-ES is enabled.
-    mov       byte[SEV_ES_WORK_AREA], 1
 
 GetSevEncBit:
     ; Get pte bit position to enable memory encryption
@@ -219,7 +314,10 @@ NoSev:
     ;
     ; Perform an SEV-ES sanity check by seeing if a #VC exception occurred.
     ;
-    cmp       byte[SEV_ES_WORK_AREA], 0
+    ; If SEV-ES is enabled, the CPUID instruction will trigger a #VC exception
+    ; where the RECEIVED_VC offset in the workarea will be set to one.
+    ;
+    cmp       byte[SEV_ES_WORK_AREA_RECEIVED_VC], 0
     jz        NoSevPass
 
     ;
@@ -246,27 +344,6 @@ SevExit:
 
     OneTimeCallRet CheckSevFeatures
 
-; Check if Secure Encrypted Virtualization - Encrypted State (SEV-ES) feature
-; is enabled.
-;
-; Modified:  EAX
-;
-; If SEV-ES is enabled then EAX will be non-zero.
-; If SEV-ES is disabled then EAX will be zero.
-;
-IsSevEsEnabled:
-    xor       eax, eax
-
-    ; During CheckSevFeatures, the SEV_ES_WORK_AREA was set to 1 if
-    ; SEV-ES is enabled.
-    cmp       byte[SEV_ES_WORK_AREA], 1
-    jne       SevEsDisabled
-
-    mov       eax, 1
-
-SevEsDisabled:
-    OneTimeCallRet IsSevEsEnabled
-
 ; Start of #VC exception handling routines
 ;
 
@@ -274,19 +351,69 @@ SevEsIdtNotCpuid:
     TerminateVmgExit TERM_VC_NOT_CPUID
     iret
 
-    ;
-    ; Total stack usage for the #VC handler is 44 bytes:
-    ;   - 12 bytes for the exception IRET (after popping error code)
-    ;   - 32 bytes for the local variables.
-    ;
+; Use the SNP CPUID page to handle the cpuid lookup
+;
+;  Modified: EAX, EBX, ECX, EDX
+;
+;  Relies on the stack setup/usage in #VC handler:
+;
+;    On entry,
+;      [esp + VC_CPUID_FUNCTION] contains EAX input to cpuid instruction
+;
+;    On return, stores corresponding results of CPUID lookup in:
+;      [esp + VC_CPUID_RESULT_EAX]
+;      [esp + VC_CPUID_RESULT_EBX]
+;      [esp + VC_CPUID_RESULT_ECX]
+;      [esp + VC_CPUID_RESULT_EDX]
+;
+SnpCpuidLookup:
+    mov     eax, [esp + VC_CPUID_FUNCTION]
+    mov     ebx, [CPUID_BASE + SNP_CPUID_COUNT]
+    mov     ecx, CPUID_BASE + SNP_CPUID_ENTRY
+    ; Zero these out now so we can simply return if lookup fails
+    mov     dword[esp + VC_CPUID_RESULT_EAX], 0
+    mov     dword[esp + VC_CPUID_RESULT_EBX], 0
+    mov     dword[esp + VC_CPUID_RESULT_ECX], 0
+    mov     dword[esp + VC_CPUID_RESULT_EDX], 0
+
+SnpCpuidCheckEntry:
+    cmp     ebx, 0
+    je      VmmDoneSnpCpuid
+    cmp     dword[ecx + SNP_CPUID_ENTRY_EAX_IN], eax
+    jne     SnpCpuidCheckEntryNext
+    ; As with SEV-ES handler we assume requested CPUID sub-leaf/index is 0
+    cmp     dword[ecx + SNP_CPUID_ENTRY_ECX_IN], 0
+    je      SnpCpuidEntryFound
+
+SnpCpuidCheckEntryNext:
+    dec     ebx
+    add     ecx, SNP_CPUID_ENTRY_SZ
+    jmp     SnpCpuidCheckEntry
+
+SnpCpuidEntryFound:
+    mov     eax, [ecx + SNP_CPUID_ENTRY_EAX]
+    mov     [esp + VC_CPUID_RESULT_EAX], eax
+    mov     eax, [ecx + SNP_CPUID_ENTRY_EBX]
+    mov     [esp + VC_CPUID_RESULT_EBX], eax
+    mov     eax, [ecx + SNP_CPUID_ENTRY_EDX]
+    mov     [esp + VC_CPUID_RESULT_ECX], eax
+    mov     eax, [ecx + SNP_CPUID_ENTRY_ECX]
+    mov     [esp + VC_CPUID_RESULT_EDX], eax
+    jmp     VmmDoneSnpCpuid
+
+;
+; Total stack usage for the #VC handler is 44 bytes:
+;   - 12 bytes for the exception IRET (after popping error code)
+;   - 32 bytes for the local variables.
+;
 SevEsIdtVmmComm:
     ;
     ; If we're here, then we are an SEV-ES guest and this
     ; was triggered by a CPUID instruction
     ;
-    ; Set the first byte of the workarea to one to communicate that
+    ; Set the recievedVc field in the workarea to communicate that
     ; a #VC was taken.
-    mov     byte[SEV_ES_WORK_AREA], 1
+    mov     byte[SEV_ES_WORK_AREA_RECEIVED_VC], 1
 
     pop     ecx                     ; Error code
     cmp     ecx, 0x72               ; Be sure it was CPUID
@@ -305,6 +432,13 @@ SevEsIdtVmmComm:
 
     ; Save the CPUID function being requested
     mov     [esp + VC_CPUID_FUNCTION], eax
+
+    ; If SEV-SNP is enabled, use the CPUID page to handle the CPUID
+    ; instruction.
+    mov     ecx, SEV_STATUS_MSR
+    rdmsr
+    bt      eax, 2
+    jc      SnpCpuidLookup
 
     ; The GHCB CPUID protocol uses the following mapping to request
     ; a specific register:
@@ -363,6 +497,7 @@ VmmDone:
     mov     ecx, SEV_GHCB_MSR
     wrmsr
 
+VmmDoneSnpCpuid:
     mov     eax, [esp + VC_CPUID_RESULT_EAX]
     mov     ebx, [esp + VC_CPUID_RESULT_EBX]
     mov     ecx, [esp + VC_CPUID_RESULT_ECX]

@@ -154,6 +154,10 @@
   #
   VariablePolicyHelperLib|Include/Library/VariablePolicyHelperLib.h
 
+  ##  @libraryclass  Provides services to access UEFI variable flash information.
+  #
+  VariableFlashInfoLib|Include/Library/VariableFlashInfoLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -225,6 +229,10 @@
   ## Guid is defined for SMM variable module to notify SMM variable wrapper module when variable write service was ready.
   #  Include/Guid/SmmVariableCommon.h
   gSmmVariableWriteGuid  = { 0x93ba1826, 0xdffb, 0x45dd, { 0x82, 0xa7, 0xe7, 0xdc, 0xaa, 0x3b, 0xbd, 0xf3 }}
+
+  ## Guid of the variable flash information HOB.
+  #  Include/Guid/VariableFlashInfo.h
+  gVariableFlashInfoHobGuid = { 0x5d11c653, 0x8154, 0x4ac3, { 0xa8, 0xc2, 0xfb, 0xa2, 0x89, 0x20, 0xfc, 0x90 }}
 
   ## Performance protocol guid that also acts as the performance HOB guid and performance variable GUID
   #  Include/Guid/Performance.h
@@ -500,6 +508,9 @@
 
   ## Include/Ppi/NvmExpressPassThru.h
   gEdkiiPeiNvmExpressPassThruPpiGuid    = { 0x6af31b2c, 0x3be, 0x46c1, { 0xb1, 0x2d, 0xea, 0x4a, 0x36, 0xdf, 0xa7, 0x4c } }
+
+  ## Include/Ppi/PciDevice.h
+  gEdkiiPeiPciDevicePpiGuid                 = { 0x1597ab4f, 0xd542, 0x4efe, { 0x9a, 0xf7, 0xb2, 0x44, 0xec, 0x54, 0x4c, 0x0b } }
 
   ## Include/Ppi/CapsuleOnDisk.h
   gEdkiiPeiCapsuleOnDiskPpiGuid             = { 0x71a9ea61, 0x5a35, 0x4a5d, { 0xac, 0xef, 0x9c, 0xf8, 0x6d, 0x6d, 0x67, 0xe0 } }
@@ -1559,6 +1570,10 @@
   # @Prompt Maximum permitted FwVol section nesting depth (exclusive).
   gEfiMdeModulePkgTokenSpaceGuid.PcdFwVolDxeMaxEncapsulationDepth|0x10|UINT32|0x00000030
 
+  ## Indicates the default timeout value for SD/MMC Host Controller operations in microseconds.
+  # @Prompt SD/MMC Host Controller Operations Timeout (us).
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdMmcGenericTimeoutValue|1000000|UINT32|0x00000031
+
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD defines the Console output row. The default value is 25 according to UEFI spec.
   #  This PCD could be set to 0 then console output would be at max column and max row.
@@ -1879,9 +1894,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosEntryPointProvideMethod|0x3|UINT32|0x00010069
 
   ## This PCD specifies the additional pad size in FPDT Basic Boot Performance Table for
-  #  the extension FPDT boot records received after ReadyToBoot and before ExitBootService.
+  #  the extension FPDT boot records received after EndOfDxe and before ExitBootService.
   # @Prompt Pad size for extension FPDT boot records.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdExtFpdtBootRecordPadSize|0x20000|UINT32|0x0001005F
+  gEfiMdeModulePkgTokenSpaceGuid.PcdExtFpdtBootRecordPadSize|0x30000|UINT32|0x0001005F
 
   ## Indicates if ConIn device are connected on demand.<BR><BR>
   #   TRUE  - ConIn device are not connected during BDS and ReadKeyStroke/ReadKeyStrokeEx produced
@@ -2078,6 +2093,10 @@
   #   FALSE - PCIe Resizable BAR Capability is not supported.<BR>
   # @Prompt Enable PCIe Resizable BAR Capability support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport|FALSE|BOOLEAN|0x10000024
+
+  ## This PCD holds the shared bit mask for page table entries when Tdx is enabled.
+  # @Prompt The shared bit mask when Intel Tdx is enabled.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTdxSharedBitMask|0x0|UINT64|0x10000025
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when

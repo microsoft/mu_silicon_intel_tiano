@@ -7,9 +7,14 @@
 
 **/
 
-
 #include <Uefi.h>
 
+/**
+  The dummy constructor for DxeHobListLib.
+
+  @retval  EFI_SUCCESS
+
+**/
 EFI_STATUS
 EFIAPI
 DxeHobListLibNullConstructor (

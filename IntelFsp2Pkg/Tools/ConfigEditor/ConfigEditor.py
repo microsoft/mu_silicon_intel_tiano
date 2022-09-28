@@ -13,6 +13,7 @@ import tkinter.ttk as ttk
 import tkinter.messagebox as messagebox
 import tkinter.filedialog as filedialog
 
+from pickle import FALSE, TRUE
 from pathlib import Path
 from GenYamlCfg import CGenYamlCfg, bytes_to_value, \
       bytes_to_bracket_str, value_to_bytes, array_str_to_value
@@ -458,7 +459,10 @@ class FSP_INFORMATION_HEADER(Structure):
         ('NotifyPhaseEntryOffset',     c_uint32),
         ('FspMemoryInitEntryOffset',   c_uint32),
         ('TempRamExitEntryOffset',     c_uint32),
-        ('FspSiliconInitEntryOffset',  c_uint32)
+        ('FspSiliconInitEntryOffset',  c_uint32),
+        ('FspMultiPhaseSiInitEntryOffset', c_uint32),
+        ('ExtendedImageRevision',  c_uint16),
+        ('Reserved4',  c_uint16)
         ]
 
 
@@ -700,6 +704,34 @@ class FirmwareDevice:
                     raise Exception("ERROR: Incorrect FV size in image !")
         self.CheckFsp()
 
+    def IsIntegerType(self, val):
+        if sys.version_info[0] < 3:
+            if type(val) in (int, long):
+                return True
+        else:
+            if type(val) is int:
+                return True
+        return False
+
+    def ConvertRevisionString(self, obj):
+        for field in obj._fields_:
+            key = field[0]
+            val = getattr(obj, key)
+            rep = ''
+
+            if self.IsIntegerType(val):
+                if (key == 'ImageRevision'):
+                    FspImageRevisionMajor = ((val >> 24) & 0xFF)
+                    FspImageRevisionMinor = ((val >> 16) & 0xFF)
+                    FspImageRevisionRevision = ((val >> 8) & 0xFF)
+                    FspImageRevisionBuildNumber = (val & 0xFF)
+                    rep = '0x%08X' % val
+                elif (key == 'ExtendedImageRevision'):
+                    FspImageRevisionRevision |= (val & 0xFF00)
+                    FspImageRevisionBuildNumber |= ((val << 8) & 0xFF00)
+                    rep = "0x%04X ('%02X.%02X.%04X.%04X')" % (val, FspImageRevisionMajor, FspImageRevisionMinor, FspImageRevisionRevision, FspImageRevisionBuildNumber)
+                    return rep
+
     def OutputFsp(self):
         def copy_text_to_clipboard():
             window.clipboard_clear()
@@ -721,7 +753,8 @@ class FirmwareDevice:
         self.OutputText = self.OutputText + "Fsp Header Details \n\n"
         while i < len(self.FihList):
             try:
-                self.OutputText += str(self.BuildList[i].decode()) + "\n"
+                # self.OutputText += str(self.BuildList[i].decode()) + "\n"
+                self.OutputText += str(self.BuildList[i]) + "\n"
             except Exception:
                 self.OutputText += "No description found\n"
             self.OutputText += "FSP Header :\n "
@@ -729,6 +762,8 @@ class FirmwareDevice:
                 str(self.FihList[i].Signature.decode('utf-8')) + "\n "
             self.OutputText += "Header Length : " + \
                 str(hex(self.FihList[i].HeaderLength)) + "\n "
+            self.OutputText += "Reserved1 : " + \
+                str(hex(self.FihList[i].Reserved1)) + "\n "
             self.OutputText += "Header Revision : " + \
                 str(hex(self.FihList[i].HeaderRevision)) + "\n "
             self.OutputText += "Spec Version : " + \
@@ -743,15 +778,17 @@ class FirmwareDevice:
                 str(hex(self.FihList[i].ImageBase)) + "\n "
             self.OutputText += "Image Attribute : " + \
                 str(hex(self.FihList[i].ImageAttribute)) + "\n "
+            self.OutputText += "Component Attribute : " + \
+                str(hex(self.FihList[i].ComponentAttribute)) + "\n "
             self.OutputText += "Cfg Region Offset : " + \
                 str(hex(self.FihList[i].CfgRegionOffset)) + "\n "
             self.OutputText += "Cfg Region Size : " + \
                 str(hex(self.FihList[i].CfgRegionSize)) + "\n "
-            self.OutputText += "API Entry Num : " + \
+            self.OutputText += "Reserved2 : " + \
                 str(hex(self.FihList[i].Reserved2)) + "\n "
             self.OutputText += "Temp Ram Init Entry : " + \
                 str(hex(self.FihList[i].TempRamInitEntryOffset)) + "\n "
-            self.OutputText += "FSP Init Entry : " + \
+            self.OutputText += "Reserved3 : " + \
                 str(hex(self.FihList[i].Reserved3)) + "\n "
             self.OutputText += "Notify Phase Entry : " + \
                 str(hex(self.FihList[i].NotifyPhaseEntryOffset)) + "\n "
@@ -760,7 +797,23 @@ class FirmwareDevice:
             self.OutputText += "Temp Ram Exit Entry : " + \
                 str(hex(self.FihList[i].TempRamExitEntryOffset)) + "\n "
             self.OutputText += "Fsp Silicon Init Entry : " + \
-                str(hex(self.FihList[i].FspSiliconInitEntryOffset)) + "\n\n"
+                str(hex(self.FihList[i].FspSiliconInitEntryOffset)) + "\n "
+            self.OutputText += "Fsp Multi Phase Si Init Entry : " + \
+                str(hex(self.FihList[i].FspMultiPhaseSiInitEntryOffset)) + "\n "
+
+            # display ExtendedImageRevision & Reserved4 if HeaderRevision >= 6
+            for fsp in self.FihList:
+                if fsp.HeaderRevision >= 6:
+                    Display_ExtndImgRev = TRUE
+                else:
+                    Display_ExtndImgRev = FALSE
+                    self.OutputText += "\n"
+            if  Display_ExtndImgRev == TRUE:
+                self.OutputText += "ExtendedImageRevision : " + \
+                    str(self.ConvertRevisionString(self.FihList[i])) + "\n "
+                self.OutputText += "Reserved4 : " + \
+                    str(hex(self.FihList[i].Reserved4)) + "\n\n"
+
             self.OutputText += "FSP Extended Header:\n "
             self.OutputText += "Signature : " + \
                 str(self.FspExtList[i].Signature.decode('utf-8')) + "\n "
@@ -807,12 +860,12 @@ class application(tkinter.Frame):
         self.page_id = ''
         self.page_list = {}
         self.conf_list = {}
+        self.cfg_page_dict = {}
         self.cfg_data_obj = None
         self.org_cfg_data_bin = None
         self.in_left = state()
         self.in_right = state()
         self.search_text = ''
-        self.binseg_dict = {}
 
         # Check if current directory contains a file with a .yaml extension
         # if not default self.last_dir to a Platform directory where it is
@@ -1009,10 +1062,17 @@ class application(tkinter.Frame):
             return visible
         if self.cfg_data_obj.binseg_dict:
             str_split = item['path'].split('.')
-            if self.cfg_data_obj.binseg_dict[str_split[-2]] == -1:
-                visible = False
-                widget.grid_remove()
-                return visible
+            if str_split[-2] not in CGenYamlCfg.available_fv and \
+                    str_split[-2] not in CGenYamlCfg.missing_fv:
+                if self.cfg_data_obj.binseg_dict[str_split[-3]] == -1:
+                    visible = False
+                    widget.grid_remove()
+                    return visible
+            else:
+                if self.cfg_data_obj.binseg_dict[str_split[-2]] == -1:
+                    visible = False
+                    widget.grid_remove()
+                    return visible
         result = 1
         if item['condition']:
             result = self.evaluate_condition(item)
@@ -1371,8 +1431,34 @@ class application(tkinter.Frame):
         self.clear_widgets_inLayout()
         self.on_config_page_select_change(None)
 
+    def set_config_data_page(self):
+        page_id_list = []
+        for idx, page in enumerate(
+                self.cfg_data_obj._cfg_page['root']['child']):
+            page_id_list.append(list(page.keys())[0])
+            page_list = self.cfg_data_obj.get_cfg_list(page_id_list[idx])
+            self.cfg_page_dict[page_id_list[idx]] = 0
+            for item in page_list:
+                str_split = item['path'].split('.')
+                if str_split[-2] not in CGenYamlCfg.available_fv and \
+                        str_split[-2] not in CGenYamlCfg.missing_fv:
+                    if self.cfg_data_obj.binseg_dict[str_split[-3]] != -1:
+                        self.cfg_page_dict[page_id_list[idx]] += 1
+                else:
+                    if self.cfg_data_obj.binseg_dict[str_split[-2]] != -1:
+                        self.cfg_page_dict[page_id_list[idx]] += 1
+        removed_page = 0
+        for idx, id in enumerate(page_id_list):
+            if self.cfg_page_dict[id] == 0:
+                del self.cfg_data_obj._cfg_page['root']['child'][idx-removed_page]  # noqa: E501
+                removed_page += 1
+
     def reload_config_data_from_bin(self, bin_dat):
         self.cfg_data_obj.load_default_from_bin(bin_dat)
+        self.set_config_data_page()
+        self.left.delete(*self.left.get_children())
+        self.build_config_page_tree(self.cfg_data_obj.get_cfg_page()['root'],
+                                    '')
         self.refresh_config_data_page()
 
     def set_config_item_value(self, item, value_str):

@@ -19,6 +19,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiLib.h>                     // AsciiPrint()
 #include <Library/UefiRuntimeServicesTableLib.h> // gRT
 #include <Uefi/UefiMultiPhase.h>
+#include <UefiSecureBoot.h>
 #include <Library/SecureBootVariableLib.h>
 #include <Library/SecureBootVariableProvisionLib.h>
 
@@ -37,8 +38,8 @@ UefiMain (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS Status;
-  UINT8      SetupMode;
+  EFI_STATUS  Status;
+  UINT8       SetupMode;
 
   Status = GetSetupMode (&SetupMode);
   if (EFI_ERROR (Status)) {
@@ -92,6 +93,7 @@ UefiMain (
       "Please do it manually, otherwise system can be easily compromised\n"
       );
   }
+
   return 0;
 
 clearKEK:
