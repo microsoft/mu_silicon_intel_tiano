@@ -280,6 +280,76 @@ ScanPciBus (
 }
 
 /**
+  Scan PCI bus and invoke callback function for each PCI devices under all root bus.
+
+  @param[in]  Context               The context of the callback function.
+  @param[in]  Segment               The segment of the source.
+  @param[in]  Callback              The callback function in PCI scan.
+
+  @retval EFI_SUCCESS           The PCI devices under the bus are scaned.
+**/
+EFI_STATUS
+ScanAllPciBus (
+  IN VOID                         *Context,
+  IN UINT16                       Segment,
+  IN SCAN_BUS_FUNC_CALLBACK_FUNC  Callback
+  )
+{
+  EFI_STATUS                        Status;
+  UINTN                             Index;
+  UINTN                             HandleCount;
+  EFI_HANDLE                        *HandleBuffer;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *PciRootBridgeIo;
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Descriptors;
+
+  DEBUG ((DEBUG_INFO, "ScanAllPciBus ()\n"));
+
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  DEBUG ((DEBUG_INFO,"Find %d root bridges\n", HandleCount));
+
+  for (Index = 0; Index < HandleCount; Index++) {
+    Status = gBS->HandleProtocol (
+                    HandleBuffer[Index],
+                    &gEfiPciRootBridgeIoProtocolGuid,
+                    (VOID **) &PciRootBridgeIo
+                    );
+    ASSERT_EFI_ERROR (Status);
+
+    Status = PciRootBridgeIo->Configuration (PciRootBridgeIo, (VOID **) &Descriptors);
+    ASSERT_EFI_ERROR (Status);
+
+    while (Descriptors->Desc != ACPI_END_TAG_DESCRIPTOR) {
+      if (Descriptors->ResType == ACPI_ADDRESS_SPACE_TYPE_BUS) {
+        break;
+      }
+      Descriptors++;
+    }
+
+    if (Descriptors->Desc == ACPI_END_TAG_DESCRIPTOR) {
+      continue;
+    }
+
+    DEBUG ((DEBUG_INFO,"Scan root bridges : %d, Segment : %d, Bus : 0x%02X\n", Index, PciRootBridgeIo->SegmentNumber, Descriptors->AddrRangeMin));
+    Status = ScanPciBus(Context, (UINT16) PciRootBridgeIo->SegmentNumber, (UINT8) Descriptors->AddrRangeMin, Callback);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  FreePool(HandleBuffer);
+
+  return Status;
+}
+
+/**
   Dump the PCI device information managed by this VTd engine.
 
   @param[in]  VtdIndex              The index of VTd engine.

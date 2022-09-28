@@ -488,7 +488,7 @@ DoMeasurementsFromDigestRegister (
       DEBUG((DEBUG_INFO, "\n"));
     }
 
-    DEBUG((DEBUG_INFO, "ExtendDigestRegister...\n", ExtendDigestRegister));
+    DEBUG((DEBUG_INFO, "ExtendDigestRegister...\n"));
     ExtendDigestRegister (PciIo, DeviceSecurityPolicy, TcgAlgId, DigestSel, Digest, DeviceSecurityState);
   }
 }

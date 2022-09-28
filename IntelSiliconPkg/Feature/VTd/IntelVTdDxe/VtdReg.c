@@ -72,7 +72,7 @@ PerpareCacheInvalidationInterface (
   UINT64  Reg64;
   UINT32  Reg32;
 
-  if (mVtdUnitInformation[VtdIndex].VerReg.Bits.Major <= 6) {
+  if (mVtdUnitInformation[VtdIndex].VerReg.Bits.Major <= 5) {
     mVtdUnitInformation[VtdIndex].EnableQueuedInvalidation = 0;
     DEBUG ((DEBUG_INFO, "Use Register-based Invalidation Interface for engine [%d]\n", VtdIndex));
     return EFI_SUCCESS;
@@ -238,7 +238,7 @@ SubmitQueuedInvalidationDescriptor (
   QiDescLength = mVtdUnitInformation[VtdIndex].QiDescLength;
   BaseDesc = mVtdUnitInformation[VtdIndex].QiDesc;
 
-  DEBUG((DEBUG_INFO, "[%d] Submit QI Descriptor [0x%08x, 0x%08x] Free Head (%d)\n", VtdIndex, Desc->Low, Desc->High, mVtdUnitInformation[VtdIndex].QiFreeHead));
+  DEBUG((DEBUG_VERBOSE, "[%d] Submit QI Descriptor [0x%08x, 0x%08x] Free Head (%d)\n", VtdIndex, Desc->Low, Desc->High, mVtdUnitInformation[VtdIndex].QiFreeHead));
 
   BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead].Low = Desc->Low;
   BaseDesc[mVtdUnitInformation[VtdIndex].QiFreeHead].High = Desc->High;
@@ -642,7 +642,7 @@ DumpVtdVerRegs (
   IN VTD_VER_REG                *VerReg
   )
 {
-  DEBUG ((DEBUG_INFO, "  VerReg:\n", VerReg->Uint32));
+  DEBUG ((DEBUG_INFO, "   VerReg - 0x%x\n", VerReg->Uint32));
   DEBUG ((DEBUG_INFO, "    Major - 0x%x\n", VerReg->Bits.Major));
   DEBUG ((DEBUG_INFO, "    Minor - 0x%x\n", VerReg->Bits.Minor));
 }
@@ -657,7 +657,7 @@ DumpVtdCapRegs (
   IN VTD_CAP_REG *CapReg
   )
 {
-  DEBUG((DEBUG_INFO, "  CapReg:\n", CapReg->Uint64));
+  DEBUG((DEBUG_INFO, "  CapReg   - 0x%x\n", CapReg->Uint64));
   DEBUG((DEBUG_INFO, "    ND     - 0x%x\n", CapReg->Bits.ND));
   DEBUG((DEBUG_INFO, "    AFL    - 0x%x\n", CapReg->Bits.AFL));
   DEBUG((DEBUG_INFO, "    RWBF   - 0x%x\n", CapReg->Bits.RWBF));
@@ -688,7 +688,7 @@ DumpVtdECapRegs (
   IN VTD_ECAP_REG *ECapReg
   )
 {
-  DEBUG((DEBUG_INFO, "  ECapReg:\n", ECapReg->Uint64));
+  DEBUG((DEBUG_INFO, "  ECapReg  - 0x%x\n", ECapReg->Uint64));
   DEBUG((DEBUG_INFO, "    C      - 0x%x\n", ECapReg->Bits.C));
   DEBUG((DEBUG_INFO, "    QI     - 0x%x\n", ECapReg->Bits.QI));
   DEBUG((DEBUG_INFO, "    DT     - 0x%x\n", ECapReg->Bits.DT));
@@ -698,10 +698,8 @@ DumpVtdECapRegs (
   DEBUG((DEBUG_INFO, "    SC     - 0x%x\n", ECapReg->Bits.SC));
   DEBUG((DEBUG_INFO, "    IRO    - 0x%x\n", ECapReg->Bits.IRO));
   DEBUG((DEBUG_INFO, "    MHMV   - 0x%x\n", ECapReg->Bits.MHMV));
-  DEBUG((DEBUG_INFO, "    ECS    - 0x%x\n", ECapReg->Bits.ECS));
   DEBUG((DEBUG_INFO, "    MTS    - 0x%x\n", ECapReg->Bits.MTS));
   DEBUG((DEBUG_INFO, "    NEST   - 0x%x\n", ECapReg->Bits.NEST));
-  DEBUG((DEBUG_INFO, "    DIS    - 0x%x\n", ECapReg->Bits.DIS));
   DEBUG((DEBUG_INFO, "    PASID  - 0x%x\n", ECapReg->Bits.PASID));
   DEBUG((DEBUG_INFO, "    PRS    - 0x%x\n", ECapReg->Bits.PRS));
   DEBUG((DEBUG_INFO, "    ERS    - 0x%x\n", ECapReg->Bits.ERS));
@@ -709,6 +707,8 @@ DumpVtdECapRegs (
   DEBUG((DEBUG_INFO, "    NWFS   - 0x%x\n", ECapReg->Bits.NWFS));
   DEBUG((DEBUG_INFO, "    EAFS   - 0x%x\n", ECapReg->Bits.EAFS));
   DEBUG((DEBUG_INFO, "    PSS    - 0x%x\n", ECapReg->Bits.PSS));
+  DEBUG((DEBUG_INFO, "    SMTS   - 0x%x\n", ECapReg->Bits.SMTS));
+  DEBUG((DEBUG_INFO, "    ADMS   - 0x%x\n", ECapReg->Bits.ADMS));
 }
 
 /**
@@ -769,9 +769,10 @@ DumpVtdRegs (
     DEBUG((DEBUG_INFO, "  FRCD_REG[%d] - 0x%016lx %016lx\n", Index, FrcdReg.Uint64[1], FrcdReg.Uint64[0]));
     if (FrcdReg.Uint64[1] != 0 || FrcdReg.Uint64[0] != 0) {
       DEBUG((DEBUG_INFO, "    Fault Info - 0x%016lx\n", VTD_64BITS_ADDRESS(FrcdReg.Bits.FILo, FrcdReg.Bits.FIHi)));
+      DEBUG((DEBUG_INFO, "    Fault Bit - %d\n", FrcdReg.Bits.F));
       SourceId.Uint16 = (UINT16)FrcdReg.Bits.SID;
       DEBUG((DEBUG_INFO, "    Source - B%02x D%02x F%02x\n", SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function));
-      DEBUG((DEBUG_INFO, "    Type - %x (%a)\n", FrcdReg.Bits.T, FrcdReg.Bits.T ? "read" : "write"));
+      DEBUG((DEBUG_INFO, "    Type - 0x%02x\n", (FrcdReg.Bits.T1 << 1) | FrcdReg.Bits.T2));
       DEBUG((DEBUG_INFO, "    Reason - %x (Refer to VTd Spec, Appendix A)\n", FrcdReg.Bits.FR));
     }
   }
