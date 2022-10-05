@@ -115,7 +115,7 @@ GetFvbInfo (
     Status = mFvbMediaInfoGenerators[Index](&FvbMediaInfo);
     ASSERT_EFI_ERROR (Status);
     if (!EFI_ERROR (Status) && (FvbMediaInfo.BaseAddress == FvBaseAddress)) {
-      FvHeader = AllocateCopyPool (sizeof (EFI_FIRMWARE_VOLUME_HEADER), &FvbMediaInfo.FvbInfo);
+      FvHeader = AllocateCopyPool (FvbMediaInfo.FvbInfo.HeaderLength, &FvbMediaInfo.FvbInfo);
 
       //
       // Update the checksum value of FV header.
