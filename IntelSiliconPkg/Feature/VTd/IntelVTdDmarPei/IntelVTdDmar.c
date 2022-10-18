@@ -486,7 +486,6 @@ EnableDmar (
   IN UINTN                      RootEntryTable
   )
 {
-  UINT32                        Reg32;
   UINTN                         VtdUnitBaseAddress;
   BOOLEAN                       TEWasEnabled;
 
@@ -529,7 +528,7 @@ EnableDmar (
   //
   // Init DMAr Fault Event and Data registers
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_FEDATA_REG);
+  MmioRead32 (VtdUnitBaseAddress + R_FEDATA_REG);
 
   //
   // Write Buffer Flush before invalidation

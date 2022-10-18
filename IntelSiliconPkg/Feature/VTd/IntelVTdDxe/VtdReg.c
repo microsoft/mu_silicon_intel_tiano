@@ -573,7 +573,6 @@ EnableDmar (
   )
 {
   UINTN     Index;
-  UINT32    Reg32;
   UINTN     VtdUnitBaseAddress;
   BOOLEAN   TEWasEnabled;
 
@@ -615,7 +614,7 @@ EnableDmar (
     //
     // Init DMAr Fault Event and Data registers
     //
-    Reg32 = MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_FEDATA_REG);
+    MmioRead32 (mVtdUnitInformation[Index].VtdUnitBaseAddress + R_FEDATA_REG);
 
     //
     // Write Buffer Flush before invalidation
