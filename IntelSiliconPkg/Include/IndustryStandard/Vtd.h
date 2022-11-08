@@ -259,6 +259,8 @@ typedef union {
 
 #define R_IQA_REG        0x90
 
+#define R_IQERCD_REG     0xB0
+
 #define VTD_PAGE_SHIFT   (12)
 #define VTD_PAGE_SIZE    (1UL << VTD_PAGE_SHIFT)
 #define VTD_PAGE_MASK    (((UINT64)-1) << VTD_PAGE_SHIFT)
@@ -289,12 +291,19 @@ typedef union {
 #define QI_IWD_STATUS_WRITE (((UINT64)1) << 5)
 
 //
-// This is the queued invalidate descriptor.
+// queued invalidation 128-bit descriptor
 //
 typedef struct {
-  UINT64 Low;
-  UINT64 High;
+  UINT64          Low;
+  UINT64          High;
 } QI_DESC;
+
+//
+// queued invalidation 256-bit descriptor
+//
+typedef struct {
+  UINT64          Uint64[4];
+} QI_256_DESC;
 
 typedef union {
   struct {
@@ -410,6 +419,56 @@ typedef union {
   } Bits;
   UINT64     Uint64[2];
 } VTD_FRCD_REG;
+
+typedef union {
+  struct {
+    UINT32   IQEI:4;       // Invalidation Queue Error Info
+    UINT32   Rsvd_4:28;
+    UINT32   ITESID:16;    // Invalidation Time-out Error Source Identifier
+    UINT32   ICESID:16;    // Invalidation Completion Error Source Identifier
+  } Bits;
+  UINT64     Uint64;
+} VTD_IQERCD_REG;
+
+typedef union {
+  struct {
+    UINT64   Rsvd_0:4;
+    UINT64   QH:15;         // Queue Head
+    UINT64   Rsvd_19:45;
+  } Bits128Desc;
+  struct {
+    UINT64   Rsvd_0:4;
+    UINT64   Rsvd_4:1;
+    UINT64   QH:14;         // Queue Head
+    UINT64   Rsvd_19:45;
+  } Bits256Desc;
+  UINT64     Uint64;
+} VTD_IQH_REG;
+
+typedef union {
+  struct {
+    UINT64   Rsvd_0:4;
+    UINT64   QT:15;         // Queue Tail
+    UINT64   Rsvd_19:45;
+  } Bits128Desc;
+  struct {
+    UINT64   Rsvd_0:4;
+    UINT64   Rsvd_4:1;
+    UINT64   QT:14;         // Queue Tail
+    UINT64   Rsvd_19:45;
+  } Bits256Desc;
+  UINT64     Uint64;
+} VTD_IQT_REG;
+
+typedef union {
+  struct {
+    UINT64   QS:3;         // Queue Size
+    UINT64   Rsvd_3:8;
+    UINT64   DW:1;         // Descriptor Width
+    UINT64   IQA:52;       // Invalidation Queue Base Address
+  } Bits;
+  UINT64     Uint64;
+} VTD_IQA_REG;
 
 typedef union {
   struct {

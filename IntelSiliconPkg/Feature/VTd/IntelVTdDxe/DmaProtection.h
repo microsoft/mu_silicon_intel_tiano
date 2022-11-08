@@ -47,6 +47,13 @@
 #define VTD_TPL_LEVEL TPL_NOTIFY
 
 //
+// Use 256-bit descriptor
+// Queue size is 128.
+//
+#define VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH 1
+#define VTD_INVALIDATION_QUEUE_SIZE 0
+
+//
 // This is the initial max PCI DATA number.
 // The number may be enlarged later.
 //
@@ -81,9 +88,8 @@ typedef struct {
   PCI_DEVICE_INFORMATION           PciDeviceInfo;
   BOOLEAN                          Is5LevelPaging;
   UINT8                            EnableQueuedInvalidation;
-  UINT16                           QiDescLength;
-  QI_DESC                          *QiDesc;
-  UINT16                           QiFreeHead;
+  VOID                             *QiDescBuffer;
+  UINTN                            QiDescBufferSize;
 } VTD_UNIT_INFORMATION;
 
 //
