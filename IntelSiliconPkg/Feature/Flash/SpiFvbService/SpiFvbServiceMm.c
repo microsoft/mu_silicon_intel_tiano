@@ -12,6 +12,7 @@
 #include <Library/MmServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Protocol/SmmFirmwareVolumeBlock.h>
+#include <Guid/VariableFormat.h>
 
 /**
   The function installs EFI_FIRMWARE_VOLUME_BLOCK protocol
@@ -105,17 +106,22 @@ FvbInitialize (
   VOID
   )
 {
-  EFI_FVB_INSTANCE            *FvbInstance;
-  EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
-  EFI_FV_BLOCK_MAP_ENTRY      *PtrBlockMapEntry;
-  EFI_PHYSICAL_ADDRESS        BaseAddress;
-  EFI_STATUS                  Status;
-  UINTN                       BufferSize;
-  UINTN                       Idx;
-  UINT32                      MaxLbaSize;
-  UINT32                      BytesWritten;
-  UINTN                       BytesErased;
-  UINT64                      NvStorageFvSize;
+  EFI_FVB_INSTANCE                      *FvbInstance;
+  EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
+  EFI_FV_BLOCK_MAP_ENTRY                *PtrBlockMapEntry;
+  EFI_PHYSICAL_ADDRESS                  BaseAddress;
+  EFI_STATUS                            Status;
+  UINTN                                 BufferSize;
+  UINTN                                 Idx;
+  UINT32                                MaxLbaSize;
+  UINT32                                BytesWritten;
+  UINTN                                 BytesErased;
+  EFI_PHYSICAL_ADDRESS                  NvStorageBaseAddress;
+  UINT64                                NvStorageFvSize;
+  UINT32                                ExpectedBytesWritten;
+  VARIABLE_STORE_HEADER                 *VariableStoreHeader;
+  UINT8                                 VariableStoreType;
+  UINT8                                 *NvStoreBuffer;
 
   Status = GetVariableFlashNvStorageInfo (&BaseAddress, &NvStorageFvSize);
   if (EFI_ERROR (Status)) {
@@ -131,6 +137,7 @@ FvbInitialize (
     DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage base address not supported.\n", __FUNCTION__));
     return;
   }
+  NvStorageBaseAddress = mPlatformFvBaseAddress[0].FvBase;
 
   Status = SafeUint64ToUint32 (NvStorageFvSize, &mPlatformFvBaseAddress[0].FvSize);
   if (EFI_ERROR (Status)) {
@@ -138,6 +145,7 @@ FvbInitialize (
     DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage size not supported.\n", __FUNCTION__));
     return;
   }
+  NvStorageFvSize = mPlatformFvBaseAddress[0].FvSize;
 
   mPlatformFvBaseAddress[1].FvBase = PcdGet32 (PcdFlashMicrocodeFvBase);
   mPlatformFvBaseAddress[1].FvSize = PcdGet32 (PcdFlashMicrocodeFvSize);
@@ -194,8 +202,58 @@ FvbInitialize (
           continue;
         }
 
-        BytesWritten = FvHeader->HeaderLength;
-        Status       = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, (UINT8 *)FvHeader);
+        BytesWritten         = FvHeader->HeaderLength;
+        ExpectedBytesWritten = BytesWritten;
+        if (BaseAddress != NvStorageBaseAddress) {
+          Status = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, (UINT8 *)FvHeader);
+        } else {
+          //
+          // This is Variable Store, rewrite both EFI_FIRMWARE_VOLUME_HEADER and VARIABLE_STORE_HEADER.
+          // The corrupted Variable content should be taken care by FaultTolerantWrite driver later.
+          //
+          NvStoreBuffer = NULL;
+          NvStoreBuffer = AllocateZeroPool (sizeof (VARIABLE_STORE_HEADER) + FvHeader->HeaderLength);
+          if (NvStoreBuffer != NULL) {
+            //
+            // Combine FV header and VariableStore header into the buffer.
+            //
+            CopyMem (NvStoreBuffer, FvHeader, FvHeader->HeaderLength);
+            VariableStoreHeader = (VARIABLE_STORE_HEADER *)(NvStoreBuffer + FvHeader->HeaderLength);
+            VariableStoreType   = PcdGet8 (PcdFlashVariableStoreType);
+            switch (VariableStoreType) {
+              case 0:
+                DEBUG ((DEBUG_ERROR, "Type: gEfiVariableGuid\n"));
+                CopyGuid (&VariableStoreHeader->Signature, &gEfiVariableGuid);
+                break;
+              case 1:
+                DEBUG ((DEBUG_ERROR, "Type: gEfiAuthenticatedVariableGuid\n"));
+                CopyGuid (&VariableStoreHeader->Signature, &gEfiAuthenticatedVariableGuid);
+                break;
+              default:
+                break;
+            }
+
+            //
+            // Initialize common VariableStore header fields
+            //
+            VariableStoreHeader->Size      = (UINT32) (NvStorageFvSize - FvHeader->HeaderLength);
+            VariableStoreHeader->Format    = VARIABLE_STORE_FORMATTED;
+            VariableStoreHeader->State     = VARIABLE_STORE_HEALTHY;
+            VariableStoreHeader->Reserved  = 0;
+            VariableStoreHeader->Reserved1 = 0;
+
+            //
+            // Write buffer to flash
+            //
+            BytesWritten         = FvHeader->HeaderLength + sizeof (VARIABLE_STORE_HEADER);
+            ExpectedBytesWritten = BytesWritten;
+            Status               = SpiFlashWrite ((UINTN)BaseAddress, &BytesWritten, NvStoreBuffer);
+            FreePool (NvStoreBuffer);
+          } else {
+            Status = EFI_OUT_OF_RESOURCES;
+          }
+        }
+
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "ERROR - SpiFlashWrite Error  %r\n", Status));
           if (FvHeader != NULL) {
@@ -204,10 +262,9 @@ FvbInitialize (
 
           continue;
         }
-
-        if (BytesWritten != FvHeader->HeaderLength) {
-          DEBUG ((DEBUG_WARN, "ERROR - BytesWritten != HeaderLength\n"));
-          DEBUG ((DEBUG_INFO, " BytesWritten = 0x%X\n HeaderLength = 0x%X\n", BytesWritten, FvHeader->HeaderLength));
+        if (BytesWritten != ExpectedBytesWritten) {
+          DEBUG ((DEBUG_WARN, "ERROR - BytesWritten != ExpectedBytesWritten\n"));
+          DEBUG ((DEBUG_INFO, " BytesWritten = 0x%X\n ExpectedBytesWritten = 0x%X\n", BytesWritten, ExpectedBytesWritten));
           if (FvHeader != NULL) {
             FreePool (FvHeader);
           }
