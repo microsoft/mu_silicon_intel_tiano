@@ -160,7 +160,6 @@
   #  EDKII_ERROR_CODE_VTD_ERROR = (EFI_IO_BUS_UNSPECIFIED | (EFI_OEM_SPECIFIC | 0x00000000)) = 0x02008000<BR>
   # @Prompt Error code for VTd error.
   gIntelSiliconPkgTokenSpaceGuid.PcdErrorCodeVTdError|0x02008000|UINT32|0x00000005
-
   ## ABase I/O address.<BR><BR>
   # @Prompt ABase I/O address.
   gIntelSiliconPkgTokenSpaceGuid.PcdAcpiBaseAddress|0x0|UINT16|0x0000000D
