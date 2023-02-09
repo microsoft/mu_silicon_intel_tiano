@@ -102,22 +102,22 @@ FvbInitialize (
   VOID
   )
 {
-  EFI_FVB_INSTANCE                      *FvbInstance;
-  EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
-  EFI_FV_BLOCK_MAP_ENTRY                *PtrBlockMapEntry;
-  EFI_PHYSICAL_ADDRESS                  BaseAddress;
-  EFI_STATUS                            Status;
-  UINTN                                 BufferSize;
-  UINTN                                 Idx;
-  UINT32                                MaxLbaSize;
-  UINT32                                BytesWritten;
-  UINTN                                 BytesErased;
-  EFI_PHYSICAL_ADDRESS                  NvStorageBaseAddress;
-  UINT64                                NvStorageFvSize;
-  UINT32                                ExpectedBytesWritten;
-  VARIABLE_STORE_HEADER                 *VariableStoreHeader;
-  UINT8                                 VariableStoreType;
-  UINT8                                 *NvStoreBuffer;
+  EFI_FVB_INSTANCE            *FvbInstance;
+  EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
+  EFI_FV_BLOCK_MAP_ENTRY      *PtrBlockMapEntry;
+  EFI_PHYSICAL_ADDRESS        BaseAddress;
+  EFI_STATUS                  Status;
+  UINTN                       BufferSize;
+  UINTN                       Idx;
+  UINT32                      MaxLbaSize;
+  UINT32                      BytesWritten;
+  UINTN                       BytesErased;
+  EFI_PHYSICAL_ADDRESS        NvStorageBaseAddress;
+  UINT64                      NvStorageFvSize;
+  UINT32                      ExpectedBytesWritten;
+  VARIABLE_STORE_HEADER       *VariableStoreHeader;
+  UINT8                       VariableStoreType;
+  UINT8                       *NvStoreBuffer;
 
   Status = GetVariableFlashNvStorageInfo (&BaseAddress, &NvStorageFvSize);
   if (EFI_ERROR (Status)) {
@@ -133,6 +133,7 @@ FvbInitialize (
     DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage base address not supported.\n", __FUNCTION__));
     return;
   }
+
   NvStorageBaseAddress = mPlatformFvBaseAddress[0].FvBase;
 
   Status = SafeUint64ToUint32 (NvStorageFvSize, &mPlatformFvBaseAddress[0].FvSize);
@@ -141,6 +142,7 @@ FvbInitialize (
     DEBUG ((DEBUG_ERROR, "[%a] - 64-bit variable storage size not supported.\n", __FUNCTION__));
     return;
   }
+
   NvStorageFvSize = mPlatformFvBaseAddress[0].FvSize;
 
   mPlatformFvBaseAddress[1].FvBase = PcdGet32 (PcdFlashMicrocodeFvBase);
@@ -236,7 +238,7 @@ FvbInitialize (
             //
             // Initialize common VariableStore header fields
             //
-            VariableStoreHeader->Size      = (UINT32) (NvStorageFvSize - FvHeader->HeaderLength);
+            VariableStoreHeader->Size      = (UINT32)(NvStorageFvSize - FvHeader->HeaderLength);
             VariableStoreHeader->Format    = VARIABLE_STORE_FORMATTED;
             VariableStoreHeader->State     = VARIABLE_STORE_HEALTHY;
             VariableStoreHeader->Reserved  = 0;
@@ -262,6 +264,7 @@ FvbInitialize (
 
           continue;
         }
+
         if (BytesWritten != ExpectedBytesWritten) {
           DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - BytesWritten != ExpectedBytesWritten\n"));
           DEBUG ((DEBUG_ERROR, " BytesWritten = 0x%X\n ExpectedBytesWritten = 0x%X\n", BytesWritten, ExpectedBytesWritten));
