@@ -73,6 +73,9 @@
   ## HOB GUID to get memory information after MRC is done. The hob data will be used to set the PMR ranges
   gVtdPmrInfoDataHobGuid = {0x6fb61645, 0xf168, 0x46be, { 0x80, 0xec, 0xb5, 0x02, 0x38, 0x5e, 0xe7, 0xe7 } }
 
+  ## HOB GUID to get VTd log data.
+  gVTdLogBufferHobGuid = {0xc8049121, 0xdf91, 0x4dfd, { 0xad, 0xcb, 0x1c, 0x55, 0x85, 0x09, 0x6d, 0x3b } }
+
   ## Include/Guid/MicrocodeShadowInfoHob.h
   gEdkiiMicrocodeShadowInfoHobGuid = { 0x658903f9, 0xda66, 0x460d, { 0x8b, 0xb0, 0x9d, 0x2d, 0xdf, 0x65, 0x44, 0x59 } }
 
@@ -119,6 +122,8 @@
   gPchSmmSpi2ProtocolGuid = { 0x2d1c0c43, 0x20d3, 0x40ae, { 0x99, 0x07, 0x2d, 0xf0, 0xe7, 0x91, 0x21, 0xa5 } }
 
   gEdkiiPlatformVTdPolicyProtocolGuid = { 0x3d17e448, 0x466, 0x4e20, { 0x99, 0x9f, 0xb2, 0xe1, 0x34, 0x88, 0xee, 0x22 }}
+  gEdkiiVTdLogProtocolGuid = { 0x1e271819, 0xa3ca, 0x481f, { 0xbd, 0xff, 0x92, 0x78, 0x2f, 0x9a, 0x99, 0x3c }}
+
   gIntelDieInfoProtocolGuid = { 0xAED8A0A1, 0xFDE6, 0x4CF2, { 0xA3, 0x85, 0x08, 0xF1, 0x25, 0xF2, 0x40, 0x37 }}
 
   ## Protocol for device security policy.
@@ -207,3 +212,19 @@
   #  non-zero: The size of an additional NVS region following the Regular variable region.<BR>
   # @Prompt Additional NVS Region Size.
   gIntelSiliconPkgTokenSpaceGuid.PcdFlashNvStorageAdditionalSize|0x00000000|UINT32|0x0000000F
+
+  ## Declares VTd LOG Output Level.<BR><BR>
+  #  0 : Disable VTd Log
+  #  1 : Enable Basic Log
+  #  2 : Enable All Log
+  # @Prompt The VTd Log Output Level.
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdLogLevel|0x02|UINT8|0x00000017
+
+  ## Declares VTd PEI POST-MEM LOG buffer size.<BR><BR>
+  # @Prompt The VTd PEI Post-Mem Log buffer size. 8k
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdPeiPostMemLogBufferSize|0x00002000|UINT32|0x00000019
+
+  ## Declares VTd DXE LOG buffer size.<BR><BR>
+  # @Prompt The VTd DXE Log buffer size. 4M
+  gIntelSiliconPkgTokenSpaceGuid.PcdVTdDxeLogBufferSize|0x00400000|UINT32|0x0000001A
+
