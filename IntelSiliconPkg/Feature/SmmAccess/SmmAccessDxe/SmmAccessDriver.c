@@ -167,7 +167,7 @@ Close (
 {
   SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
   BOOLEAN                  OpenState;
-  UINT8                    Index;
+  UINTN                    Index;   // MU_CHANGE - Use consistent width in loop comparison
   UINTN                    DescriptorIndex;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
