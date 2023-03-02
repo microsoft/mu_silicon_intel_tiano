@@ -328,7 +328,8 @@ ProgramFixedMtrr (
     return EFI_DEVICE_ERROR;
   }
 
-  for ( ; ((ByteShift < 8) && (*Len >= mFixedMtrrTable[MsrNum].Length)); ByteShift++) {
+  // MU_CHANGE - CodeQL change for consistent integer width in loop condition
+  for ( ; ((ByteShift < 8) && (*Len >= (UINT64)mFixedMtrrTable[MsrNum].Length)); ByteShift++) {
     OrMask    |= LShiftU64 ((UINT64)MemoryCacheType, (UINT32)(ByteShift* 8));
     ClearMask |= LShiftU64 ((UINT64)0xFF, (UINT32)(ByteShift * 8));
     *Len      -= mFixedMtrrTable[MsrNum].Length;
