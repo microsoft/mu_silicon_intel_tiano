@@ -496,6 +496,9 @@ SetupVtd (
   if (EFI_ERROR (Status)) {
     return;
   }
+
+  DumpVtdIfError ();
+
   DEBUG ((DEBUG_INFO, "PrepareVtdConfig\n"));
   PrepareVtdConfig ();
 

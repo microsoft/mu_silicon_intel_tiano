@@ -537,12 +537,12 @@ DumpDmarDrhd (
     Drhd->Flags
     ));
   DEBUG ((DEBUG_INFO,
-    "    Size ................................................. 0x%02x\n",
-    Drhd->Size
-    ));
-  DEBUG ((DEBUG_INFO,
     "      INCLUDE_PCI_ALL .................................... 0x%02x\n",
     Drhd->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL
+    ));
+  DEBUG ((DEBUG_INFO,
+    "    Size ................................................. 0x%02x\n",
+    Drhd->Size
     ));
   DEBUG ((DEBUG_INFO,
     "    Segment Number ....................................... 0x%04x\n",

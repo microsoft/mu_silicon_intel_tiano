@@ -11,6 +11,13 @@
 
 #define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
 
+//
+// Use 256-bit descriptor
+// Queue size is 128.
+//
+#define VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH 1
+#define VTD_INVALIDATION_QUEUE_SIZE 0
+
 typedef struct {
   BOOLEAN                          Done;
   UINTN                            VtdUnitBaseAddress;
@@ -21,9 +28,8 @@ typedef struct {
   VTD_ECAP_REG                     ECapReg;
   BOOLEAN                          Is5LevelPaging;
   UINT8                            EnableQueuedInvalidation;
-  UINT16                           QiDescLength;
-  QI_DESC                          *QiDesc;
-  UINT16                           QiFreeHead;
+  VOID                             *QiDescBuffer;
+  UINTN                            QiDescBufferSize;
   UINTN                            FixedSecondLevelPagingEntry;
   UINTN                            RootEntryTable;
   UINTN                            ExtRootEntryTable;

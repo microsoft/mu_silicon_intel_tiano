@@ -196,7 +196,7 @@ CreateSecondLevelPagingEntryTable (
   UINT64                         EndAddress;
 
   if (MemoryLimit == 0) {
-    return EFI_SUCCESS;
+    return NULL;
   }
 
   Lvl4PagesStart = 0;

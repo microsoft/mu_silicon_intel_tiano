@@ -109,7 +109,7 @@ CreateSecondLevelPagingEntryTable (
   BOOLEAN                               Is5LevelPaging;
 
   if (MemoryLimit == 0) {
-    return EFI_SUCCESS;
+    return NULL;
   }
 
   Lvl4PagesStart = 0;
