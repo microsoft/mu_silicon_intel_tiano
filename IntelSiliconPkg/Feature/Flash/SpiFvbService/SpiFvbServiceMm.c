@@ -55,6 +55,7 @@ InstallFvbProtocol (
       DEBUG ((DEBUG_ERROR, "SpiFvbServiceSmm.c: Memory allocation for MEMMAP_DEVICE_PATH failed\n"));
       return;
     }
+
     ((FV_MEMMAP_DEVICE_PATH *)FvbInstance->DevicePath)->MemMapDevPath.StartingAddress = FvbInstance->FvBase;
     ((FV_MEMMAP_DEVICE_PATH *)FvbInstance->DevicePath)->MemMapDevPath.EndingAddress   = FvbInstance->FvBase + FvHeader->FvLength - 1;
   } else {
@@ -204,6 +205,7 @@ FvbInitialize (
 
           continue;
         }
+
         BytesWritten         = FvHeader->HeaderLength;
         ExpectedBytesWritten = BytesWritten;
         if (BaseAddress != NvStorageBaseAddress) {

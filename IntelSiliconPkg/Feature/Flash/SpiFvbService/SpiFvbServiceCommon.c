@@ -14,19 +14,19 @@
 // Global variable for this FVB driver  which contains
 // the private data of all firmware volume block instances
 //
-FVB_GLOBAL   mFvbModuleGlobal;
+FVB_GLOBAL  mFvbModuleGlobal;
 
 //
 // This platform driver knows there are multiple FVs on FD.
 // Now we only provide FVs on Variable region and MicorCode region for performance issue.
 //
-FV_INFO mPlatformFvBaseAddress[] = {
-  {0, 0}, // {FixedPcdGet32(PcdFlashNvStorageVariableBase), FixedPcdGet32(PcdFlashNvStorageVariableSize)},
-  {0, 0}, // {FixedPcdGet32(PcdFlashMicrocodeFvBase), FixedPcdGet32(PcdFlashMicrocodeFvSize)},
-  {0, 0}
+FV_INFO  mPlatformFvBaseAddress[] = {
+  { 0, 0 }, // {FixedPcdGet32(PcdFlashNvStorageVariableBase), FixedPcdGet32(PcdFlashNvStorageVariableSize)},
+  { 0, 0 }, // {FixedPcdGet32(PcdFlashMicrocodeFvBase), FixedPcdGet32(PcdFlashMicrocodeFvSize)},
+  { 0, 0 }
 };
 
-FV_MEMMAP_DEVICE_PATH mFvMemmapDevicePathTemplate = {
+FV_MEMMAP_DEVICE_PATH  mFvMemmapDevicePathTemplate = {
   {
     {
       HARDWARE_DEVICE_PATH,
@@ -37,8 +37,8 @@ FV_MEMMAP_DEVICE_PATH mFvMemmapDevicePathTemplate = {
       }
     },
     EfiMemoryMappedIO,
-    (EFI_PHYSICAL_ADDRESS) 0,
-    (EFI_PHYSICAL_ADDRESS) 0,
+    (EFI_PHYSICAL_ADDRESS)0,
+    (EFI_PHYSICAL_ADDRESS)0,
   },
   {
     END_DEVICE_PATH_TYPE,
@@ -50,7 +50,7 @@ FV_MEMMAP_DEVICE_PATH mFvMemmapDevicePathTemplate = {
   }
 };
 
-FV_PIWG_DEVICE_PATH mFvPIWGDevicePathTemplate = {
+FV_PIWG_DEVICE_PATH  mFvPIWGDevicePathTemplate = {
   {
     {
       MEDIA_DEVICE_PATH,
@@ -75,7 +75,7 @@ FV_PIWG_DEVICE_PATH mFvPIWGDevicePathTemplate = {
 //
 // Template structure used when installing FVB protocol
 //
-EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL mFvbProtocolTemplate = {
+EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  mFvbProtocolTemplate = {
   FvbProtocolGetAttributes,
   FvbProtocolSetAttributes,
   FvbProtocolGetPhysicalAddress,
@@ -136,21 +136,21 @@ FvbGetLbaAddress (
   OUT UINTN                               *NumOfBlocks OPTIONAL
   )
 {
-  UINT32                                  NumBlocks;
-  UINT32                                  BlockLength;
-  UINTN                                   Offset;
-  EFI_LBA                                 StartLba;
-  EFI_LBA                                 NextLba;
+  UINT32                  NumBlocks;
+  UINT32                  BlockLength;
+  UINTN                   Offset;
+  EFI_LBA                 StartLba;
+  EFI_LBA                 NextLba;
   CONST EFI_FV_BLOCK_MAP_ENTRY            *BlockMap;
 
-  StartLba  = 0;
-  Offset    = 0;
+  StartLba = 0;
+  Offset   = 0;
 
   if (FvbInstance == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  BlockMap  = &(FvbInstance->FvHeader.BlockMap[0]);
+  BlockMap = &(FvbInstance->FvHeader.BlockMap[0]);
 
   //
   // Parse the blockmap of the FV to find which map entry the Lba belongs to
@@ -159,7 +159,7 @@ FvbGetLbaAddress (
     NumBlocks   = BlockMap->NumBlocks;
     BlockLength = BlockMap->Length;
 
-    if ( NumBlocks == 0 || BlockLength == 0) {
+    if ((NumBlocks == 0) || (BlockLength == 0)) {
       return EFI_INVALID_PARAMETER;
     }
 
@@ -168,8 +168,8 @@ FvbGetLbaAddress (
     //
     // The map entry found
     //
-    if (Lba >= StartLba && Lba < NextLba) {
-      Offset = Offset + (UINTN)MultU64x32((Lba - StartLba), BlockLength);
+    if ((Lba >= StartLba) && (Lba < NextLba)) {
+      Offset = Offset + (UINTN)MultU64x32 ((Lba - StartLba), BlockLength);
       if (LbaAddress != NULL) {
         *LbaAddress = FvbInstance->FvBase + Offset;
       }
@@ -181,11 +181,12 @@ FvbGetLbaAddress (
       if (NumOfBlocks != NULL) {
         *NumOfBlocks = (UINTN)(NextLba - Lba);
       }
+
       return EFI_SUCCESS;
     }
 
-    StartLba  = NextLba;
-    Offset    = Offset + NumBlocks * BlockLength;
+    StartLba = NextLba;
+    Offset   = Offset + NumBlocks * BlockLength;
     BlockMap++;
   }
 }
@@ -216,17 +217,17 @@ FvbGetLbaAddress (
 EFI_STATUS
 FvbReadBlock (
   IN CONST  EFI_FVB_INSTANCE              *FvbInstance,
-  IN        EFI_LBA                       Lba,
-  IN        UINTN                         BlockOffset,
-  IN OUT    UINTN                         *NumBytes,
-  IN        UINT8                         *Buffer
+  IN EFI_LBA                              Lba,
+  IN UINTN                                BlockOffset,
+  IN OUT UINTN                            *NumBytes,
+  IN UINT8                                *Buffer
   )
 {
-  EFI_FVB_ATTRIBUTES_2                    Attributes;
-  UINTN                                   LbaAddress;
-  UINTN                                   LbaLength;
-  EFI_STATUS                              Status;
-  BOOLEAN                                 BadBufferSize = FALSE;
+  EFI_FVB_ATTRIBUTES_2  Attributes;
+  UINTN                 LbaAddress;
+  UINTN                 LbaLength;
+  EFI_STATUS            Status;
+  BOOLEAN               BadBufferSize = FALSE;
 
   if ((FvbInstance == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -237,7 +238,7 @@ FvbReadBlock (
   }
 
   Status = FvbGetLbaAddress (FvbInstance, Lba, &LbaAddress, &LbaLength, NULL);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -248,16 +249,18 @@ FvbReadBlock (
   }
 
   if (BlockOffset > LbaLength) {
-   return EFI_INVALID_PARAMETER;
+    return EFI_INVALID_PARAMETER;
   }
 
   if (LbaLength < (*NumBytes + BlockOffset)) {
-    DEBUG ((DEBUG_INFO,
+    DEBUG ((
+      DEBUG_INFO,
       "FvReadBlock: Reducing Numbytes from 0x%x to 0x%x\n",
       *NumBytes,
-      (UINT32)(LbaLength - BlockOffset))
+      (UINT32)(LbaLength - BlockOffset)
+      )
       );
-    *NumBytes     = (UINT32) (LbaLength - BlockOffset);
+    *NumBytes     = (UINT32)(LbaLength - BlockOffset);
     BadBufferSize = TRUE;
   }
 
@@ -295,27 +298,28 @@ FvbReadBlock (
 EFI_STATUS
 FvbWriteBlock (
   IN CONST  EFI_FVB_INSTANCE              *FvbInstance,
-  IN        EFI_LBA                       Lba,
-  IN        UINTN                         BlockOffset,
-  IN OUT    UINTN                         *NumBytes,
-  IN        UINT8                         *Buffer
+  IN EFI_LBA                              Lba,
+  IN UINTN                                BlockOffset,
+  IN OUT UINTN                            *NumBytes,
+  IN UINT8                                *Buffer
   )
 {
-  EFI_FVB_ATTRIBUTES_2                    Attributes;
-  UINTN                                   LbaAddress;
-  UINTN                                   LbaLength;
-  EFI_STATUS                              Status;
-  BOOLEAN                                 BadBufferSize = FALSE;
+  EFI_FVB_ATTRIBUTES_2  Attributes;
+  UINTN                 LbaAddress;
+  UINTN                 LbaLength;
+  EFI_STATUS            Status;
+  BOOLEAN               BadBufferSize = FALSE;
 
   if ((FvbInstance == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
+
   if (*NumBytes == 0) {
     return EFI_INVALID_PARAMETER;
   }
 
   Status = FvbGetLbaAddress (FvbInstance, Lba, &LbaAddress, &LbaLength, NULL);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -323,7 +327,7 @@ FvbWriteBlock (
   // Check if the FV is write enabled
   //
   Attributes = FvbGetVolumeAttributes (FvbInstance);
-  if ((Attributes & EFI_FVB2_WRITE_STATUS) == 0)  {
+  if ((Attributes & EFI_FVB2_WRITE_STATUS) == 0) {
     return EFI_ACCESS_DENIED;
   }
 
@@ -335,12 +339,14 @@ FvbWriteBlock (
   }
 
   if (LbaLength < (*NumBytes + BlockOffset)) {
-    DEBUG ((DEBUG_INFO,
+    DEBUG ((
+      DEBUG_INFO,
       "FvWriteBlock: Reducing Numbytes from 0x%x to 0x%x\n",
       *NumBytes,
-      (UINT32)(LbaLength - BlockOffset))
+      (UINT32)(LbaLength - BlockOffset)
+      )
       );
-    *NumBytes     = (UINT32) (LbaLength - BlockOffset);
+    *NumBytes     = (UINT32)(LbaLength - BlockOffset);
     BadBufferSize = TRUE;
   }
 
@@ -354,7 +360,7 @@ FvbWriteBlock (
     return Status;
   }
 
-  WriteBackInvalidateDataCacheRange ((VOID *) (LbaAddress + BlockOffset), *NumBytes);
+  WriteBackInvalidateDataCacheRange ((VOID *)(LbaAddress + BlockOffset), *NumBytes);
 
   if (!EFI_ERROR (Status) && BadBufferSize) {
     return EFI_BAD_BUFFER_SIZE;
@@ -380,14 +386,13 @@ FvbWriteBlock (
 EFI_STATUS
 FvbEraseBlock (
   IN CONST  EFI_FVB_INSTANCE    *FvbInstance,
-  IN        EFI_LBA             Lba
+  IN EFI_LBA                    Lba
   )
 {
-
-  EFI_FVB_ATTRIBUTES_2                    Attributes;
-  UINTN                                   LbaAddress;
-  UINTN                                   LbaLength;
-  EFI_STATUS                              Status;
+  EFI_FVB_ATTRIBUTES_2  Attributes;
+  UINTN                 LbaAddress;
+  UINTN                 LbaLength;
+  EFI_STATUS            Status;
 
   if (FvbInstance == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -398,7 +403,7 @@ FvbEraseBlock (
   //
   Attributes = FvbGetVolumeAttributes (FvbInstance);
 
-  if( (Attributes & EFI_FVB2_WRITE_STATUS) == 0)  {
+  if ((Attributes & EFI_FVB2_WRITE_STATUS) == 0) {
     return EFI_ACCESS_DENIED;
   }
 
@@ -406,7 +411,7 @@ FvbEraseBlock (
   // Get the starting address of the block for erase.
   //
   Status = FvbGetLbaAddress (FvbInstance, Lba, &LbaAddress, &LbaLength, NULL);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -420,7 +425,7 @@ FvbEraseBlock (
     return Status;
   }
 
-  WriteBackInvalidateDataCacheRange ((VOID *) LbaAddress, LbaLength);
+  WriteBackInvalidateDataCacheRange ((VOID *)LbaAddress, LbaLength);
 
   return Status;
 }
@@ -444,21 +449,21 @@ FvbEraseBlock (
 **/
 EFI_STATUS
 FvbSetVolumeAttributes (
-  IN EFI_FVB_INSTANCE                     *FvbInstance,
-  IN OUT EFI_FVB_ATTRIBUTES_2             *Attributes
+  IN EFI_FVB_INSTANCE          *FvbInstance,
+  IN OUT EFI_FVB_ATTRIBUTES_2  *Attributes
   )
 {
-  EFI_FVB_ATTRIBUTES_2                      OldAttributes;
-  EFI_FVB_ATTRIBUTES_2                      *AttribPtr;
-  EFI_FVB_ATTRIBUTES_2                      UnchangedAttributes;
-  UINT32                                    Capabilities;
-  UINT32                                    OldStatus, NewStatus;
+  EFI_FVB_ATTRIBUTES_2  OldAttributes;
+  EFI_FVB_ATTRIBUTES_2  *AttribPtr;
+  EFI_FVB_ATTRIBUTES_2  UnchangedAttributes;
+  UINT32                Capabilities;
+  UINT32                OldStatus, NewStatus;
 
   if ((FvbInstance == NULL) || (Attributes == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  AttribPtr     = (EFI_FVB_ATTRIBUTES_2 *) &(FvbInstance->FvHeader.Attributes);
+  AttribPtr     = (EFI_FVB_ATTRIBUTES_2 *)&(FvbInstance->FvHeader.Attributes);
   OldAttributes = *AttribPtr;
   Capabilities  = OldAttributes & EFI_FVB2_CAPABILITIES;
   OldStatus     = OldAttributes & EFI_FVB2_STATUS;
@@ -553,21 +558,21 @@ FvbSetVolumeAttributes (
 **/
 VOID
 GetVariableFvInfo (
-  OUT EFI_PHYSICAL_ADDRESS      *BaseAddress,
-  OUT UINT32                    *Length
+  OUT EFI_PHYSICAL_ADDRESS  *BaseAddress,
+  OUT UINT32                *Length
   )
 {
-  EFI_STATUS                    Status;
-  EFI_PHYSICAL_ADDRESS          NvBaseAddress;
-  EFI_PHYSICAL_ADDRESS          NvVariableBaseAddress;
-  UINT64                        Length64;
-  UINT32                        NvStoreLength;
-  UINT32                        FtwSpareLength;
-  UINT32                        FtwWorkingLength;
-  UINT32                        TotalLength;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  NvBaseAddress;
+  EFI_PHYSICAL_ADDRESS  NvVariableBaseAddress;
+  UINT64                Length64;
+  UINT32                NvStoreLength;
+  UINT32                FtwSpareLength;
+  UINT32                FtwWorkingLength;
+  UINT32                TotalLength;
 
   TotalLength = 0;
-  Status = EFI_SUCCESS;
+  Status      = EFI_SUCCESS;
 
   if ((BaseAddress == NULL) || (Length == NULL)) {
     ASSERT ((BaseAddress != NULL) && (Length != NULL));
@@ -575,7 +580,7 @@ GetVariableFvInfo (
   }
 
   *BaseAddress = 0;
-  *Length = 0;
+  *Length      = 0;
 
   Status = GetVariableFlashNvStorageInfo (&NvBaseAddress, &Length64);
   if (!EFI_ERROR (Status)) {
@@ -583,6 +588,7 @@ GetVariableFvInfo (
     // Stay within the current UINT32 size assumptions in the variable stack.
     Status = SafeUint64ToUint32 (Length64, &NvStoreLength);
   }
+
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return;
@@ -615,6 +621,7 @@ GetVariableFvInfo (
     // Stay within the current UINT32 size assumptions in the variable stack.
     Status = SafeUint64ToUint32 (Length64, &FtwSpareLength);
   }
+
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return;
@@ -625,6 +632,7 @@ GetVariableFvInfo (
     // Stay within the current UINT32 size assumptions in the variable stack.
     Status = SafeUint64ToUint32 (Length64, &FtwWorkingLength);
   }
+
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return;
@@ -643,7 +651,7 @@ GetVariableFvInfo (
   }
 
   *BaseAddress = NvVariableBaseAddress;
-  *Length = TotalLength;
+  *Length      = TotalLength;
 }
 
 /**
@@ -658,12 +666,12 @@ GetVariableFvInfo (
 **/
 BOOLEAN
 IsFvHeaderValid (
-  IN       EFI_PHYSICAL_ADDRESS          FvBase,
-  IN CONST EFI_FIRMWARE_VOLUME_HEADER    *FvHeader
+  IN       EFI_PHYSICAL_ADDRESS        FvBase,
+  IN CONST EFI_FIRMWARE_VOLUME_HEADER  *FvHeader
   )
 {
-  EFI_PHYSICAL_ADDRESS    NvStorageFvBaseAddress;
-  UINT32                  NvStorageSize;
+  EFI_PHYSICAL_ADDRESS  NvStorageFvBaseAddress;
+  UINT32                NvStorageSize;
 
   if (FvHeader == NULL) {
     ASSERT (FvHeader != NULL);
@@ -673,22 +681,24 @@ IsFvHeaderValid (
   GetVariableFvInfo (&NvStorageFvBaseAddress, &NvStorageSize);
 
   if (FvBase == NvStorageFvBaseAddress) {
-    if (CompareMem (&FvHeader->FileSystemGuid, &gEfiSystemNvDataFvGuid, sizeof(EFI_GUID)) != 0 ) {
+    if (CompareMem (&FvHeader->FileSystemGuid, &gEfiSystemNvDataFvGuid, sizeof (EFI_GUID)) != 0 ) {
       return FALSE;
     }
   } else {
-    if (CompareMem (&FvHeader->FileSystemGuid, &gEfiFirmwareFileSystem2Guid, sizeof(EFI_GUID)) != 0 ) {
+    if (CompareMem (&FvHeader->FileSystemGuid, &gEfiFirmwareFileSystem2Guid, sizeof (EFI_GUID)) != 0 ) {
       return FALSE;
     }
   }
-  if ( (FvHeader->Revision != EFI_FVH_REVISION)   ||
-       (FvHeader->Signature != EFI_FVH_SIGNATURE) ||
-       (FvHeader->FvLength == ((UINTN) -1))       ||
-       ((FvHeader->HeaderLength & 0x01 ) !=0) )  {
+
+  if ((FvHeader->Revision != EFI_FVH_REVISION)   ||
+      (FvHeader->Signature != EFI_FVH_SIGNATURE) ||
+      (FvHeader->FvLength == ((UINTN)-1))       ||
+      ((FvHeader->HeaderLength & 0x01) != 0))
+  {
     return FALSE;
   }
 
-  if (CalculateCheckSum16 ((UINT16 *) FvHeader, FvHeader->HeaderLength) != 0) {
+  if (CalculateCheckSum16 ((UINT16 *)FvHeader, FvHeader->HeaderLength) != 0) {
     return FALSE;
   }
 
@@ -716,7 +726,7 @@ FvbProtocolGetPhysicalAddress (
   OUT       EFI_PHYSICAL_ADDRESS                  *Address
   )
 {
-  EFI_FVB_INSTANCE      *FvbInstance;
+  EFI_FVB_INSTANCE  *FvbInstance;
 
   if ((This == NULL) || (Address == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -754,7 +764,7 @@ FvbProtocolGetBlockSize (
   OUT       UINTN                                 *NumOfBlocks
   )
 {
-  EFI_FVB_INSTANCE                 *FvbInstance;
+  EFI_FVB_INSTANCE  *FvbInstance;
 
   if ((This == NULL) || (BlockSize == NULL) || (NumOfBlocks == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -796,7 +806,7 @@ FvbProtocolGetAttributes (
   OUT       EFI_FVB_ATTRIBUTES_2                 *Attributes
   )
 {
-  EFI_FVB_INSTANCE                 *FvbInstance;
+  EFI_FVB_INSTANCE  *FvbInstance;
 
   if ((This == NULL) || (Attributes == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -828,12 +838,12 @@ FvbProtocolGetAttributes (
 EFI_STATUS
 EFIAPI
 FvbProtocolSetAttributes (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN OUT    EFI_FVB_ATTRIBUTES_2                 *Attributes
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN OUT EFI_FVB_ATTRIBUTES_2                   *Attributes
   )
 {
-  EFI_STATUS                       Status;
-  EFI_FVB_INSTANCE                 *FvbInstance;
+  EFI_STATUS        Status;
+  EFI_FVB_INSTANCE  *FvbInstance;
 
   if ((This == NULL) || (Attributes == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -883,24 +893,24 @@ FvbProtocolSetAttributes (
 EFI_STATUS
 EFIAPI
 FvbProtocolEraseBlocks (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
   ...
   )
 {
-  EFI_FVB_INSTANCE                      *FvbInstance;
-  UINTN                                 NumOfBlocks;
-  VA_LIST                               Args;
-  EFI_LBA                               StartingLba;
-  UINTN                                 NumOfLba;
-  EFI_STATUS                            Status;
+  EFI_FVB_INSTANCE  *FvbInstance;
+  UINTN             NumOfBlocks;
+  VA_LIST           Args;
+  EFI_LBA           StartingLba;
+  UINTN             NumOfLba;
+  EFI_STATUS        Status;
 
-  DEBUG((DEBUG_INFO, "FvbProtocolEraseBlocks: \n"));
+  DEBUG ((DEBUG_INFO, "FvbProtocolEraseBlocks: \n"));
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  FvbInstance  = FVB_INSTANCE_FROM_THIS (This);
+  FvbInstance = FVB_INSTANCE_FROM_THIS (This);
 
   NumOfBlocks = FvbInstance->NumOfBlocks;
 
@@ -922,10 +932,10 @@ FvbProtocolEraseBlocks (
       return EFI_INVALID_PARAMETER;
     }
 
-    if ( ( StartingLba + NumOfLba ) > NumOfBlocks ) {
+    if ((StartingLba + NumOfLba) > NumOfBlocks ) {
       return EFI_INVALID_PARAMETER;
     }
-  } while ( 1 );
+  } while (1);
 
   VA_END (Args);
 
@@ -940,15 +950,15 @@ FvbProtocolEraseBlocks (
 
     while ( NumOfLba > 0 ) {
       Status = FvbEraseBlock (FvbInstance, StartingLba);
-      if ( EFI_ERROR(Status)) {
+      if ( EFI_ERROR (Status)) {
         VA_END (Args);
         return Status;
       }
-      StartingLba ++;
-      NumOfLba --;
-    }
 
-  } while ( 1 );
+      StartingLba++;
+      NumOfLba--;
+    }
+  } while (1);
 
   VA_END (Args);
 
@@ -983,14 +993,14 @@ FvbProtocolEraseBlocks (
 EFI_STATUS
 EFIAPI
 FvbProtocolWrite (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
-  IN        EFI_LBA                               Lba,
-  IN        UINTN                                 Offset,
-  IN OUT    UINTN                                 *NumBytes,
-  IN        UINT8                                 *Buffer
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN EFI_LBA                                    Lba,
+  IN UINTN                                      Offset,
+  IN OUT UINTN                                  *NumBytes,
+  IN UINT8                                      *Buffer
   )
 {
-  EFI_FVB_INSTANCE        *FvbInstance;
+  EFI_FVB_INSTANCE  *FvbInstance;
 
   if ((This == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -1039,22 +1049,22 @@ FvbProtocolWrite (
 EFI_STATUS
 EFIAPI
 FvbProtocolRead (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
-  IN        EFI_LBA                               Lba,
-  IN        UINTN                                 Offset,
-  IN        OUT UINTN                             *NumBytes,
-  OUT       UINT8                                 *Buffer
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN EFI_LBA                                    Lba,
+  IN UINTN                                      Offset,
+  IN OUT UINTN                                  *NumBytes,
+  OUT UINT8                                     *Buffer
   )
 {
-  EFI_FVB_INSTANCE     *FvbInstance;
-  EFI_STATUS           Status;
+  EFI_FVB_INSTANCE  *FvbInstance;
+  EFI_STATUS        Status;
 
   if ((This == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   FvbInstance = FVB_INSTANCE_FROM_THIS (This);
-  Status = FvbReadBlock (FvbInstance, Lba, Offset, NumBytes, Buffer);
+  Status      = FvbReadBlock (FvbInstance, Lba, Offset, NumBytes, Buffer);
   DEBUG ((
     DEBUG_INFO,
     "FvbProtocolRead: Lba: 0x%lx Offset: 0x%x NumBytes: 0x%x, Buffer: 0x%x\n",
