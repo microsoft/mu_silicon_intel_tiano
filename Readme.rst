@@ -5,25 +5,25 @@ Project Mu Silicon Intel Tiano Repository
 ============================= ================= =============== ===================
  Host Type & Toolchain        Build Status      Test Status     Code Coverage
 ============================= ================= =============== ===================
-Windows_VS2019_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCoverage|
+Windows_VS2022_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCoverage|
 Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverage|
 ============================= ================= =============== ===================
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
-Branch Status - release/202208
+Branch Status - release/202302
 ==============================
 
 :Status:
   In Development
 
 :Entered Development:
-  September 2022
+  May 2023
 
 :Anticipated Stabilization:
-  November 2022
+  August 2023
 
-Branch Changes - release/202208
+Branch Changes - release/202302
 ===============================
 
 Breaking Changes-dev
@@ -41,20 +41,20 @@ Bug Fixes-dev
 
 - Incomplete
 
-2208_RefBoot Changes
+2302_RefBoot Changes
 --------------------
 
 - Incomplete
 
-2208_CIBuild Changes
+2302_CIBuild Changes
 --------------------
 
 - None
 
-2208_Rebase Changes
+2302_Rebase Changes
 -------------------
 
-| Starting commit: 2005804911
+| Starting commit: 732446a8c8
 | Destination commit: 9e90ec99a4
 
 
@@ -64,8 +64,8 @@ Repo Maintenance
 Upstream Sync Details
 ---------------------
 
-- edk2 - ba0e0e4c6a (edk2-stable202208)
-- edk2_platforms - 3c3b116801 ("Maintainers.txt: Update maintainers list for edk2-platforms", 2022-08-25)
+- edk2 - f80f052 (edk2-stable202302)
+- edk2_platforms - 54306d023e ("Ext4Pkg: Move unicode collation initialization to Start()", 2023-02-23)
 
 Instructions
 ------------
@@ -173,12 +173,12 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=53&&branchName=release%2F202208
-.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20VS2019?branchName=release%2F202208
+.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=53&&branchName=release%2F202302
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20VS2019?branchName=release%2F202302
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/53.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=54&branchName=release%2F202208
-.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20Ubuntu%20GCC5?branchName=release%2F202208
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=54&branchName=release%2F202302
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20Ubuntu%20GCC5?branchName=release%2F202302
 .. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/54.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
