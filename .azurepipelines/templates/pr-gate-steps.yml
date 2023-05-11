@@ -12,6 +12,9 @@ parameters:
   build_pkgs: ''
   build_targets: ''
   build_archs: ''
+  has_ci_dependencies: false    # MU_CHANGE - Enable toggle for stuart_ci_build
+  extra_steps: []               # MU_CHANGE - needed for clang
+  build_args: '' # MU_CHANGE - add build arguments to support code coverage
 
 steps:
 - checkout: self
@@ -64,6 +67,13 @@ steps:
 # MU_CHANGE - Add MarkdownLint
 # install markdownlint check prereqs
 - template: markdownlint-check-prereq-steps.yml
+<<<<<<< HEAD
+=======
+# MU_CHANGE - [start] need support for extra steps for clang
+# Extra steps if needed
+- ${{ parameters.extra_steps }}
+# MU_CHANGE [end]
+>>>>>>> fc7114e536 (Merge branch 'upstream-edk2-platforms' into upstream)
 
 
 # Build repo
@@ -73,7 +83,7 @@ steps:
   inputs:
     filename: stuart_ci_setup
     arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) --force-git -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}}
-  condition: and(gt(variables.pkg_count, 0), succeeded())
+  condition: and(gt(variables.pkg_count, 0), succeeded(), eq('${{ parameters.has_ci_dependencies }}', 'true'))
 
 - task: CmdLine@1
   displayName: Setup ${{ parameters.build_pkgs }} ${{ parameters.build_archs}}
@@ -102,7 +112,8 @@ steps:
   displayName: Build and Test ${{ parameters.build_pkgs }} ${{ parameters.build_archs}}
   inputs:
     filename: stuart_ci_build
-    arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}}
+    # MU_CHANGE - Add build arguments parameter
+    arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}} ${{ parameters.build_args}}
   condition: and(gt(variables.pkg_count, 0), succeeded())
 
 # Publish Test Results to Azure Pipelines/TFS
@@ -153,6 +164,8 @@ steps:
       TestSuites.xml
       **/BUILD_TOOLS_REPORT.html
       **/OVERRIDELOG.TXT
+      coverage.xml
+      coverage.html
     flattenFolders: true
   condition: succeededOrFailed()
 
