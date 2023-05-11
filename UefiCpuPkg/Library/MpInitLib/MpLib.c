@@ -1,7 +1,7 @@
 /** @file
   CPU MP Initialize Library common functions.
 
-  Copyright (c) 2016 - 2021, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2022, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2020, AMD Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,11 +9,34 @@
 **/
 
 #include "MpLib.h"
-#include <Library/VmgExitLib.h>
+#include <Library/CcExitLib.h>
 #include <Register/Amd/Fam17Msr.h>
 #include <Register/Amd/Ghcb.h>
 
 EFI_GUID  mCpuInitMpLibHobGuid = CPU_INIT_MP_LIB_HOB_GUID;
+
+/**
+  Save the volatile registers required to be restored following INIT IPI.
+
+  @param[out]  VolatileRegisters    Returns buffer saved the volatile resisters
+**/
+VOID
+SaveVolatileRegisters (
+  OUT CPU_VOLATILE_REGISTERS  *VolatileRegisters
+  );
+
+/**
+  Restore the volatile registers following INIT IPI.
+
+  @param[in]  VolatileRegisters   Pointer to volatile resisters
+  @param[in]  IsRestoreDr         TRUE:  Restore DRx if supported
+                                  FALSE: Do not restore DRx
+**/
+VOID
+RestoreVolatileRegisters (
+  IN CPU_VOLATILE_REGISTERS  *VolatileRegisters,
+  IN BOOLEAN                 IsRestoreDr
+  );
 
 /**
   The function will check if BSP Execute Disable is enabled.
@@ -83,7 +106,12 @@ FutureBSPProc (
   CPU_MP_DATA  *DataInHob;
 
   DataInHob = (CPU_MP_DATA *)Buffer;
+  //
+  // Save and restore volatile registers when switch BSP
+  //
+  SaveVolatileRegisters (&DataInHob->APInfo.VolatileRegisters);
   AsmExchangeRole (&DataInHob->APInfo, &DataInHob->BSPInfo);
+  RestoreVolatileRegisters (&DataInHob->APInfo.VolatileRegisters, FALSE);
 }
 
 /**
@@ -571,12 +599,19 @@ InitializeApData (
 {
   CPU_INFO_IN_HOB                *CpuInfoInHob;
   MSR_IA32_PLATFORM_ID_REGISTER  PlatformIdMsr;
+  AP_STACK_DATA                  *ApStackData;
 
   CpuInfoInHob                                = (CPU_INFO_IN_HOB *)(UINTN)CpuMpData->CpuInfoInHob;
   CpuInfoInHob[ProcessorNumber].InitialApicId = GetInitialApicId ();
   CpuInfoInHob[ProcessorNumber].ApicId        = GetApicId ();
   CpuInfoInHob[ProcessorNumber].Health        = BistData;
   CpuInfoInHob[ProcessorNumber].ApTopOfStack  = ApTopOfStack;
+
+  //
+  // AP_STACK_DATA is stored at the top of AP Stack
+  //
+  ApStackData         = (AP_STACK_DATA *)((UINTN)ApTopOfStack - sizeof (AP_STACK_DATA));
+  ApStackData->MpData = CpuMpData;
 
   CpuMpData->CpuData[ProcessorNumber].Waiting    = FALSE;
   CpuMpData->CpuData[ProcessorNumber].CpuHealthy = (BistData == 0) ? TRUE : FALSE;
@@ -623,6 +658,7 @@ ApWakeupFunction (
   CPU_INFO_IN_HOB   *CpuInfoInHob;
   UINT64            ApTopOfStack;
   UINTN             CurrentApicMode;
+  AP_STACK_DATA     *ApStackData;
 
   //
   // AP finished assembly code and begin to execute C code
@@ -648,7 +684,9 @@ ApWakeupFunction (
       // This is first time AP wakeup, get BIST information from AP stack
       //
       ApTopOfStack = CpuMpData->Buffer + (ProcessorNumber + 1) * CpuMpData->CpuApStackSize;
-      BistData     = *(UINT32 *)((UINTN)ApTopOfStack - sizeof (UINTN));
+      ApStackData  = (AP_STACK_DATA *)((UINTN)ApTopOfStack - sizeof (AP_STACK_DATA));
+      BistData     = (UINT32)ApStackData->Bist;
+
       //
       // CpuMpData->CpuData[0].VolatileRegisters is initialized based on BSP environment,
       //   to initialize AP in InitConfig path.
@@ -1796,14 +1834,22 @@ MpInitLibInitialize (
   AsmGetAddressMap (&AddressMap);
   GetApResetVectorSize (&AddressMap, &ApResetVectorSizeBelow1Mb, &ApResetVectorSizeAbove1Mb);
   ApStackSize = PcdGet32 (PcdCpuApStackSize);
-  ApLoopMode  = GetApLoopMode (&MonitorFilterSize);
+  //
+  // ApStackSize must be power of 2
+  //
+  ASSERT ((ApStackSize & (ApStackSize - 1)) == 0);
+  ApLoopMode = GetApLoopMode (&MonitorFilterSize);
 
   //
   // Save BSP's Control registers for APs.
   //
   SaveVolatileRegisters (&VolatileRegisters);
 
-  BufferSize  = ApStackSize * MaxLogicalProcessorNumber;
+  BufferSize = ApStackSize * MaxLogicalProcessorNumber;
+  //
+  // Allocate extra ApStackSize to let AP stack align on ApStackSize bounday
+  //
+  BufferSize += ApStackSize;
   BufferSize += MonitorFilterSize * MaxLogicalProcessorNumber;
   BufferSize += ApResetVectorSizeBelow1Mb;
   BufferSize  = ALIGN_VALUE (BufferSize, 8);
@@ -1813,13 +1859,13 @@ MpInitLibInitialize (
   MpBuffer    = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
   ASSERT (MpBuffer != NULL);
   ZeroMem (MpBuffer, BufferSize);
-  Buffer = (UINTN)MpBuffer;
+  Buffer = ALIGN_VALUE ((UINTN)MpBuffer, ApStackSize);
 
   //
-  //  The layout of the Buffer is as below:
+  //  The layout of the Buffer is as below (lower address on top):
   //
-  //    +--------------------+ <-- Buffer
-  //        AP Stacks (N)
+  //    +--------------------+ <-- Buffer (Pointer of CpuMpData is stored in the top of each AP's stack.)
+  //        AP Stacks (N)                 (StackTop = (RSP + ApStackSize) & ~ApStackSize))
   //    +--------------------+ <-- MonitorBuffer
   //    AP Monitor Filters (N)
   //    +--------------------+ <-- BackupBufferAddr (CpuMpData->BackupBuffer)
@@ -1827,7 +1873,7 @@ MpInitLibInitialize (
   //    +--------------------+
   //           Padding
   //    +--------------------+ <-- ApIdtBase (8-byte boundary)
-  //           AP IDT          All APs share one separate IDT. So AP can get address of CPU_MP_DATA from IDT Base.
+  //           AP IDT          All APs share one separate IDT.
   //    +--------------------+ <-- CpuMpData
   //         CPU_MP_DATA
   //    +--------------------+ <-- CpuMpData->CpuData
@@ -1864,10 +1910,11 @@ MpInitLibInitialize (
 
   //
   // Make sure no memory usage outside of the allocated buffer.
+  // (ApStackSize - (Buffer - (UINTN)MpBuffer)) is the redundant caused by alignment
   //
   ASSERT (
     (CpuMpData->CpuInfoInHob + sizeof (CPU_INFO_IN_HOB) * MaxLogicalProcessorNumber) ==
-    Buffer + BufferSize
+    (UINTN)MpBuffer + BufferSize - (ApStackSize - Buffer + (UINTN)MpBuffer)
     );
 
   //
@@ -2233,7 +2280,12 @@ SwitchBSPWorker (
   //
   WakeUpAP (CpuMpData, FALSE, ProcessorNumber, FutureBSPProc, CpuMpData, TRUE);
 
+  //
+  // Save and restore volatile registers when switch BSP
+  //
+  SaveVolatileRegisters (&CpuMpData->BSPInfo.VolatileRegisters);
   AsmExchangeRole (&CpuMpData->BSPInfo, &CpuMpData->APInfo);
+  RestoreVolatileRegisters (&CpuMpData->BSPInfo.VolatileRegisters, FALSE);
 
   //
   // Set the BSP bit of MSR_IA32_APIC_BASE on new BSP

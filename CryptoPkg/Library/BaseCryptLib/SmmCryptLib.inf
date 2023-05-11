@@ -42,9 +42,11 @@
   Hash/CryptXkcp.c
   Hash/CryptCShake256.c
   Hash/CryptParallelHash.c
-  Hmac/CryptHmacSha256.c
-  Kdf/CryptHkdfNull.c
+  Hash/CryptDispatchApMm.c
+  Hmac/CryptHmac.c
+  Kdf/CryptHkdf.c
   Cipher/CryptAes.c
+  Cipher/CryptAeadAesGcmNull.c
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
   Pk/CryptPkcs1Oaep.c
@@ -59,7 +61,9 @@
   Pk/CryptTsNull.c
   Pk/CryptRsaPss.c
   Pk/CryptRsaPssSignNull.c
+  Pk/CryptEcNull.c
   Pem/CryptPem.c
+  Bn/CryptBnNull.c
 
   SysCall/CrtWrapper.c
   SysCall/ConstantTimeClock.c
@@ -83,7 +87,6 @@
 
 [LibraryClasses]
   BaseLib
-  IoLib
   BaseMemoryLib
   MemoryAllocationLib
   OpensslLib
@@ -92,18 +95,13 @@
   MmServicesTableLib
   SynchronizationLib
 
-[FixedPcd]
-  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslEcEnabled
-
 #
 # Remove these [BuildOptions] after this library is cleaned up
 #
 [BuildOptions]
   #
   # suppress the following warnings so we do not break the build with warnings-as-errors:
-  # C4090: 'function' : different 'const' qualifiers
   #
-  MSFT:*_*_*_CC_FLAGS = /wd4090
 
   XCODE:*_*_*_CC_FLAGS = -mmmx -msse -std=c99
 

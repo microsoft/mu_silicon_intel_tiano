@@ -101,6 +101,42 @@ CommonExceptionHandler (
 }
 
 /**
+  Registers a function to be called from the processor interrupt handler.
+
+  This function registers and enables the handler specified by InterruptHandler for a processor
+  interrupt or exception type specified by InterruptType. If InterruptHandler is NULL, then the
+  handler for the processor interrupt or exception type specified by InterruptType is uninstalled.
+  The installed handler is called once for each processor interrupt or exception.
+  NOTE: This function should be invoked after InitializeCpuExceptionHandlers() is invoked,
+  otherwise EFI_UNSUPPORTED returned.
+
+  @param[in]  InterruptType     Defines which interrupt or exception to hook.
+  @param[in]  InterruptHandler  A pointer to a function of type EFI_CPU_INTERRUPT_HANDLER that is called
+                                when a processor interrupt occurs. If this parameter is NULL, then the handler
+                                will be uninstalled.
+
+  @retval EFI_SUCCESS           The handler for the processor interrupt was successfully installed or uninstalled.
+  @retval EFI_ALREADY_STARTED   InterruptHandler is not NULL, and a handler for InterruptType was
+                                previously installed.
+  @retval EFI_INVALID_PARAMETER InterruptHandler is NULL, and a handler for InterruptType was not
+                                previously installed.
+  @retval EFI_UNSUPPORTED       The interrupt specified by InterruptType is not supported,
+                                or this function is not supported.
+**/
+EFI_STATUS
+EFIAPI
+RegisterCpuInterruptHandler (
+  IN EFI_EXCEPTION_TYPE         InterruptType,
+  IN EFI_CPU_INTERRUPT_HANDLER  InterruptHandler
+  )
+{
+  EXCEPTION_HANDLER_DATA  *ExceptionHandlerData;
+
+  ExceptionHandlerData = GetExceptionHandlerData ();
+  return RegisterCpuInterruptHandlerWorker (InterruptType, InterruptHandler, ExceptionHandlerData);
+}
+
+/**
   Initializes all CPU exceptions entries and provides the default exception handlers.
 
   Caller should try to get an array of interrupt and/or exception vectors that are in use and need to
@@ -135,7 +171,7 @@ InitializeCpuExceptionHandlers (
   ASSERT (ExceptionHandlerData != NULL);
   ExceptionHandlerData->IdtEntryCount            = CPU_EXCEPTION_NUM;
   ExceptionHandlerData->ReservedVectors          = ReservedVectors;
-  ExceptionHandlerData->ExternalInterruptHandler = NULL;
+  ExceptionHandlerData->ExternalInterruptHandler = AllocateZeroPool (sizeof (EFI_CPU_INTERRUPT_HANDLER) * ExceptionHandlerData->IdtEntryCount);
   InitializeSpinLock (&ExceptionHandlerData->DisplayMessageSpinLock);
 
   Status = InitializeCpuExceptionHandlersWorker (VectorInfo, ExceptionHandlerData);
@@ -170,84 +206,9 @@ InitializeSeparateExceptionStacks (
   IN OUT UINTN  *BufferSize
   )
 {
-  CPU_EXCEPTION_INIT_DATA  EssData;
-  IA32_DESCRIPTOR          Idtr;
-  IA32_DESCRIPTOR          Gdtr;
-  UINTN                    NeedBufferSize;
-  UINTN                    StackTop;
-  UINT8                    *NewGdtTable;
-
-  //
-  // X64 needs only one TSS of current task working for all exceptions
-  // because of its IST feature. IA32 needs one TSS for each exception
-  // in addition to current task. To simplify the code, we report the
-  // needed memory for IA32 case to cover both IA32 and X64 exception
-  // stack switch.
-  //
-  // Layout of memory needed for each processor:
-  //    --------------------------------
-  //    |            Alignment         |  (just in case)
-  //    --------------------------------
-  //    |                              |
-  //    |        Original GDT          |
-  //    |                              |
-  //    --------------------------------
-  //    |    Current task descriptor   |
-  //    --------------------------------
-  //    |                              |
-  //    |  Exception task descriptors  |  X ExceptionNumber
-  //    |                              |
-  //    --------------------------------
-  //    |  Current task-state segment  |
-  //    --------------------------------
-  //    |                              |
-  //    | Exception task-state segment |  X ExceptionNumber
-  //    |                              |
-  //    --------------------------------
-  //
-
   if ((Buffer == NULL) && (BufferSize == NULL)) {
     return EFI_UNSUPPORTED;
   }
 
-  if (BufferSize == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  AsmReadGdtr (&Gdtr);
-  //
-  // Total needed size includes stack size, new GDT table size, TSS size.
-  // Add another DESCRIPTOR size for alignment requiremet.
-  //
-  NeedBufferSize = CPU_STACK_SWITCH_EXCEPTION_NUMBER * CPU_KNOWN_GOOD_STACK_SIZE +
-                   CPU_TSS_DESC_SIZE + Gdtr.Limit + 1 +
-                   CPU_TSS_SIZE +
-                   sizeof (IA32_TSS_DESCRIPTOR);
-  if (*BufferSize < NeedBufferSize) {
-    *BufferSize = NeedBufferSize;
-    return EFI_BUFFER_TOO_SMALL;
-  }
-
-  if (Buffer == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  StackTop    = (UINTN)Buffer + CPU_STACK_SWITCH_EXCEPTION_NUMBER * CPU_KNOWN_GOOD_STACK_SIZE;
-  NewGdtTable = ALIGN_POINTER (StackTop, sizeof (IA32_TSS_DESCRIPTOR));
-
-  AsmReadIdtr (&Idtr);
-  EssData.KnownGoodStackTop          = StackTop;
-  EssData.KnownGoodStackSize         = CPU_KNOWN_GOOD_STACK_SIZE;
-  EssData.StackSwitchExceptions      = CPU_STACK_SWITCH_EXCEPTION_LIST;
-  EssData.StackSwitchExceptionNumber = CPU_STACK_SWITCH_EXCEPTION_NUMBER;
-  EssData.IdtTable                   = (VOID *)Idtr.Base;
-  EssData.IdtTableSize               = Idtr.Limit + 1;
-  EssData.GdtTable                   = NewGdtTable;
-  EssData.GdtTableSize               = CPU_TSS_DESC_SIZE + Gdtr.Limit + 1;
-  EssData.ExceptionTssDesc           = NewGdtTable + Gdtr.Limit + 1;
-  EssData.ExceptionTssDescSize       = CPU_TSS_DESC_SIZE;
-  EssData.ExceptionTss               = NewGdtTable + Gdtr.Limit + 1 + CPU_TSS_DESC_SIZE;
-  EssData.ExceptionTssSize           = CPU_TSS_SIZE;
-
-  return ArchSetupExceptionStack (&EssData);
+  return ArchSetupExceptionStack (Buffer, BufferSize);
 }

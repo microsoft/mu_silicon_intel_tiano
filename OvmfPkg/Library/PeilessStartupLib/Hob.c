@@ -20,9 +20,8 @@
 #include <IndustryStandard/UefiTcgPlatform.h>
 #include <Library/PlatformInitLib.h>
 #include <OvmfPlatforms.h>
+#include <Pi/PrePiHob.h>
 #include "PeilessStartupInternal.h"
-
-#define EFI_RESOURCE_MEMORY_UNACCEPTED  7
 
 /**
  * Construct the HobList in SEC phase.
@@ -43,7 +42,8 @@ ConstructSecHobList (
 
   ZeroMem (&PlatformInfoHob, sizeof (PlatformInfoHob));
   PlatformInfoHob.HostBridgeDevId = PciRead16 (OVMF_HOSTBRIDGE_DID);
-  LowMemorySize                   = PlatformGetSystemMemorySizeBelow4gb (&PlatformInfoHob);
+  PlatformGetSystemMemorySizeBelow4gb (&PlatformInfoHob);
+  LowMemorySize = PlatformInfoHob.LowMemory;
   ASSERT (LowMemorySize != 0);
   LowMemoryStart = FixedPcdGet32 (PcdOvmfDxeMemFvBase) + FixedPcdGet32 (PcdOvmfDxeMemFvSize);
   LowMemorySize -= LowMemoryStart;
@@ -92,7 +92,7 @@ ConstructFwHobList (
   //
   while (!END_OF_HOB_LIST (Hob)) {
     if (Hob.Header->HobType == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
-      if (Hob.ResourceDescriptor->ResourceType == EFI_RESOURCE_MEMORY_UNACCEPTED) {
+      if (Hob.ResourceDescriptor->ResourceType == BZ3937_EFI_RESOURCE_MEMORY_UNACCEPTED) {
         PhysicalEnd    = Hob.ResourceDescriptor->PhysicalStart + Hob.ResourceDescriptor->ResourceLength;
         ResourceLength = Hob.ResourceDescriptor->ResourceLength;
 

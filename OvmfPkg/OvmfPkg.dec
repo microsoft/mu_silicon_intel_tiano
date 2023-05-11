@@ -38,6 +38,10 @@
   #
   MemEncryptTdxLib|Include/Library/MemEncryptTdxLib.h
 
+  ##  @libraryclass  Handle TPL changes within nested interrupt handlers
+  #
+  NestedInterruptTplLib|Include/Library/NestedInterruptTplLib.h
+
   ##  @libraryclass  Save and restore variables using a file
   #
   NvVarsFileLib|Include/Library/NvVarsFileLib.h
@@ -94,12 +98,20 @@
   #
   SerializeVariablesLib|Include/Library/SerializeVariablesLib.h
 
+  ##  @libraryclass  TdxHelper
+  #
+  TdxHelperLib|Include/Library/TdxHelperLib.h
+
   ##  @libraryclass  Declares utility functions for virtio device drivers.
   VirtioLib|Include/Library/VirtioLib.h
 
   ##  @libraryclass  Install Virtio Device Protocol instances on virtio-mmio
   #                  transports.
   VirtioMmioDeviceLib|Include/Library/VirtioMmioDeviceLib.h
+
+  ##  @libraryclass  Provides a Nor flash interface.
+  #
+  VirtNorFlashPlatformLib|Include/Library/VirtNorFlashPlatformLib.h
 
   ##  @libraryclass  Invoke Xen hypercalls
   #
@@ -146,6 +158,10 @@
   gConfidentialComputingSecretGuid      = {0xadf956ad, 0xe98c, 0x484c, {0xae, 0x11, 0xb5, 0x1c, 0x7d, 0x33, 0x64, 0x47}}
   gConfidentialComputingSevSnpBlobGuid  = {0x067b1f5f, 0xcf26, 0x44c5, {0x85, 0x54, 0x93, 0xd7, 0x77, 0x91, 0x2d, 0x42}}
   gUefiOvmfPkgPlatformInfoGuid          = {0xdec9b486, 0x1f16, 0x47c7, {0x8f, 0x68, 0xdf, 0x1a, 0x41, 0x88, 0x8b, 0xa5}}
+  gVMMBootOrderGuid                     = {0x668f4529, 0x63d0, 0x4bb5, {0xb6, 0x5d, 0x6f, 0xbb, 0x9d, 0x36, 0xa4, 0x4a}}
+  gUefiOvmfPkgTdxAcpiHobGuid            = {0x6a0c5870, 0xd4ed, 0x44f4, {0xa1, 0x35, 0xdd, 0x23, 0x8b, 0x6f, 0x0c, 0x8d}}
+  gEfiNonCcFvGuid                       = {0xae047c6d, 0xbce9, 0x426c, {0xae, 0x03, 0xa6, 0x8e, 0x3b, 0x8a, 0x04, 0x88}}
+  gOvmfVariableGuid                     = {0x50bea1e5, 0xa2c5, 0x46e9, {0x9b, 0x3a, 0x59, 0x59, 0x65, 0x16, 0xb0, 0x0a}}
 
 [Ppis]
   # PPI whose presence in the PPI database signals that the TPM base address
@@ -173,6 +189,7 @@
   gEfiLegacyInterruptProtocolGuid       = {0x31ce593d, 0x108a, 0x485d, {0xad, 0xb2, 0x78, 0xf2, 0x1f, 0x29, 0x66, 0xbe}}
   gEfiVgaMiniPortProtocolGuid           = {0xc7735a2f, 0x88f5, 0x4882, {0xae, 0x63, 0xfa, 0xac, 0x8c, 0x8b, 0x86, 0xb3}}
   gOvmfLoadedX86LinuxKernelProtocolGuid = {0xa3edc05d, 0xb618, 0x4ff6, {0x95, 0x52, 0x76, 0xd7, 0x88, 0x63, 0x43, 0xc8}}
+  gOvmfSevMemoryAcceptanceProtocolGuid  = {0xc5a010fe, 0x38a7, 0x4531, {0x8a, 0x4a, 0x05, 0x00, 0xd2, 0xfd, 0x16, 0x49}}
   gQemuAcpiTableNotifyProtocolGuid      = {0x928939b2, 0x4235, 0x462f, {0x95, 0x80, 0xf6, 0xa2, 0xb2, 0xc2, 0x1a, 0x4f}}
   gEfiMpInitLibMpDepProtocolGuid        = {0xbb00a5ca, 0x8ce,  0x462f, {0xa5, 0x37, 0x43, 0xc7, 0x4a, 0x82, 0x5c, 0xa4}}
   gEfiMpInitLibUpDepProtocolGuid        = {0xa9e7cef1, 0x5682, 0x42cc, {0xb1, 0x23, 0x99, 0x30, 0x97, 0x3f, 0x4a, 0x9f}}
@@ -182,6 +199,8 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvSize|0x0|UINT32|1
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvBase|0x0|UINT32|0x15
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvSize|0x0|UINT32|0x16
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeNonCcFvBase|0x0|UINT32|0x6a
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeNonCcFvSize|0x0|UINT32|0x6b
 
   ## This flag is used to control the destination port for PlatformDebugLibIoPort
   gUefiOvmfPkgTokenSpaceGuid.PcdDebugIoPort|0x402|UINT16|4
@@ -399,6 +418,10 @@
   ## The Tdx accept page size. 0x1000(4k),0x200000(2M)
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageSize|0x200000|UINT32|0x65
 
+  ## The QEMU fw_cfg variable that UefiDriverEntryPointFwCfgOverrideLib will
+  #  check to decide whether to abort dispatch of the driver it is linked into.
+  gUefiOvmfPkgTokenSpaceGuid.PcdEntryPointOverrideFwCfgVarName|""|VOID*|0x68
+
 [PcdsDynamic, PcdsDynamicEx]
   gUefiOvmfPkgTokenSpaceGuid.PcdEmuVariableEvent|0|UINT64|2
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashVariablesEnable|FALSE|BOOLEAN|0x10
@@ -445,11 +468,11 @@
   #    2 - set by GOP Driver.
   gUefiOvmfPkgTokenSpaceGuid.PcdVideoResolutionSource|0|UINT8|0x64
 
-  ## This PCD records LAML field in CC EVENTLOG ACPI table.
-  gUefiOvmfPkgTokenSpaceGuid.PcdCcEventlogAcpiTableLaml|0|UINT32|0x66
-
-  ## This PCD records LASA field in CC EVENTLOG ACPI table.
-  gUefiOvmfPkgTokenSpaceGuid.PcdCcEventlogAcpiTableLasa|0|UINT64|0x67
+  #
+  # Whether to force disable ACPI, regardless of the fw_cfg settings
+  # exposed by QEMU
+  #
+  gUefiOvmfPkgTokenSpaceGuid.PcdForceNoAcpi|0x0|BOOLEAN|0x69
 
 [PcdsFeatureFlag]
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderPciTranslation|TRUE|BOOLEAN|0x1c

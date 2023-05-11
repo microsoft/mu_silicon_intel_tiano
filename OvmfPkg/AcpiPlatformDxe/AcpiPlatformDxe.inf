@@ -45,6 +45,8 @@
   QemuFwCfgS3Lib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
+  HobLib
+  TpmMeasurementLib
 
 [Protocols]
   gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
@@ -53,12 +55,14 @@
 
 [Guids]
   gRootBridgesConnectedEventGroupGuid
+  gUefiOvmfPkgTdxAcpiHobGuid
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
   gUefiOvmfPkgTokenSpaceGuid.PcdXenPvhStartOfDayStructPtr
   gUefiOvmfPkgTokenSpaceGuid.PcdXenPvhStartOfDayStructPtrSize
+  gEfiMdePkgTokenSpaceGuid.PcdConfidentialComputingGuestAttr
 
 [Depex]
   gEfiAcpiTableProtocolGuid

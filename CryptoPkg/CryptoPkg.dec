@@ -37,6 +37,15 @@
   #
   HashApiLib|Include/Library/HashApiLib.h
 
+[LibraryClasses.common.Private]
+  ##  @libraryclass  Provides library functions from the openssl project.
+  #
+  OpensslLib|Private/Library/OpensslLib.h
+
+  ##  @libraryclass  Provides compiler intrinsic functions required to link openssl project.
+  #
+  InstrinsicLib|Private/Library/IntrinsicLib.h
+
 [Protocols]
   ## EDK II Crypto DXE protocol
   # 2C2275C9-3A7B-426F-BE54-2D22BD9D1092
@@ -80,10 +89,6 @@
   # @Prompt Set policy for hashing unsigned image for Secure Boot.
   # @ValidList 0x80000001 | 0x00000001, 0x00000002, 0x00000004, 0x00000008, 0x00000010
   gEfiCryptoPkgTokenSpaceGuid.PcdHashApiLibPolicy|0x00000002|UINT32|0x00000001
-
-  ## Enable/Disable the ECC feature in openssl library. The default is disabled.
-  #  If ECC feature is disabled, all related source files will not be compiled.
-  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslEcEnabled|FALSE|BOOLEAN|0x0000003
 
 [UserExtensions.TianoCore."ExtraFiles"]
   CryptoPkgExtra.uni

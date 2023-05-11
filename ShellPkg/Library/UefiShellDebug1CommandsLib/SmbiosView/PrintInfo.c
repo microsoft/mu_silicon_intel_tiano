@@ -638,12 +638,17 @@ SmbiosPrintStructure (
             ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DATA_BUS_WIDTH), gShellDebug1HiiHandle, PeerGroupPtr[Index].DataBusWidth);
           }
 
-          // Since PeerGroups has a variable number of entries, new fields added after PeerGroups are defined in
-          // a extended structure. Those fields can be referenced using SMBIOS_TABLE_TYPE9_EXTENDED structure.
-          Type9ExtendedStruct = (SMBIOS_TABLE_TYPE9_EXTENDED *)((UINT8 *)PeerGroupPtr + (PeerGroupCount * sizeof (MISC_SLOT_PEER_GROUP)));
-          DisplaySystemSlotHeight (Type9ExtendedStruct->SlotHeight, Option);
-          DisplaySystemSlotPhysicalWidth (Type9ExtendedStruct->SlotPhysicalWidth, Option);
-          DisplaySystemSlotInformation (Type9ExtendedStruct->SlotInformation, Option);
+          if (AE_SMBIOS_VERSION (0x3, 0x4)) {
+            // Since PeerGroups has a variable number of entries, new fields added after PeerGroups are defined in
+            // a extended structure. Those fields can be referenced using SMBIOS_TABLE_TYPE9_EXTENDED structure.
+            Type9ExtendedStruct = (SMBIOS_TABLE_TYPE9_EXTENDED *)((UINT8 *)PeerGroupPtr + (PeerGroupCount * sizeof (MISC_SLOT_PEER_GROUP)));
+            DisplaySystemSlotInformation (Type9ExtendedStruct->SlotInformation, Option);
+            DisplaySystemSlotPhysicalWidth (Type9ExtendedStruct->SlotPhysicalWidth, Option);
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SMBIOSVIEW_QUERYTABLE_SYSTEM_SLOT_PITCH), gShellDebug1HiiHandle, Type9ExtendedStruct->SlotPitch);
+            if (AE_SMBIOS_VERSION (0x3, 0x5)) {
+              DisplaySystemSlotHeight (Type9ExtendedStruct->SlotHeight, Option);
+            }
+          }
         }
       }
 
@@ -1172,10 +1177,31 @@ SmbiosPrintStructure (
     //
     case 38:
       DisplayIPMIDIBMCInterfaceType (Struct->Type38->InterfaceType, Option);
-      PRINT_STRUCT_VALUE_H (Struct, Type38, IPMISpecificationRevision);
+
+      ShellPrintHiiEx (
+        -1,
+        -1,
+        NULL,
+        STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_IPMI_SPECIFICATION_REVISION),
+        gShellDebug1HiiHandle,
+        RShiftU64 ((UINT64)Struct->Type38->IPMISpecificationRevision, 4), \
+        Struct->Type38->IPMISpecificationRevision & 0x0F
+        );
+
       PRINT_STRUCT_VALUE_H (Struct, Type38, I2CSlaveAddress);
-      PRINT_STRUCT_VALUE_H (Struct, Type38, NVStorageDeviceAddress);
-      PRINT_STRUCT_VALUE_LH (Struct, Type38, BaseAddress);
+
+      if (Struct->Type38->NVStorageDeviceAddress == 0xFF) {
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_NV_STORAGE_DEVICE_NOT_PRESENT), gShellDebug1HiiHandle);
+      } else {
+        PRINT_STRUCT_VALUE_H (Struct, Type38, NVStorageDeviceAddress);
+      }
+
+      if (Struct->Type38->InterfaceType == IPMIDeviceInfoInterfaceTypeSSIF) {
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BASE_ADDRESS), gShellDebug1HiiHandle, RShiftU64 ((UINT64)Struct->Type38->BaseAddress, 1));
+      } else {
+        PRINT_STRUCT_VALUE_LH (Struct, Type38, BaseAddress);
+      }
+
       break;
 
     //

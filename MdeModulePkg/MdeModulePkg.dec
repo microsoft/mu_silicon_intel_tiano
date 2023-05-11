@@ -9,6 +9,7 @@
 # (C) Copyright 2016 - 2019 Hewlett Packard Enterprise Development LP<BR>
 # Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 # Copyright (c) Microsoft Corporation.<BR>
+# Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -116,6 +117,10 @@
   ## @libraryclass  Provides interfaces about Ipmi submit generic commond.
   #
   IpmiLib|Include/Library/IpmiLib.h
+
+  ## @libraryclass  Provides interfaces to send/receive IPMI command.
+  #
+  IpmiCommandLib|Include/Library/IpmiCommandLib.h
 
   ## @libraryclass  Provides interfaces for platform to return root bridge information to PciHostBridgeDxe driver.
   #
@@ -917,15 +922,13 @@
   # @Prompt Enable process non-reset capsule image at runtime.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportProcessCapsuleAtRuntime|FALSE|BOOLEAN|0x00010079
 
-[PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
+[PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64, PcdsFeatureFlag.LOONGARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.X64]
   ## Indicates if DxeIpl should switch to long mode to enter DXE phase.
-  #  It is assumed that 64-bit DxeCore is built in firmware if it is true; otherwise 32-bit DxeCore
-  #  is built in firmware.<BR><BR>
   #   TRUE  - DxeIpl will load a 64-bit DxeCore and switch to long mode to hand over to DxeCore.<BR>
-  #   FALSE - DxeIpl will load a 32-bit DxeCore and perform stack switch to hand over to DxeCore.<BR>
+  #   FALSE - DxeIpl will load a 32-bit or 64-bit DxeCore and perform stack switch to hand over to DxeCore.<BR>
   # @Prompt DxeIpl switch to long mode.
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode|TRUE|BOOLEAN|0x0001003b
 
@@ -1573,6 +1576,10 @@
   ## Indicates the default timeout value for SD/MMC Host Controller operations in microseconds.
   # @Prompt SD/MMC Host Controller Operations Timeout (us).
   gEfiMdeModulePkgTokenSpaceGuid.PcdSdMmcGenericTimeoutValue|1000000|UINT32|0x00000031
+
+  ## The Retry Count of AHCI command if there is a failure
+  # @Prompt The value of Retry Count,  Default value is 5.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAhciCommandRetryCount|5|UINT32|0x00000032
 
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD defines the Console output row. The default value is 25 according to UEFI spec.

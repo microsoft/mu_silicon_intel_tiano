@@ -26,6 +26,7 @@ Module Name:
 //
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/CcProbeLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HardwareInfoLib.h>
 #include <Library/HobLib.h>
@@ -42,28 +43,15 @@ Module Name:
 
 #include <Library/PlatformInitLib.h>
 
+#define MEGABYTE_SHIFT  20
+
 VOID
 EFIAPI
 PlatformQemuUc32BaseInitialization (
   IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
-  UINT32  LowerMemorySize;
-
   if (PlatformInfoHob->HostBridgeDevId == 0xffff /* microvm */) {
-    return;
-  }
-
-  if (PlatformInfoHob->HostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
-    //
-    // On q35, the 32-bit area that we'll mark as UC, through variable MTRRs,
-    // starts at PcdPciExpressBaseAddress. The platform DSC is responsible for
-    // setting PcdPciExpressBaseAddress such that describing the
-    // [PcdPciExpressBaseAddress, 4GB) range require a very small number of
-    // variable MTRRs (preferably 1 or 2).
-    //
-    ASSERT (PcdGet64 (PcdPciExpressBaseAddress) <= MAX_UINT32);
-    PlatformInfoHob->Uc32Base = (UINT32)PcdGet64 (PcdPciExpressBaseAddress);
     return;
   }
 
@@ -73,14 +61,37 @@ PlatformQemuUc32BaseInitialization (
     return;
   }
 
+  PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
+
+  if (PlatformInfoHob->HostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
+    ASSERT (PcdGet64 (PcdPciExpressBaseAddress) <= MAX_UINT32);
+    ASSERT (PcdGet64 (PcdPciExpressBaseAddress) >= PlatformInfoHob->LowMemory);
+
+    if (PlatformInfoHob->LowMemory <= BASE_2GB) {
+      // Newer qemu with gigabyte aligned memory,
+      // 32-bit pci mmio window is 2G -> 4G then.
+      PlatformInfoHob->Uc32Base = BASE_2GB;
+    } else {
+      //
+      // On q35, the 32-bit area that we'll mark as UC, through variable MTRRs,
+      // starts at PcdPciExpressBaseAddress. The platform DSC is responsible for
+      // setting PcdPciExpressBaseAddress such that describing the
+      // [PcdPciExpressBaseAddress, 4GB) range require a very small number of
+      // variable MTRRs (preferably 1 or 2).
+      //
+      PlatformInfoHob->Uc32Base = (UINT32)PcdGet64 (PcdPciExpressBaseAddress);
+    }
+
+    return;
+  }
+
   ASSERT (PlatformInfoHob->HostBridgeDevId == INTEL_82441_DEVICE_ID);
   //
   // On i440fx, start with the [LowerMemorySize, 4GB) range. Make sure one
   // variable MTRR suffices by truncating the size to a whole power of two,
   // while keeping the end affixed to 4GB. This will round the base up.
   //
-  LowerMemorySize           = PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
-  PlatformInfoHob->Uc32Size = GetPowerOfTwo32 ((UINT32)(SIZE_4GB - LowerMemorySize));
+  PlatformInfoHob->Uc32Size = GetPowerOfTwo32 ((UINT32)(SIZE_4GB - PlatformInfoHob->LowMemory));
   PlatformInfoHob->Uc32Base = (UINT32)(SIZE_4GB - PlatformInfoHob->Uc32Size);
   //
   // Assuming that LowerMemorySize is at least 1 byte, Uc32Size is at most 2GB.
@@ -88,51 +99,191 @@ PlatformQemuUc32BaseInitialization (
   //
   ASSERT (PlatformInfoHob->Uc32Base >= BASE_2GB);
 
-  if (PlatformInfoHob->Uc32Base != LowerMemorySize) {
+  if (PlatformInfoHob->Uc32Base != PlatformInfoHob->LowMemory) {
     DEBUG ((
       DEBUG_VERBOSE,
       "%a: rounded UC32 base from 0x%x up to 0x%x, for "
       "an UC32 size of 0x%x\n",
       __FUNCTION__,
-      LowerMemorySize,
+      PlatformInfoHob->LowMemory,
       PlatformInfoHob->Uc32Base,
       PlatformInfoHob->Uc32Size
       ));
   }
 }
 
+typedef VOID (*E820_SCAN_CALLBACK) (
+  EFI_E820_ENTRY64       *E820Entry,
+  EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  );
+
 /**
-  Iterate over the RAM entries in QEMU's fw_cfg E820 RAM map that start outside
-  of the 32-bit address range.
+  Store first address not used by e820 RAM entries in
+  PlatformInfoHob->FirstNonAddress
+**/
+STATIC
+VOID
+PlatformGetFirstNonAddressCB (
+  IN     EFI_E820_ENTRY64       *E820Entry,
+  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  )
+{
+  UINT64  Candidate;
 
-  Find the highest exclusive >=4GB RAM address, or produce memory resource
-  descriptor HOBs for RAM entries that start at or above 4GB.
+  if (E820Entry->Type != EfiAcpiAddressRangeMemory) {
+    return;
+  }
 
-  @param[out] MaxAddress  If MaxAddress is NULL, then PlatformScanOrAdd64BitE820Ram()
-                          produces memory resource descriptor HOBs for RAM
-                          entries that start at or above 4GB.
+  Candidate = E820Entry->BaseAddr + E820Entry->Length;
+  if (PlatformInfoHob->FirstNonAddress < Candidate) {
+    DEBUG ((DEBUG_INFO, "%a: FirstNonAddress=0x%Lx\n", __FUNCTION__, Candidate));
+    PlatformInfoHob->FirstNonAddress = Candidate;
+  }
+}
 
-                          Otherwise, MaxAddress holds the highest exclusive
-                          >=4GB RAM address on output. If QEMU's fw_cfg E820
-                          RAM map contains no RAM entry that starts outside of
-                          the 32-bit address range, then MaxAddress is exactly
-                          4GB on output.
+/**
+  Store the low (below 4G) memory size in
+  PlatformInfoHob->LowMemory
+**/
+STATIC
+VOID
+PlatformGetLowMemoryCB (
+  IN     EFI_E820_ENTRY64       *E820Entry,
+  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  )
+{
+  UINT64  Candidate;
 
-  @retval EFI_SUCCESS         The fw_cfg E820 RAM map was found and processed.
+  if (E820Entry->Type != EfiAcpiAddressRangeMemory) {
+    return;
+  }
 
-  @retval EFI_PROTOCOL_ERROR  The RAM map was found, but its size wasn't a
-                              whole multiple of sizeof(EFI_E820_ENTRY64). No
-                              RAM entry was processed.
+  Candidate = E820Entry->BaseAddr + E820Entry->Length;
+  if (Candidate >= BASE_4GB) {
+    return;
+  }
 
-  @return                     Error codes from QemuFwCfgFindFile(). No RAM
-                              entry was processed.
+  if (PlatformInfoHob->LowMemory < Candidate) {
+    DEBUG ((DEBUG_INFO, "%a: LowMemory=0x%Lx\n", __FUNCTION__, Candidate));
+    PlatformInfoHob->LowMemory = (UINT32)Candidate;
+  }
+}
+
+/**
+  Create HOBs for reservations and RAM (except low memory).
+**/
+STATIC
+VOID
+PlatformAddHobCB (
+  IN     EFI_E820_ENTRY64       *E820Entry,
+  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  )
+{
+  UINT64  Base, End;
+
+  Base = E820Entry->BaseAddr;
+  End  = E820Entry->BaseAddr + E820Entry->Length;
+
+  switch (E820Entry->Type) {
+    case EfiAcpiAddressRangeMemory:
+      if (Base >= BASE_4GB) {
+        //
+        // Round up the start address, and round down the end address.
+        //
+        Base = ALIGN_VALUE (Base, (UINT64)EFI_PAGE_SIZE);
+        End  = End & ~(UINT64)EFI_PAGE_MASK;
+        if (Base < End) {
+          DEBUG ((DEBUG_INFO, "%a: HighMemory [0x%Lx, 0x%Lx)\n", __FUNCTION__, Base, End));
+          PlatformAddMemoryRangeHob (Base, End);
+        }
+      }
+
+      break;
+    case EfiAcpiAddressRangeReserved:
+      BuildResourceDescriptorHob (EFI_RESOURCE_MEMORY_RESERVED, 0, Base, End - Base);
+      DEBUG ((DEBUG_INFO, "%a: Reserved [0x%Lx, 0x%Lx)\n", __FUNCTION__, Base, End));
+      break;
+    default:
+      DEBUG ((
+        DEBUG_WARN,
+        "%a: Type %u [0x%Lx, 0x%Lx) (NOT HANDLED)\n",
+        __FUNCTION__,
+        E820Entry->Type,
+        Base,
+        End
+        ));
+      break;
+  }
+}
+
+/**
+  Check whenever the 64bit PCI MMIO window overlaps with a reservation
+  from qemu.  If so move down the MMIO window to resolve the conflict.
+
+  This happens on (virtual) AMD machines with 1TB address space,
+  because the AMD IOMMU uses an address window just below 1TB.
+**/
+STATIC
+VOID
+PlatformReservationConflictCB (
+  IN     EFI_E820_ENTRY64       *E820Entry,
+  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  )
+{
+  UINT64  IntersectionBase;
+  UINT64  IntersectionEnd;
+  UINT64  NewBase;
+
+  IntersectionBase = MAX (
+                       E820Entry->BaseAddr,
+                       PlatformInfoHob->PcdPciMmio64Base
+                       );
+  IntersectionEnd = MIN (
+                      E820Entry->BaseAddr + E820Entry->Length,
+                      PlatformInfoHob->PcdPciMmio64Base +
+                      PlatformInfoHob->PcdPciMmio64Size
+                      );
+
+  if (IntersectionBase >= IntersectionEnd) {
+    return;  // no overlap
+  }
+
+  NewBase = E820Entry->BaseAddr - PlatformInfoHob->PcdPciMmio64Size;
+  NewBase = NewBase & ~(PlatformInfoHob->PcdPciMmio64Size - 1);
+
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: move mmio: 0x%Lx => %Lx\n",
+    __FUNCTION__,
+    PlatformInfoHob->PcdPciMmio64Base,
+    NewBase
+    ));
+  PlatformInfoHob->PcdPciMmio64Base = NewBase;
+}
+
+/**
+  Iterate over the entries in QEMU's fw_cfg E820 RAM map, call the
+  passed callback for each entry.
+
+  @param[in] Callback              The callback function to be called.
+
+  @param[in out]  PlatformInfoHob  PlatformInfo struct which is passed
+                                   through to the callback.
+
+  @retval EFI_SUCCESS              The fw_cfg E820 RAM map was found and processed.
+
+  @retval EFI_PROTOCOL_ERROR       The RAM map was found, but its size wasn't a
+                                   whole multiple of sizeof(EFI_E820_ENTRY64). No
+                                   RAM entry was processed.
+
+  @return                          Error codes from QemuFwCfgFindFile(). No RAM
+                                   entry was processed.
 **/
 STATIC
 EFI_STATUS
-PlatformScanOrAdd64BitE820Ram (
-  IN BOOLEAN  AddHighHob,
-  OUT UINT64  *LowMemory OPTIONAL,
-  OUT UINT64  *MaxAddress OPTIONAL
+PlatformScanE820 (
+  IN      E820_SCAN_CALLBACK     Callback,
+  IN OUT  EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
   EFI_STATUS            Status;
@@ -150,73 +301,10 @@ PlatformScanOrAdd64BitE820Ram (
     return EFI_PROTOCOL_ERROR;
   }
 
-  if (LowMemory != NULL) {
-    *LowMemory = 0;
-  }
-
-  if (MaxAddress != NULL) {
-    *MaxAddress = BASE_4GB;
-  }
-
   QemuFwCfgSelectItem (FwCfgItem);
   for (Processed = 0; Processed < FwCfgSize; Processed += sizeof E820Entry) {
     QemuFwCfgReadBytes (sizeof E820Entry, &E820Entry);
-    DEBUG ((
-      DEBUG_VERBOSE,
-      "%a: Base=0x%Lx Length=0x%Lx Type=%u\n",
-      __FUNCTION__,
-      E820Entry.BaseAddr,
-      E820Entry.Length,
-      E820Entry.Type
-      ));
-    if (E820Entry.Type == EfiAcpiAddressRangeMemory) {
-      if (AddHighHob && (E820Entry.BaseAddr >= BASE_4GB)) {
-        UINT64  Base;
-        UINT64  End;
-
-        //
-        // Round up the start address, and round down the end address.
-        //
-        Base = ALIGN_VALUE (E820Entry.BaseAddr, (UINT64)EFI_PAGE_SIZE);
-        End  = (E820Entry.BaseAddr + E820Entry.Length) &
-               ~(UINT64)EFI_PAGE_MASK;
-        if (Base < End) {
-          PlatformAddMemoryRangeHob (Base, End);
-          DEBUG ((
-            DEBUG_VERBOSE,
-            "%a: PlatformAddMemoryRangeHob [0x%Lx, 0x%Lx)\n",
-            __FUNCTION__,
-            Base,
-            End
-            ));
-        }
-      }
-
-      if (MaxAddress || LowMemory) {
-        UINT64  Candidate;
-
-        Candidate = E820Entry.BaseAddr + E820Entry.Length;
-        if (MaxAddress && (Candidate > *MaxAddress)) {
-          *MaxAddress = Candidate;
-          DEBUG ((
-            DEBUG_VERBOSE,
-            "%a: MaxAddress=0x%Lx\n",
-            __FUNCTION__,
-            *MaxAddress
-            ));
-        }
-
-        if (LowMemory && (Candidate > *LowMemory) && (Candidate < BASE_4GB)) {
-          *LowMemory = Candidate;
-          DEBUG ((
-            DEBUG_VERBOSE,
-            "%a: LowMemory=0x%Lx\n",
-            __FUNCTION__,
-            *LowMemory
-            ));
-        }
-      }
-    }
+    Callback (&E820Entry, PlatformInfoHob);
   }
 
   return EFI_SUCCESS;
@@ -289,25 +377,27 @@ GetHighestSystemMemoryAddressFromPvhMemmap (
   return HighestAddress;
 }
 
-UINT32
+VOID
 EFIAPI
 PlatformGetSystemMemorySizeBelow4gb (
   IN EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
   EFI_STATUS  Status;
-  UINT64      LowerMemorySize = 0;
   UINT8       Cmos0x34;
   UINT8       Cmos0x35;
 
-  if (PlatformInfoHob->HostBridgeDevId == CLOUDHV_DEVICE_ID) {
+  if ((PlatformInfoHob->HostBridgeDevId == CLOUDHV_DEVICE_ID) &&
+      (CcProbe () != CcGuestTypeIntelTdx))
+  {
     // Get the information from PVH memmap
-    return (UINT32)GetHighestSystemMemoryAddressFromPvhMemmap (TRUE);
+    PlatformInfoHob->LowMemory = (UINT32)GetHighestSystemMemoryAddressFromPvhMemmap (TRUE);
+    return;
   }
 
-  Status = PlatformScanOrAdd64BitE820Ram (FALSE, &LowerMemorySize, NULL);
-  if ((Status == EFI_SUCCESS) && (LowerMemorySize > 0)) {
-    return (UINT32)LowerMemorySize;
+  Status = PlatformScanE820 (PlatformGetLowMemoryCB, PlatformInfoHob);
+  if (!EFI_ERROR (Status) && (PlatformInfoHob->LowMemory > 0)) {
+    return;
   }
 
   //
@@ -322,7 +412,7 @@ PlatformGetSystemMemorySizeBelow4gb (
   Cmos0x34 = (UINT8)PlatformCmosRead8 (0x34);
   Cmos0x35 = (UINT8)PlatformCmosRead8 (0x35);
 
-  return (UINT32)(((UINTN)((Cmos0x35 << 8) + Cmos0x34) << 16) + SIZE_16MB);
+  PlatformInfoHob->LowMemory = (UINT32)(((UINTN)((Cmos0x35 << 8) + Cmos0x34) << 16) + SIZE_16MB);
 }
 
 STATIC
@@ -353,22 +443,16 @@ PlatformGetSystemMemorySizeAbove4gb (
   Return the highest address that DXE could possibly use, plus one.
 **/
 STATIC
-UINT64
+VOID
 PlatformGetFirstNonAddress (
   IN OUT  EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
-  UINT64                FirstNonAddress;
   UINT32                FwCfgPciMmio64Mb;
   EFI_STATUS            Status;
   FIRMWARE_CONFIG_ITEM  FwCfgItem;
   UINTN                 FwCfgSize;
   UINT64                HotPlugMemoryEnd;
-
-  //
-  // set FirstNonAddress to suppress incorrect compiler/analyzer warnings
-  //
-  FirstNonAddress = 0;
 
   //
   // If QEMU presents an E820 map, then get the highest exclusive >=4GB RAM
@@ -377,9 +461,10 @@ PlatformGetFirstNonAddress (
   // Otherwise, get the flat size of the memory above 4GB from the CMOS (which
   // can only express a size smaller than 1TB), and add it to 4GB.
   //
-  Status = PlatformScanOrAdd64BitE820Ram (FALSE, NULL, &FirstNonAddress);
+  PlatformInfoHob->FirstNonAddress = BASE_4GB;
+  Status                           = PlatformScanE820 (PlatformGetFirstNonAddressCB, PlatformInfoHob);
   if (EFI_ERROR (Status)) {
-    FirstNonAddress = BASE_4GB + PlatformGetSystemMemorySizeAbove4gb ();
+    PlatformInfoHob->FirstNonAddress = BASE_4GB + PlatformGetSystemMemorySizeAbove4gb ();
   }
 
   //
@@ -389,7 +474,7 @@ PlatformGetFirstNonAddress (
   //
  #ifdef MDE_CPU_IA32
   if (!FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
-    return FirstNonAddress;
+    return;
   }
 
  #endif
@@ -442,7 +527,7 @@ PlatformGetFirstNonAddress (
     // determines the highest address plus one. The memory hotplug area (see
     // below) plays no role for the firmware in this case.
     //
-    return FirstNonAddress;
+    return;
   }
 
   //
@@ -466,15 +551,15 @@ PlatformGetFirstNonAddress (
       HotPlugMemoryEnd
       ));
 
-    ASSERT (HotPlugMemoryEnd >= FirstNonAddress);
-    FirstNonAddress = HotPlugMemoryEnd;
+    ASSERT (HotPlugMemoryEnd >= PlatformInfoHob->FirstNonAddress);
+    PlatformInfoHob->FirstNonAddress = HotPlugMemoryEnd;
   }
 
   //
   // SeaBIOS aligns both boundaries of the 64-bit PCI host aperture to 1GB, so
   // that the host can map it with 1GB hugepages. Follow suit.
   //
-  PlatformInfoHob->PcdPciMmio64Base = ALIGN_VALUE (FirstNonAddress, (UINT64)SIZE_1GB);
+  PlatformInfoHob->PcdPciMmio64Base = ALIGN_VALUE (PlatformInfoHob->FirstNonAddress, (UINT64)SIZE_1GB);
   PlatformInfoHob->PcdPciMmio64Size = ALIGN_VALUE (PlatformInfoHob->PcdPciMmio64Size, (UINT64)SIZE_1GB);
 
   //
@@ -488,44 +573,138 @@ PlatformGetFirstNonAddress (
   //
   // The useful address space ends with the 64-bit PCI host aperture.
   //
-  FirstNonAddress = PlatformInfoHob->PcdPciMmio64Base + PlatformInfoHob->PcdPciMmio64Size;
-  return FirstNonAddress;
+  PlatformInfoHob->FirstNonAddress = PlatformInfoHob->PcdPciMmio64Base + PlatformInfoHob->PcdPciMmio64Size;
+  return;
 }
 
 /*
- * Use CPUID to figure physical address width.  Does *not* work
- * reliable on qemu.  For historical reasons qemu returns phys-bits=40
- * even in case the host machine supports less than that.
+ * Use CPUID to figure physical address width.
  *
- * qemu has a cpu property (host-phys-bits={on,off}) to change that
- * and make sure guest phys-bits are not larger than host phys-bits.,
- * but it is off by default.  Exception: microvm machine type
- * hard-wires that property to on.
+ * Does *not* work reliable on qemu.  For historical reasons qemu
+ * returns phys-bits=40 by default even in case the host machine
+ * supports less than that.
+ *
+ * So we apply the following rules (which can be enabled/disabled
+ * using the QemuQuirk parameter) to figure whenever we can work with
+ * the returned physical address width or not:
+ *
+ *   (1) If it is 41 or higher consider it valid.
+ *   (2) If it is 40 or lower consider it valid in case it matches a
+ *       known-good value for the CPU vendor, which is:
+ *         ->  36 or 39 for Intel
+ *         ->  40 for AMD
+ *   (3) Otherwise consider it invalid.
+ *
+ * Recommendation: Run qemu with host-phys-bits=on.  That will make
+ * sure guest phys-bits is not larger than host phys-bits.  Some
+ * distro builds do that by default.
  */
 VOID
 EFIAPI
 PlatformAddressWidthFromCpuid (
-  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob,
+  IN     BOOLEAN                QemuQuirk
   )
 {
-  UINT32  RegEax;
+  UINT32   RegEax, RegEbx, RegEcx, RegEdx, Max;
+  UINT8    PhysBits;
+  CHAR8    Signature[13] = { 0 };
+  BOOLEAN  Valid         = FALSE;
+  BOOLEAN  Page1GSupport = FALSE;
 
-  AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
-  if (RegEax >= 0x80000008) {
-    AsmCpuid (0x80000008, &RegEax, NULL, NULL, NULL);
-    PlatformInfoHob->PhysMemAddressWidth = (UINT8)RegEax;
-  } else {
-    PlatformInfoHob->PhysMemAddressWidth = 36;
+  AsmCpuid (0x80000000, &RegEax, &RegEbx, &RegEcx, &RegEdx);
+  *(UINT32 *)(Signature + 0) = RegEbx;
+  *(UINT32 *)(Signature + 4) = RegEdx;
+  *(UINT32 *)(Signature + 8) = RegEcx;
+  Max                        = RegEax;
+
+  if (Max >= 0x80000001) {
+    AsmCpuid (0x80000001, NULL, NULL, NULL, &RegEdx);
+    if ((RegEdx & BIT26) != 0) {
+      Page1GSupport = TRUE;
+    }
   }
 
-  PlatformInfoHob->FirstNonAddress = LShiftU64 (1, PlatformInfoHob->PhysMemAddressWidth);
+  if (Max >= 0x80000008) {
+    AsmCpuid (0x80000008, &RegEax, NULL, NULL, NULL);
+    PhysBits = (UINT8)RegEax;
+  } else {
+    PhysBits = 36;
+  }
+
+  if (!QemuQuirk) {
+    Valid = TRUE;
+  } else if (PhysBits >= 41) {
+    Valid = TRUE;
+  } else if (AsciiStrCmp (Signature, "GenuineIntel") == 0) {
+    if ((PhysBits == 36) || (PhysBits == 39)) {
+      Valid = TRUE;
+    }
+  } else if (AsciiStrCmp (Signature, "AuthenticAMD") == 0) {
+    if (PhysBits == 40) {
+      Valid = TRUE;
+    }
+  }
 
   DEBUG ((
     DEBUG_INFO,
-    "%a: cpuid: phys-bits is %d\n",
+    "%a: Signature: '%a', PhysBits: %d, QemuQuirk: %a, Valid: %a\n",
     __FUNCTION__,
-    PlatformInfoHob->PhysMemAddressWidth
+    Signature,
+    PhysBits,
+    QemuQuirk ? "On" : "Off",
+    Valid ? "Yes" : "No"
     ));
+
+  if (Valid) {
+    if (PhysBits > 47) {
+      /*
+       * Avoid 5-level paging altogether for now, which limits
+       * PhysBits to 48.  Also avoid using address bit 48, due to sign
+       * extension we can't identity-map these addresses (and lots of
+       * places in edk2 assume we have everything identity-mapped).
+       * So the actual limit is 47.
+       */
+      DEBUG ((DEBUG_INFO, "%a: limit PhysBits to 47 (avoid 5-level paging)\n", __func__));
+      PhysBits = 47;
+    }
+
+    if (!Page1GSupport && (PhysBits > 40)) {
+      DEBUG ((DEBUG_INFO, "%a: limit PhysBits to 40 (no 1G pages available)\n", __func__));
+      PhysBits = 40;
+    }
+
+    PlatformInfoHob->PhysMemAddressWidth = PhysBits;
+    PlatformInfoHob->FirstNonAddress     = LShiftU64 (1, PlatformInfoHob->PhysMemAddressWidth);
+  }
+}
+
+VOID
+EFIAPI
+PlatformDynamicMmioWindow (
+  IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  )
+{
+  UINT64  AddrSpace, MmioSpace;
+
+  AddrSpace = LShiftU64 (1, PlatformInfoHob->PhysMemAddressWidth);
+  MmioSpace = LShiftU64 (1, PlatformInfoHob->PhysMemAddressWidth - 3);
+
+  if ((PlatformInfoHob->PcdPciMmio64Size < MmioSpace) &&
+      (PlatformInfoHob->PcdPciMmio64Base + MmioSpace < AddrSpace))
+  {
+    DEBUG ((DEBUG_INFO, "%a: using dynamic mmio window\n", __func__));
+    DEBUG ((DEBUG_INFO, "%a:   Addr Space 0x%Lx (%Ld GB)\n", __func__, AddrSpace, RShiftU64 (AddrSpace, 30)));
+    DEBUG ((DEBUG_INFO, "%a:   MMIO Space 0x%Lx (%Ld GB)\n", __func__, MmioSpace, RShiftU64 (MmioSpace, 30)));
+    PlatformInfoHob->PcdPciMmio64Size = MmioSpace;
+    PlatformInfoHob->PcdPciMmio64Base = AddrSpace - MmioSpace;
+    PlatformScanE820 (PlatformReservationConflictCB, PlatformInfoHob);
+  } else {
+    DEBUG ((DEBUG_INFO, "%a: using classic mmio window\n", __func__));
+  }
+
+  DEBUG ((DEBUG_INFO, "%a:   Pci64 Base 0x%Lx\n", __func__, PlatformInfoHob->PcdPciMmio64Base));
+  DEBUG ((DEBUG_INFO, "%a:   Pci64 Size 0x%Lx\n", __func__, PlatformInfoHob->PcdPciMmio64Size));
 }
 
 /**
@@ -657,12 +836,11 @@ PlatformAddressWidthInitialization (
   IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
-  UINT64      FirstNonAddress;
   UINT8       PhysMemAddressWidth;
   EFI_STATUS  Status;
 
   if (PlatformInfoHob->HostBridgeDevId == 0xffff /* microvm */) {
-    PlatformAddressWidthFromCpuid (PlatformInfoHob);
+    PlatformAddressWidthFromCpuid (PlatformInfoHob, FALSE);
     return;
   }
 
@@ -670,7 +848,7 @@ PlatformAddressWidthInitialization (
   // First scan host-provided hardware information to assess if the address
   // space is already known. If so, guest must use those values.
   //
-  Status = PlatformScanHostProvided64BitPciMmioEnd (&FirstNonAddress);
+  Status = PlatformScanHostProvided64BitPciMmioEnd (&PlatformInfoHob->FirstNonAddress);
 
   if (EFI_ERROR (Status)) {
     //
@@ -682,16 +860,29 @@ PlatformAddressWidthInitialization (
     // The DXL IPL keys off of the physical address bits advertized in the CPU
     // HOB. To conserve memory, we calculate the minimum address width here.
     //
-    FirstNonAddress = PlatformGetFirstNonAddress (PlatformInfoHob);
+    PlatformGetFirstNonAddress (PlatformInfoHob);
   }
 
-  PhysMemAddressWidth = (UINT8)HighBitSet64 (FirstNonAddress);
+  PlatformAddressWidthFromCpuid (PlatformInfoHob, TRUE);
+  if (PlatformInfoHob->PhysMemAddressWidth != 0) {
+    // physical address width is known
+    PlatformDynamicMmioWindow (PlatformInfoHob);
+    return;
+  }
+
+  //
+  // physical address width is NOT known
+  //   -> do some guess work, mostly based on installed memory
+  //   -> try be conservstibe to stay below the guaranteed minimum of
+  //      36 phys bits (aka 64 GB).
+  //
+  PhysMemAddressWidth = (UINT8)HighBitSet64 (PlatformInfoHob->FirstNonAddress);
 
   //
   // If FirstNonAddress is not an integral power of two, then we need an
   // additional bit.
   //
-  if ((FirstNonAddress & (FirstNonAddress - 1)) != 0) {
+  if ((PlatformInfoHob->FirstNonAddress & (PlatformInfoHob->FirstNonAddress - 1)) != 0) {
     ++PhysMemAddressWidth;
   }
 
@@ -719,7 +910,6 @@ PlatformAddressWidthInitialization (
   ASSERT (PhysMemAddressWidth <= 48);
  #endif
 
-  PlatformInfoHob->FirstNonAddress     = FirstNonAddress;
   PlatformInfoHob->PhysMemAddressWidth = PhysMemAddressWidth;
 }
 
@@ -759,7 +949,6 @@ PlatformQemuInitializeRam (
   IN EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
-  UINT64         LowerMemorySize;
   UINT64         UpperMemorySize;
   MTRR_SETTINGS  MtrrSettings;
   EFI_STATUS     Status;
@@ -769,7 +958,7 @@ PlatformQemuInitializeRam (
   //
   // Determine total memory size available
   //
-  LowerMemorySize = PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
+  PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
 
   if (PlatformInfoHob->BootMode == BOOT_ON_S3_RESUME) {
     //
@@ -803,14 +992,14 @@ PlatformQemuInitializeRam (
       UINT32  TsegSize;
 
       TsegSize = PlatformInfoHob->Q35TsegMbytes * SIZE_1MB;
-      PlatformAddMemoryRangeHob (BASE_1MB, LowerMemorySize - TsegSize);
+      PlatformAddMemoryRangeHob (BASE_1MB, PlatformInfoHob->LowMemory - TsegSize);
       PlatformAddReservedMemoryBaseSizeHob (
-        LowerMemorySize - TsegSize,
+        PlatformInfoHob->LowMemory - TsegSize,
         TsegSize,
         TRUE
         );
     } else {
-      PlatformAddMemoryRangeHob (BASE_1MB, LowerMemorySize);
+      PlatformAddMemoryRangeHob (BASE_1MB, PlatformInfoHob->LowMemory);
     }
 
     //
@@ -818,7 +1007,7 @@ PlatformQemuInitializeRam (
     // entries. Otherwise, create a single memory HOB with the flat >=4GB
     // memory size read from the CMOS.
     //
-    Status = PlatformScanOrAdd64BitE820Ram (TRUE, NULL, NULL);
+    Status = PlatformScanE820 (PlatformAddHobCB, PlatformInfoHob);
     if (EFI_ERROR (Status)) {
       UpperMemorySize = PlatformGetSystemMemorySizeAbove4gb ();
       if (UpperMemorySize != 0) {
@@ -830,7 +1019,7 @@ PlatformQemuInitializeRam (
   //
   // We'd like to keep the following ranges uncached:
   // - [640 KB, 1 MB)
-  // - [LowerMemorySize, 4 GB)
+  // - [Uc32Base, 4 GB)
   //
   // Everything else should be WB. Unfortunately, programming the inverse (ie.
   // keeping the default UC, and configuring the complement set of the above as
@@ -988,9 +1177,10 @@ PlatformQemuInitializeRamForS3 (
       // Make sure the TSEG area that we reported as a reserved memory resource
       // cannot be used for reserved memory allocations.
       //
+      PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
       TsegSize = PlatformInfoHob->Q35TsegMbytes * SIZE_1MB;
       BuildMemoryAllocationHob (
-        PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob) - TsegSize,
+        PlatformInfoHob->LowMemory - TsegSize,
         TsegSize,
         EfiReservedMemoryType
         );

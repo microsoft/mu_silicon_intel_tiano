@@ -102,26 +102,42 @@ F: */RiscV64/
 M: Sunil V L <sunilvl@ventanamicro.com> [vlsunil]
 R: Daniel Schaefer <git@danielschaefer.me> [JohnAZoidberg]
 
+LOONGARCH64
+F: */LoongArch64/
+M: Chao Li <lichao@loongson.cn> [kilaterlee]
+M: Baoqi Zhang <zhangbaoqi@loongson.cn> [zhangbaoqi-ls]
+R: Dongyan Qian <qiandongyan@loongson.cn> [MarsDoge]
+
 EDK II Continuous Integration:
 ------------------------------
 .azurepipelines/
 F: .azurepipelines/
 M: Sean Brogan <sean.brogan@microsoft.com> [spbrogan]
-M: Bret Barkelew <Bret.Barkelew@microsoft.com> [corthon]
+M: Michael Kubacki <mikuback@linux.microsoft.com> [makubacki]
 R: Michael D Kinney <michael.d.kinney@intel.com> [mdkinney]
 R: Liming Gao <gaoliming@byosoft.com.cn> [lgao4]
+
+.devcontainer/
+F: .devcontainer/
+M: Michael Kubacki <mikuback@linux.microsoft.com> [makubacki]
+R: Chris Fernald <chris.fernald@outlook.com> [cfernald]
+
+.github/
+F: .github/
+M: Sean Brogan <sean.brogan@microsoft.com> [spbrogan]
+M: Michael Kubacki <mikuback@linux.microsoft.com> [makubacki]
+R: Michael D Kinney <michael.d.kinney@intel.com> [mdkinney]
 
 .mergify/
 F: .mergify/
 M: Michael D Kinney <michael.d.kinney@intel.com> [mdkinney]
 M: Liming Gao <gaoliming@byosoft.com.cn> [lgao4]
 R: Sean Brogan <sean.brogan@microsoft.com> [spbrogan]
-R: Bret Barkelew <Bret.Barkelew@microsoft.com> [corthon]
 
 .pytool/
 F: .pytool/
 M: Sean Brogan <sean.brogan@microsoft.com> [spbrogan]
-M: Bret Barkelew <Bret.Barkelew@microsoft.com> [corthon]
+M: Michael Kubacki <mikuback@linux.microsoft.com> [makubacki]
 R: Michael D Kinney <michael.d.kinney@intel.com> [mdkinney]
 R: Liming Gao <gaoliming@byosoft.com.cn> [lgao4]
 
@@ -178,6 +194,7 @@ F: DynamicTablesPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/DynamicTablesPkg
 M: Sami Mujawar <Sami.Mujawar@arm.com> [samimujawar]
 M: Alexei Fedorov <Alexei.Fedorov@arm.com> [AlexeiFedorov]
+R: Pierre Gondois <pierre.gondois@arm.com> [pierregondois]
 
 EmbeddedPkg
 F: EmbeddedPkg/
@@ -197,7 +214,7 @@ S: Maintained
 EmulatorPkg: Redfish-related modules
 F: EmulatorPkg/*Redfish*
 M: Abner Chang <abner.chang@amd.com> [changab]
-R: Nickle Wang <nickle@csie.io> [nicklela]
+M: Nickle Wang <nicklew@nvidia.com> [nicklela]
 
 FatPkg
 F: FatPkg/
@@ -364,7 +381,7 @@ F: MdeModulePkg/*Smi*/
 F: MdeModulePkg/*Smm*/
 F: MdeModulePkg/Include/*Smi*.h
 F: MdeModulePkg/Include/*Smm*.h
-R: Eric Dong <eric.dong@intel.com> [ydong10]
+R: Jiaxin Wu <jiaxin.wu@intel.com> [jiaxinwu]
 R: Ray Ni <ray.ni@intel.com> [niruiyu]
 
 MdeModulePkg: Pei Core
@@ -407,6 +424,7 @@ MdeModulePkg: Universal Payload definitions
 F: MdeModulePkg/Include/UniversalPayload/
 R: Zhiguang Liu <zhiguang.liu@intel.com> [LiuZhiguang001]
 R: Ray Ni <ray.ni@intel.com> [niruiyu]
+R: Gua Guo <gua.guo@intel.com> [gguo11837463]
 
 MdePkg
 F: MdePkg/
@@ -419,7 +437,6 @@ NetworkPkg
 F: NetworkPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/NetworkPkg
 M: Maciej Rabeda <maciej.rabeda@linux.intel.com> [mrabeda]
-R: Jiaxin Wu <jiaxin.wu@intel.com> [jiaxinwu]
 R: Siyuan Fu <siyuan.fu@intel.com> [sfu5]
 
 OvmfPkg
@@ -465,19 +482,19 @@ F: OvmfPkg/AmdSev/
 F: OvmfPkg/AmdSevDxe/
 F: OvmfPkg/Include/Guid/ConfidentialComputingSecret.h
 F: OvmfPkg/Include/Library/MemEncryptSevLib.h
-F: OvmfPkg/IoMmuDxe/AmdSevIoMmu.*
+F: OvmfPkg/IoMmuDxe/CcIoMmu.*
 F: OvmfPkg/Library/BaseMemEncryptSevLib/
 F: OvmfPkg/Library/PlatformBootManagerLibGrub/
-F: OvmfPkg/Library/VmgExitLib/
+F: OvmfPkg/Library/CcExitLib/
 F: OvmfPkg/PlatformPei/AmdSev.c
 F: OvmfPkg/ResetVector/
 F: OvmfPkg/Sec/
-R: Brijesh Singh <brijesh.singh@amd.com> [codomania]
 R: Erdem Aktas <erdemaktas@google.com> [ruleof2]
 R: James Bottomley <jejb@linux.ibm.com> [jejb]
 R: Jiewen Yao <jiewen.yao@intel.com> [jyao1]
 R: Min Xu <min.m.xu@intel.com> [mxu9]
 R: Tom Lendacky <thomas.lendacky@amd.com> [tlendacky]
+R: Michael Roth <michael.roth@amd.com> [mdroth]
 
 OvmfPkg: FDT related modules
 F: OvmfPkg/Fdt
@@ -524,8 +541,13 @@ F: OvmfPkg/XenIoPvhDxe/
 F: OvmfPkg/XenPlatformPei/
 F: OvmfPkg/XenPvBlkDxe/
 F: OvmfPkg/XenResetVector/
-R: Anthony Perard <anthony.perard@citrix.com> [sheep]
+R: Anthony Perard <anthony.perard@citrix.com> [tperard]
 R: Julien Grall <julien@xen.org> [jgrall]
+
+OvmfPkg: RISC-V Qemu Virt Platform
+F: OvmfPkg/RiscVVirt
+R: Sunil V L <sunilvl@ventanamicro.com> [vlsunil]
+R: Andrei Warkentin <andrei.warkentin@intel.com> [andreiw]
 
 PcAtChipsetPkg
 F: PcAtChipsetPkg/
@@ -543,7 +565,8 @@ R: Ankit Sinha <ankit.sinha@intel.com> [ankit13s]
 RedfishPkg: Redfish related modules
 F: RedfishPkg/
 M: Abner Chang <abner.chang@amd.com> [changab]
-R: Nickle Wang <nickle@csie.io> [nicklela]
+M: Nickle Wang <nicklew@nvidia.com> [nicklela]
+R: Igor Kulchytskyy <igork@ami.com> [igorkulchytskyy]
 
 SecurityPkg
 F: SecurityPkg/
@@ -591,6 +614,7 @@ W: https://github.com/tianocore/tianocore.github.io/wiki/UefiCpuPkg
 M: Eric Dong <eric.dong@intel.com> [ydong10]
 M: Ray Ni <ray.ni@intel.com> [niruiyu]
 R: Rahul Kumar <rahul1.kumar@intel.com> [rahul1-kumar]
+R: Gerd Hoffmann <kraxel@redhat.com> [kraxel]
 
 UefiCpuPkg: Sec related modules
 F: UefiCpuPkg/SecCore/
@@ -604,6 +628,8 @@ W: https://github.com/tianocore/tianocore.github.io/wiki/UefiPayloadPkg
 M: Guo Dong <guo.dong@intel.com> [gdong1]
 M: Ray Ni <ray.ni@intel.com> [niruiyu]
 M: Sean Rhodes <sean@starlabs.systems> [Sean-StarLabs]
+M: James Lu <james.lu@intel.com> [jameslu8]
+R: Gua Guo <gua.guo@intel.com> [gguo11837463]
 S: Maintained
 
 UnitTestFrameworkPkg
@@ -611,5 +637,4 @@ F: UnitTestFrameworkPkg/
 M: Michael D Kinney <michael.d.kinney@intel.com> [mdkinney]
 M: Michael Kubacki <mikuback@linux.microsoft.com> [makubacki]
 R: Sean Brogan <sean.brogan@microsoft.com> [spbrogan]
-R: Bret Barkelew <Bret.Barkelew@microsoft.com> [corthon]
 S: Maintained

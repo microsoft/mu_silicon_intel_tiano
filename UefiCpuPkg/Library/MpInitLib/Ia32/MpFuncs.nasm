@@ -179,6 +179,14 @@ ProgramStack:
     mov         esp, dword [edi + CPU_INFO_IN_HOB.ApTopOfStack]
 
 CProcedureInvoke:
+    ;
+    ; Reserve 4 bytes for CpuMpData.
+    ; When the AP wakes up again via INIT-SIPI-SIPI, push 0 will cause the existing CpuMpData to be overwritten with 0.
+    ; CpuMpData is filled in via InitializeApData() during the first time INIT-SIPI-SIPI,
+    ; while overwirrten may occurs when under ApInHltLoop but InitFlag is not set to ApInitConfig.
+    ; Therefore reservation is implemented by sub esp instead of push 0.
+    ;
+    sub        esp, 4
     push       ebp               ; push BIST data at top of AP stack
     xor        ebp, ebp          ; clear ebp for call stack trace
     push       ebp
@@ -284,15 +292,8 @@ ASM_PFX(AsmExchangeRole):
     ; edi contains OthersInfo pointer
     mov        edi, [ebp + 28h]
 
-    ;Store EFLAGS, GDTR and IDTR register to stack
+    ;Store EFLAGS to stack
     pushfd
-    mov        eax, cr4
-    push       eax       ; push cr4 firstly
-    mov        eax, cr0
-    push       eax
-
-    sgdt       [esi + CPU_EXCHANGE_ROLE_INFO.Gdtr]
-    sidt       [esi + CPU_EXCHANGE_ROLE_INFO.Idtr]
 
     ; Store the its StackPointer
     mov        [esi + CPU_EXCHANGE_ROLE_INFO.StackPointer],esp
@@ -308,13 +309,6 @@ WaitForOtherStored:
     jmp        WaitForOtherStored
 
 OtherStored:
-    ; Since another CPU already stored its state, load them
-    ; load GDTR value
-    lgdt       [edi + CPU_EXCHANGE_ROLE_INFO.Gdtr]
-
-    ; load IDTR value
-    lidt       [edi + CPU_EXCHANGE_ROLE_INFO.Idtr]
-
     ; load its future StackPointer
     mov        esp, [edi + CPU_EXCHANGE_ROLE_INFO.StackPointer]
 
@@ -331,10 +325,6 @@ WaitForOtherLoaded:
 
 OtherLoaded:
     ; since the other CPU already get the data it want, leave this procedure
-    pop        eax
-    mov        cr0, eax
-    pop        eax
-    mov        cr4, eax
     popfd
 
     popad

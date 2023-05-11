@@ -26,6 +26,7 @@ typedef struct {
   BOOLEAN              Q35SmramAtDefaultSmbase;
   UINT16               Q35TsegMbytes;
 
+  UINT32               LowMemory;
   UINT64               FirstNonAddress;
   UINT8                PhysMemAddressWidth;
   UINT32               Uc32Base;
@@ -48,6 +49,12 @@ typedef struct {
 
   UINT32               S3AcpiReservedMemoryBase;
   UINT32               S3AcpiReservedMemorySize;
+
+  UINT64               FeatureControlValue;
+
+  BOOLEAN              QemuFwCfgChecked;
+  BOOLEAN              QemuFwCfgSupported;
+  BOOLEAN              QemuFwCfgDmaSupported;
 } EFI_HOB_PLATFORM_INFO;
 #pragma pack()
 
@@ -138,7 +145,7 @@ PlatformQemuUc32BaseInitialization (
   IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   );
 
-UINT32
+VOID
 EFIAPI
 PlatformGetSystemMemorySizeBelow4gb (
   IN EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
@@ -204,23 +211,6 @@ PlatformMaxCpuCountInitialization (
   );
 
 /**
-  In Tdx guest, some information need to be passed from host VMM to guest
-  firmware. For example, the memory resource, etc. These information are
-  prepared by host VMM and put in HobList which is described in TdxMetadata.
-
-  Information in HobList is treated as external input. From the security
-  perspective before it is consumed, it should be validated.
-
-  @retval   EFI_SUCCESS   Successfully process the hoblist
-  @retval   Others        Other error as indicated
-**/
-EFI_STATUS
-EFIAPI
-ProcessTdxHobList (
-  VOID
-  );
-
-/**
   In Tdx guest, the system memory is passed in TdHob by host VMM. So
   the major task of PlatformTdxPublishRamRegions is to walk thru the
   TdHob list and transfer the ResourceDescriptorHob and MemoryAllocationHob
@@ -232,6 +222,57 @@ VOID
 EFIAPI
 PlatformTdxPublishRamRegions (
   VOID
+  );
+
+/**
+  Check the integrity of NvVarStore.
+
+  @param[in] NvVarStoreBase - A pointer to NvVarStore header
+  @param[in] NvVarStoreSize - NvVarStore size
+
+  @retval  TRUE   - The NvVarStore is valid.
+  @retval  FALSE  - The NvVarStore is invalid.
+
+**/
+BOOLEAN
+EFIAPI
+PlatformValidateNvVarStore (
+  IN UINT8   *NvVarStoreBase,
+  IN UINT32  NvVarStoreSize
+  );
+
+/**
+ Allocate storage for NV variables early on so it will be
+ at a consistent address.  Since VM memory is preserved
+ across reboots, this allows the NV variable storage to survive
+ a VM reboot.
+
+ *
+ * @retval VOID* The pointer to the storage for NV Variables
+ */
+VOID *
+EFIAPI
+PlatformReserveEmuVariableNvStore (
+  VOID
+  );
+
+/**
+ When OVMF is lauched with -bios parameter, UEFI variables will be
+ partially emulated, and non-volatile variables may lose their contents
+ after a reboot. This makes the secure boot feature not working.
+
+ This function is used to initialize the EmuVariableNvStore
+ with the conent in PcdOvmfFlashNvStorageVariableBase.
+
+ @param[in] EmuVariableNvStore      - A pointer to EmuVariableNvStore
+
+ @retval  EFI_SUCCESS   - Successfully init the EmuVariableNvStore
+ @retval  Others        - As the error code indicates
+ */
+EFI_STATUS
+EFIAPI
+PlatformInitEmuVariableNvStore (
+  IN VOID  *EmuVariableNvStore
   );
 
 #endif // PLATFORM_INIT_LIB_H_

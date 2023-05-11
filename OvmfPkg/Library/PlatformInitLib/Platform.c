@@ -25,13 +25,19 @@
 #include <IndustryStandard/Pci22.h>
 #include <IndustryStandard/Q35MchIch9.h>
 #include <IndustryStandard/QemuCpuHotplug.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Library/QemuFwCfgLib.h>
 #include <Library/QemuFwCfgS3Lib.h>
 #include <Library/QemuFwCfgSimpleParserLib.h>
 #include <Library/PciLib.h>
+#include <Guid/SystemNvDataGuid.h>
+#include <Guid/VariableFormat.h>
 #include <OvmfPlatforms.h>
 
 #include <Library/PlatformInitLib.h>
+
+#define CPUHP_BUGCHECK_OVERRIDE_FWCFG_FILE \
+  "opt/org.tianocore/X-Cpuhp-Bugcheck-Override"
 
 VOID
 EFIAPI
@@ -125,7 +131,6 @@ PlatformMemMapInitialization (
 {
   UINT64  PciIoBase;
   UINT64  PciIoSize;
-  UINT32  TopOfLowRam;
   UINT64  PciExBarBase;
   UINT32  PciBase;
   UINT32  PciSize;
@@ -147,7 +152,7 @@ PlatformMemMapInitialization (
     return;
   }
 
-  TopOfLowRam  = PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
+  PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
   PciExBarBase = 0;
   if (PlatformInfoHob->HostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
     //
@@ -155,11 +160,11 @@ PlatformMemMapInitialization (
     // the base of the 32-bit PCI host aperture.
     //
     PciExBarBase = PcdGet64 (PcdPciExpressBaseAddress);
-    ASSERT (TopOfLowRam <= PciExBarBase);
+    ASSERT (PlatformInfoHob->LowMemory <= PciExBarBase);
     ASSERT (PciExBarBase <= MAX_UINT32 - SIZE_256MB);
     PciBase = (UINT32)(PciExBarBase + SIZE_256MB);
   } else {
-    ASSERT (TopOfLowRam <= PlatformInfoHob->Uc32Base);
+    ASSERT (PlatformInfoHob->LowMemory <= PlatformInfoHob->Uc32Base);
     PciBase = PlatformInfoHob->Uc32Base;
   }
 
@@ -403,6 +408,142 @@ PlatformMiscInitialization (
 }
 
 /**
+  Check for various QEMU bugs concerning CPU numbers.
+
+  Compensate for those bugs if various conditions are satisfied, by updating a
+  suitable subset of the input-output parameters. The function may not return
+  (it may hang deliberately), even in RELEASE builds, if the QEMU bug is
+  impossible to cover up.
+
+  @param[in,out] BootCpuCount  On input, the boot CPU count reported by QEMU via
+                               fw_cfg (QemuFwCfgItemSmpCpuCount). The caller is
+                               responsible for ensuring (BootCpuCount > 0); that
+                               is, if QEMU does not provide the boot CPU count
+                               via fw_cfg *at all*, then this function must not
+                               be called.
+
+  @param[in,out] Present       On input, the number of present-at-boot CPUs, as
+                               reported by QEMU through the modern CPU hotplug
+                               register block.
+
+  @param[in,out] Possible      On input, the number of possible CPUs, as
+                               reported by QEMU through the modern CPU hotplug
+                               register block.
+**/
+STATIC
+VOID
+PlatformCpuCountBugCheck (
+  IN OUT UINT16  *BootCpuCount,
+  IN OUT UINT32  *Present,
+  IN OUT UINT32  *Possible
+  )
+{
+  ASSERT (*BootCpuCount > 0);
+
+  //
+  // Sanity check: we need at least 1 present CPU (CPU#0 is always present).
+  //
+  // The legacy-to-modern switching of the CPU hotplug register block got broken
+  // (for TCG) in QEMU v5.1.0. Refer to "IO port write width clamping differs
+  // between TCG and KVM" at
+  // <http://mid.mail-archive.com/aaedee84-d3ed-a4f9-21e7-d221a28d1683@redhat.com>
+  // or at
+  // <https://lists.gnu.org/archive/html/qemu-devel/2023-01/msg00199.html>.
+  //
+  // QEMU received the fix in commit dab30fbef389 ("acpi: cpuhp: fix
+  // guest-visible maximum access size to the legacy reg block", 2023-01-08), to
+  // be included in QEMU v8.0.0.
+  //
+  // If we're affected by this QEMU bug, then we must not continue: it confuses
+  // the multiprocessing in UefiCpuPkg/Library/MpInitLib, and breaks CPU
+  // hot(un)plug with SMI in OvmfPkg/CpuHotplugSmm.
+  //
+  if (*Present == 0) {
+    UINTN                      Idx;
+    STATIC CONST CHAR8 *CONST  Message[] = {
+      "Broken CPU hotplug register block found. Update QEMU to version 8+, or",
+      "to a stable release with commit dab30fbef389 backported. Refer to",
+      "<https://bugzilla.tianocore.org/show_bug.cgi?id=4250>.",
+      "Consequences of the QEMU bug may include, but are not limited to:",
+      "- all firmware logic, dependent on the CPU hotplug register block,",
+      "  being confused, for example, multiprocessing-related logic;",
+      "- guest OS data loss, including filesystem corruption, due to crash or",
+      "  hang during ACPI S3 resume;",
+      "- SMM privilege escalation, by a malicious guest OS or 3rd partty UEFI",
+      "  agent, against the platform firmware.",
+      "These symptoms need not necessarily be limited to the QEMU user",
+      "attempting to hot(un)plug a CPU.",
+      "The firmware will now stop (hang) deliberately, in order to prevent the",
+      "above symptoms.",
+      "You can forcibly override the hang, *at your own risk*, with the",
+      "following *experimental* QEMU command line option:",
+      "  -fw_cfg name=" CPUHP_BUGCHECK_OVERRIDE_FWCFG_FILE ",string=yes",
+      "Please only report such bugs that you can reproduce *without* the",
+      "override.",
+    };
+    RETURN_STATUS              ParseStatus;
+    BOOLEAN                    Override;
+
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: Present=%u Possible=%u\n",
+      __FUNCTION__,
+      *Present,
+      *Possible
+      ));
+    for (Idx = 0; Idx < ARRAY_SIZE (Message); ++Idx) {
+      DEBUG ((DEBUG_ERROR, "%a: %a\n", __FUNCTION__, Message[Idx]));
+    }
+
+    ParseStatus = QemuFwCfgParseBool (
+                    CPUHP_BUGCHECK_OVERRIDE_FWCFG_FILE,
+                    &Override
+                    );
+    if (!RETURN_ERROR (ParseStatus) && Override) {
+      DEBUG ((
+        DEBUG_WARN,
+        "%a: \"%a\" active. You've been warned.\n",
+        __FUNCTION__,
+        CPUHP_BUGCHECK_OVERRIDE_FWCFG_FILE
+        ));
+      //
+      // The bug is in QEMU v5.1.0+, where we're not affected by the QEMU v2.7
+      // reset bug, so BootCpuCount from fw_cfg is reliable. Assume a fully
+      // populated topology, like when the modern CPU hotplug interface is
+      // unavailable.
+      //
+      *Present  = *BootCpuCount;
+      *Possible = *BootCpuCount;
+      return;
+    }
+
+    ASSERT (FALSE);
+    CpuDeadLoop ();
+  }
+
+  //
+  // Sanity check: fw_cfg and the modern CPU hotplug interface should expose the
+  // same boot CPU count.
+  //
+  if (*BootCpuCount != *Present) {
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: QEMU v2.7 reset bug: BootCpuCount=%d Present=%u\n",
+      __FUNCTION__,
+      *BootCpuCount,
+      *Present
+      ));
+    //
+    // The handling of QemuFwCfgItemSmpCpuCount, across CPU hotplug plus
+    // platform reset (including S3), was corrected in QEMU commit e3cadac073a9
+    // ("pc: fix FW_CFG_NB_CPUS to account for -device added CPUs", 2016-11-16),
+    // part of release v2.8.0.
+    //
+    *BootCpuCount = (UINT16)*Present;
+  }
+}
+
+/**
   Fetch the boot CPU count and the possible CPU count from QEMU, and expose
   them to UefiCpuPkg modules.
 **/
@@ -516,8 +657,8 @@ PlatformMaxCpuCountInitialization (
         UINT8  CpuStatus;
 
         //
-        // Read the status of the currently selected CPU. This will help with a
-        // sanity check against "BootCpuCount".
+        // Read the status of the currently selected CPU. This will help with
+        // various CPU count sanity checks.
         //
         CpuStatus = IoRead8 (CpuHpBase + QEMU_CPUHP_R_CPU_STAT);
         if ((CpuStatus & QEMU_CPUHP_STAT_ENABLED) != 0) {
@@ -538,27 +679,10 @@ PlatformMaxCpuCountInitialization (
         ASSERT (Selected == Possible || Selected == 0);
       } while (Selected > 0);
 
-      //
-      // Sanity check: fw_cfg and the modern CPU hotplug interface should
-      // return the same boot CPU count.
-      //
-      if (BootCpuCount != Present) {
-        DEBUG ((
-          DEBUG_WARN,
-          "%a: QEMU v2.7 reset bug: BootCpuCount=%d "
-          "Present=%u\n",
-          __FUNCTION__,
-          BootCpuCount,
-          Present
-          ));
-        //
-        // The handling of QemuFwCfgItemSmpCpuCount, across CPU hotplug plus
-        // platform reset (including S3), was corrected in QEMU commit
-        // e3cadac073a9 ("pc: fix FW_CFG_NB_CPUS to account for -device added
-        // CPUs", 2016-11-16), part of release v2.8.0.
-        //
-        BootCpuCount = (UINT16)Present;
-      }
+      PlatformCpuCountBugCheck (&BootCpuCount, &Present, &Possible);
+      ASSERT (Present > 0);
+      ASSERT (Present <= Possible);
+      ASSERT (BootCpuCount == Present);
 
       MaxCpuCount = Possible;
     }
@@ -575,4 +699,241 @@ PlatformMaxCpuCountInitialization (
 
   PlatformInfoHob->PcdCpuMaxLogicalProcessorNumber  = MaxCpuCount;
   PlatformInfoHob->PcdCpuBootLogicalProcessorNumber = BootCpuCount;
+}
+
+/**
+  Check padding data all bit should be 1.
+
+  @param[in] Buffer     - A pointer to buffer header
+  @param[in] BufferSize - Buffer size
+
+  @retval  TRUE   - The padding data is valid.
+  @retval  TRUE  - The padding data is invalid.
+
+**/
+BOOLEAN
+CheckPaddingData (
+  IN UINT8   *Buffer,
+  IN UINT32  BufferSize
+  )
+{
+  UINT32  index;
+
+  for (index = 0; index < BufferSize; index++) {
+    if (Buffer[index] != 0xFF) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+  Check the integrity of NvVarStore.
+
+  @param[in] NvVarStoreBase - A pointer to NvVarStore header
+  @param[in] NvVarStoreSize - NvVarStore size
+
+  @retval  TRUE   - The NvVarStore is valid.
+  @retval  FALSE  - The NvVarStore is invalid.
+
+**/
+BOOLEAN
+EFIAPI
+PlatformValidateNvVarStore (
+  IN UINT8   *NvVarStoreBase,
+  IN UINT32  NvVarStoreSize
+  )
+{
+  UINT16                         Checksum;
+  UINTN                          VariableBase;
+  UINT32                         VariableOffset;
+  UINT32                         VariableOffsetBeforeAlign;
+  EFI_FIRMWARE_VOLUME_HEADER     *NvVarStoreFvHeader;
+  VARIABLE_STORE_HEADER          *NvVarStoreHeader;
+  AUTHENTICATED_VARIABLE_HEADER  *VariableHeader;
+
+  static EFI_GUID  FvHdrGUID       = EFI_SYSTEM_NV_DATA_FV_GUID;
+  static EFI_GUID  VarStoreHdrGUID = EFI_AUTHENTICATED_VARIABLE_GUID;
+
+  VariableOffset = 0;
+
+  if (NvVarStoreBase == NULL) {
+    DEBUG ((DEBUG_ERROR, "NvVarStore pointer is NULL.\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header zerovetor, filesystemguid,
+  // revision, signature, attributes, fvlength, checksum
+  // HeaderLength cannot be an odd number
+  //
+  NvVarStoreFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)NvVarStoreBase;
+
+  if ((!IsZeroBuffer (NvVarStoreFvHeader->ZeroVector, 16)) ||
+      (!CompareGuid (&FvHdrGUID, &NvVarStoreFvHeader->FileSystemGuid)) ||
+      (NvVarStoreFvHeader->Signature != EFI_FVH_SIGNATURE) ||
+      (NvVarStoreFvHeader->Attributes != 0x4feff) ||
+      ((NvVarStoreFvHeader->HeaderLength & 0x01) != 0) ||
+      (NvVarStoreFvHeader->Revision != EFI_FVH_REVISION) ||
+      (NvVarStoreFvHeader->FvLength != NvVarStoreSize)
+      )
+  {
+    DEBUG ((DEBUG_ERROR, "NvVarStore FV headers were invalid.\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header checksum
+  //
+  Checksum = CalculateSum16 ((VOID *)NvVarStoreFvHeader, NvVarStoreFvHeader->HeaderLength);
+
+  if (Checksum != 0) {
+    DEBUG ((DEBUG_ERROR, "NvVarStore FV checksum was invalid.\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header signature, size, format, state
+  //
+  NvVarStoreHeader = (VARIABLE_STORE_HEADER *)(NvVarStoreBase + NvVarStoreFvHeader->HeaderLength);
+  if ((!CompareGuid (&VarStoreHdrGUID, &NvVarStoreHeader->Signature)) ||
+      (NvVarStoreHeader->Format != VARIABLE_STORE_FORMATTED) ||
+      (NvVarStoreHeader->State != VARIABLE_STORE_HEALTHY) ||
+      (NvVarStoreHeader->Size > (NvVarStoreFvHeader->FvLength - NvVarStoreFvHeader->HeaderLength)) ||
+      (NvVarStoreHeader->Size < sizeof (VARIABLE_STORE_HEADER))
+      )
+  {
+    DEBUG ((DEBUG_ERROR, "NvVarStore header signature/size/format/state were invalid.\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header startId, state
+  // Verify data to the end
+  //
+  VariableBase = (UINTN)NvVarStoreBase + NvVarStoreFvHeader->HeaderLength + sizeof (VARIABLE_STORE_HEADER);
+  while (VariableOffset  < (NvVarStoreHeader->Size - sizeof (VARIABLE_STORE_HEADER))) {
+    VariableHeader = (AUTHENTICATED_VARIABLE_HEADER *)(VariableBase + VariableOffset);
+    if (VariableHeader->StartId != VARIABLE_DATA) {
+      if (!CheckPaddingData ((UINT8 *)VariableHeader, NvVarStoreHeader->Size - sizeof (VARIABLE_STORE_HEADER) - VariableOffset)) {
+        DEBUG ((DEBUG_ERROR, "NvVarStore variable header StartId was invalid.\n"));
+        return FALSE;
+      }
+
+      VariableOffset = NvVarStoreHeader->Size - sizeof (VARIABLE_STORE_HEADER);
+    } else {
+      if (!((VariableHeader->State == VAR_HEADER_VALID_ONLY) ||
+            (VariableHeader->State == VAR_ADDED) ||
+            (VariableHeader->State == (VAR_ADDED & VAR_DELETED)) ||
+            (VariableHeader->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)) ||
+            (VariableHeader->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION & VAR_DELETED))))
+      {
+        DEBUG ((DEBUG_ERROR, "NvVarStore Variable header State was invalid.\n"));
+        return FALSE;
+      }
+
+      VariableOffset += sizeof (AUTHENTICATED_VARIABLE_HEADER) + VariableHeader->NameSize + VariableHeader->DataSize;
+      // Verify VariableOffset should be less than or equal NvVarStoreHeader->Size - sizeof(VARIABLE_STORE_HEADER)
+      if (VariableOffset > (NvVarStoreHeader->Size - sizeof (VARIABLE_STORE_HEADER))) {
+        DEBUG ((DEBUG_ERROR, "NvVarStore Variable header VariableOffset was invalid.\n"));
+        return FALSE;
+      }
+
+      VariableOffsetBeforeAlign = VariableOffset;
+      // 4 byte align
+      VariableOffset = (VariableOffset  + 3) & (UINTN)(~3);
+
+      if (!CheckPaddingData ((UINT8 *)(VariableBase + VariableOffsetBeforeAlign), VariableOffset - VariableOffsetBeforeAlign)) {
+        DEBUG ((DEBUG_ERROR, "NvVarStore Variable header PaddingData was invalid.\n"));
+        return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ Allocate storage for NV variables early on so it will be
+ at a consistent address.  Since VM memory is preserved
+ across reboots, this allows the NV variable storage to survive
+ a VM reboot.
+
+ *
+ * @retval VOID* The pointer to the storage for NV Variables
+ */
+VOID *
+EFIAPI
+PlatformReserveEmuVariableNvStore (
+  VOID
+  )
+{
+  VOID    *VariableStore;
+  UINT32  VarStoreSize;
+
+  VarStoreSize = 2 * PcdGet32 (PcdFlashNvStorageFtwSpareSize);
+  //
+  // Allocate storage for NV variables early on so it will be
+  // at a consistent address.  Since VM memory is preserved
+  // across reboots, this allows the NV variable storage to survive
+  // a VM reboot.
+  //
+  VariableStore =
+    AllocateRuntimePages (
+      EFI_SIZE_TO_PAGES (VarStoreSize)
+      );
+  DEBUG ((
+    DEBUG_INFO,
+    "Reserved variable store memory: 0x%p; size: %dkb\n",
+    VariableStore,
+    VarStoreSize / 1024
+    ));
+
+  return VariableStore;
+}
+
+/**
+ When OVMF is lauched with -bios parameter, UEFI variables will be
+ partially emulated, and non-volatile variables may lose their contents
+ after a reboot. This makes the secure boot feature not working.
+
+ This function is used to initialize the EmuVariableNvStore
+ with the conent in PcdOvmfFlashNvStorageVariableBase.
+
+ @param[in] EmuVariableNvStore      - A pointer to EmuVariableNvStore
+
+ @retval  EFI_SUCCESS   - Successfully init the EmuVariableNvStore
+ @retval  Others        - As the error code indicates
+ */
+EFI_STATUS
+EFIAPI
+PlatformInitEmuVariableNvStore (
+  IN VOID  *EmuVariableNvStore
+  )
+{
+  UINT8   *Base;
+  UINT32  Size;
+  UINT32  EmuVariableNvStoreSize;
+
+  EmuVariableNvStoreSize = 2 * PcdGet32 (PcdFlashNvStorageFtwSpareSize);
+  if ((EmuVariableNvStore == NULL) || (EmuVariableNvStoreSize == 0)) {
+    DEBUG ((DEBUG_ERROR, "Invalid EmuVariableNvStore parameter.\n"));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Base = (UINT8 *)(UINTN)PcdGet32 (PcdOvmfFlashNvStorageVariableBase);
+  Size = (UINT32)PcdGet32 (PcdFlashNvStorageVariableSize);
+  ASSERT (Size < EmuVariableNvStoreSize);
+
+  if (!PlatformValidateNvVarStore (Base, PcdGet32 (PcdCfvRawDataSize))) {
+    ASSERT (FALSE);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DEBUG ((DEBUG_INFO, "Init EmuVariableNvStore with the content in FlashNvStorage\n"));
+
+  CopyMem (EmuVariableNvStore, Base, Size);
+
+  return EFI_SUCCESS;
 }
