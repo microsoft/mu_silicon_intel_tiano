@@ -133,7 +133,7 @@ GetGeneratedFvByAddress (
     Status = mFvbMediaInfoGenerators[Index](&FvbMediaInfo);
     ASSERT_EFI_ERROR (Status);
     if (!EFI_ERROR (Status) && (FvbMediaInfo.BaseAddress == FvBaseAddress)) {
-      FvHeader = AllocateCopyPool (FvbMediaInfo.FvbInfo.HeaderLength, &FvbMediaInfo.FvbInfo);
+      FvHeader = AllocateCopyPool ((FvbMediaInfo.FvbInfo.HeaderLength), &FvbMediaInfo.FvbInfo);
       if (FvHeader == NULL) {
         ASSERT (FvHeader != NULL);
         return EFI_OUT_OF_RESOURCES;
