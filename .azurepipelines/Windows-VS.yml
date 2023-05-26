@@ -32,9 +32,7 @@ extends:
         Pkgs: 'IntelSiliconPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_INTEL_FSP2:
         Pkgs: 'IntelFsp2Pkg,IntelFsp2WrapperPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET'
         ArchList: $(arch_list)
-        SelfHostAgent: false
