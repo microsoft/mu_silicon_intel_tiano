@@ -81,7 +81,7 @@ Open (
   )
 {
   SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
-  UINT8                    Index;
+  UINTN                    Index;  // MU_CHANGE - Use consistent width in loop comparison
   UINT64                   Address;
   UINT8                    SmramControl;
 
@@ -162,7 +162,7 @@ Close (
 {
   SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
   BOOLEAN                  OpenState;
-  UINT8                    Index;
+  UINTN                    Index;   // MU_CHANGE - Use consistent width in loop comparison
   UINT64                   Address;
   UINT8                    SmramControl;
 
