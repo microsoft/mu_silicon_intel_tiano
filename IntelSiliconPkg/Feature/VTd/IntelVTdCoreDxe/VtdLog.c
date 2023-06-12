@@ -326,7 +326,7 @@ VTdLogInitialize(
 
   TotalBufferSize = PcdGet32 (PcdVTdDxeLogBufferSize) + PcdGet32 (PcdVTdPeiPostMemLogBufferSize) + sizeof (VTDLOG_PEI_PRE_MEM_INFO) * VTD_LOG_PEI_PRE_MEM_BAR_MAX;
 
-  Status = gBS->AllocatePool (EfiBootServicesData, TotalBufferSize, &mVtdLogBuffer);
+  Status = gBS->AllocatePool (EfiBootServicesData, TotalBufferSize, (VOID **) &mVtdLogBuffer);
   if (EFI_ERROR (Status)) {
     return;
   }
