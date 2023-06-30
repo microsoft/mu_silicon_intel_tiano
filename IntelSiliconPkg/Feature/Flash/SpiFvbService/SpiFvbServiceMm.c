@@ -15,13 +15,10 @@
 #include <Guid/VariableFormat.h>
 
 /**
-  The function installs EFI_FIRMWARE_VOLUME_BLOCK protocol
-  for each FV in the system.
+  The function installs the given EFI_FIRMWARE_VOLUME_BLOCK protocol instance.
 
   @param[in]  FvbInstance   The pointer to a FW volume instance structure,
                             which contains the information about one FV.
-
-  @retval     VOID
 
 **/
 VOID
@@ -33,8 +30,8 @@ InstallFvbProtocol (
   EFI_STATUS                            Status;
   EFI_HANDLE                            FvbHandle;
 
-  ASSERT (FvbInstance != NULL);
   if (FvbInstance == NULL) {
+    ASSERT (FvbInstance != NULL);
     return;
   }
 
@@ -48,14 +45,14 @@ InstallFvbProtocol (
   //
   // Set up the devicepath
   //
-  DEBUG ((DEBUG_INFO, "FwBlockService.c: Setting up DevicePath for 0x%lx:\n", FvbInstance->FvBase));
+  DEBUG ((DEBUG_INFO, "SpiFvbServiceSmm.c: Setting up DevicePath for 0x%lx:\n", FvbInstance->FvBase));
   if (FvHeader->ExtHeaderOffset == 0) {
     //
     // FV does not contains extension header, then produce MEMMAP_DEVICE_PATH
     //
     FvbInstance->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) AllocateRuntimeCopyPool (sizeof (FV_MEMMAP_DEVICE_PATH), &mFvMemmapDevicePathTemplate);
     if (FvbInstance->DevicePath == NULL) {
-      DEBUG ((DEBUG_INFO, "SpiFvbServiceSmm.c: Memory allocation for MEMMAP_DEVICE_PATH failed\n"));
+      DEBUG ((DEBUG_ERROR, "SpiFvbServiceSmm.c: Memory allocation for MEMMAP_DEVICE_PATH failed\n"));
       return;
     }
     ((FV_MEMMAP_DEVICE_PATH *) FvbInstance->DevicePath)->MemMapDevPath.StartingAddress = FvbInstance->FvBase;
@@ -63,7 +60,7 @@ InstallFvbProtocol (
   } else {
     FvbInstance->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) AllocateRuntimeCopyPool (sizeof (FV_PIWG_DEVICE_PATH), &mFvPIWGDevicePathTemplate);
     if (FvbInstance->DevicePath == NULL) {
-      DEBUG ((DEBUG_INFO, "SpiFvbServiceSmm.c: Memory allocation for FV_PIWG_DEVICE_PATH failed\n"));
+      DEBUG ((DEBUG_ERROR, "SpiFvbServiceSmm.c: Memory allocation for FV_PIWG_DEVICE_PATH failed\n"));
       return;
     }
     CopyGuid (
@@ -96,7 +93,7 @@ InstallFvbProtocol (
 
 /**
   The function does the necessary initialization work for
-  Firmware Volume Block Driver.
+  the Firmware Volume Block Driver.
 
 **/
 VOID
@@ -148,10 +145,6 @@ FvbInitialize (
   mPlatformFvBaseAddress[1].FvBase = PcdGet32(PcdFlashMicrocodeFvBase);
   mPlatformFvBaseAddress[1].FvSize = PcdGet32(PcdFlashMicrocodeFvSize);
 
-  //
-  // We will only continue with FVB installation if the
-  // SPI is the active BIOS state
-  //
   {
     //
     // Make sure all FVB are valid and/or fix if possible
@@ -167,11 +160,20 @@ FvbInitialize (
       if (!IsFvHeaderValid (BaseAddress, FvHeader)) {
         BytesWritten = 0;
         BytesErased = 0;
-        DEBUG ((DEBUG_ERROR, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
+        DEBUG ((DEBUG_ERROR, "ERROR - The FV at 0x%x is invalid!\n", FvHeader));
+
+        //
+        // Attempt to recover the FV
+        //
         FvHeader = NULL;
-        Status   = GetFvbInfo (BaseAddress, &FvHeader);
+        Status   = GetGeneratedFvByAddress (BaseAddress, &FvHeader);
         if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "ERROR - Can't recovery FV header at 0x%x.  GetFvbInfo Status %r\n", BaseAddress, Status));
+          DEBUG ((
+            DEBUG_WARN | DEBUG_ERROR,
+            "ERROR - Can't recover FV header at 0x%x.  GetGeneratedFvByAddress Status %r\n",
+            BaseAddress,
+            Status
+            ));
           continue;
         }
         DEBUG ((DEBUG_INFO, "Rewriting FV header at 0x%X with static data\n", BaseAddress));
@@ -181,15 +183,15 @@ FvbInitialize (
         BytesErased = (UINTN) FvHeader->BlockMap->Length;
         Status = SpiFlashBlockErase( (UINTN) BaseAddress, &BytesErased);
         if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "ERROR - SpiFlashBlockErase Error  %r\n", Status));
+          DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - SpiFlashBlockErase Error  %r\n", Status));
           if (FvHeader != NULL) {
             FreePool (FvHeader);
           }
           continue;
         }
         if (BytesErased != FvHeader->BlockMap->Length) {
-          DEBUG ((DEBUG_WARN, "ERROR - BytesErased != FvHeader->BlockMap->Length\n"));
-          DEBUG ((DEBUG_INFO, " BytesErased = 0x%X\n Length = 0x%X\n", BytesErased, FvHeader->BlockMap->Length));
+          DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - BytesErased != FvHeader->BlockMap->Length\n"));
+          DEBUG ((DEBUG_ERROR, " BytesErased = 0x%X\n Length = 0x%X\n", BytesErased, FvHeader->BlockMap->Length));
           if (FvHeader != NULL) {
             FreePool (FvHeader);
           }
@@ -249,15 +251,15 @@ FvbInitialize (
         }
 
         if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "ERROR - SpiFlashWrite Error  %r\n", Status));
+          DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - SpiFlashWrite Error  %r\n", Status));
           if (FvHeader != NULL) {
             FreePool (FvHeader);
           }
           continue;
         }
         if (BytesWritten != ExpectedBytesWritten) {
-          DEBUG ((DEBUG_WARN, "ERROR - BytesWritten != ExpectedBytesWritten\n"));
-          DEBUG ((DEBUG_INFO, " BytesWritten = 0x%X\n ExpectedBytesWritten = 0x%X\n", BytesWritten, ExpectedBytesWritten));
+          DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - BytesWritten != ExpectedBytesWritten\n"));
+          DEBUG ((DEBUG_ERROR, " BytesWritten = 0x%X\n ExpectedBytesWritten = 0x%X\n", BytesWritten, ExpectedBytesWritten));
           if (FvHeader != NULL) {
             FreePool (FvHeader);
           }
@@ -265,13 +267,13 @@ FvbInitialize (
         }
         Status = SpiFlashLock ();
         if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "ERROR - SpiFlashLock Error  %r\n", Status));
+          DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - SpiFlashLock Error  %r\n", Status));
           if (FvHeader != NULL) {
             FreePool (FvHeader);
           }
           continue;
         }
-        DEBUG ((DEBUG_INFO, "FV Header @ 0x%X restored with static data\n", BaseAddress));
+        DEBUG ((DEBUG_ERROR, "FV Header @ 0x%X restored with static data\n", BaseAddress));
         //
         // Clear cache for this range.
         //
@@ -294,7 +296,7 @@ FvbInitialize (
       FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
 
       if (!IsFvHeaderValid (BaseAddress, FvHeader)) {
-        DEBUG ((DEBUG_WARN, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
+        DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
         continue;
       }
 
@@ -322,7 +324,7 @@ FvbInitialize (
       FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
 
       if (!IsFvHeaderValid (BaseAddress, FvHeader)) {
-        DEBUG ((DEBUG_WARN, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
+        DEBUG ((DEBUG_WARN | DEBUG_ERROR, "ERROR - The FV in 0x%x is invalid!\n", FvHeader));
         continue;
       }
 

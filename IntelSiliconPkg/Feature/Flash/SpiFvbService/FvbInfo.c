@@ -2,16 +2,17 @@
   Defines data structure that is the volume header found.
   These data is intent to decouple FVB driver with FV header.
 
-Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-Copyright (c) Microsoft Corporation.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "SpiFvbServiceCommon.h"
 
-#define FIRMWARE_BLOCK_SIZE         0x10000
+#define FIRMWARE_BLOCK_SIZE         SIZE_64KB
 #define FVB_MEDIA_BLOCK_SIZE        FIRMWARE_BLOCK_SIZE
+
 typedef struct {
   EFI_PHYSICAL_ADDRESS        BaseAddress;
   EFI_FIRMWARE_VOLUME_HEADER  FvbInfo;
@@ -19,7 +20,7 @@ typedef struct {
 } EFI_FVB2_MEDIA_INFO;
 
 /**
-  Returns FVB media information for NV variable storage.
+  Returns FVB media information for a firmware volume.
 
   @return       FvbMediaInfo          A pointer to an instance of FVB media info produced by this function.
                                       The buffer is allocated internally to this function and it is the caller's
@@ -100,8 +101,21 @@ FVB_MEDIA_INFO_GENERATOR mFvbMediaInfoGenerators[] = {
   GenerateNvStorageFvbMediaInfo
 };
 
+/**
+  Returns an empty firmware volume for the firmware volume at the given base address.
+
+  @param[in]    FvBaseAddress       The base address of the firmware volume requested.
+  @param[out]   FvbInfo             A pointer that will be set to a buffer for the firmware volume header
+                                    at the given base address. The buffer is a pool allocation made in this function.
+
+  @retval     EFI_SUCCESS           The firmware volume was returned successfully.
+  @retval     EFI_INVALID_PARAMETER The FvbInfo pointer argument is NULL.
+  @retval     EFI_NOT_FOUND         The firmware volume was not found for the given base address.
+  @retval     EFI_OUT_OF_RESOURCES  Insufficient memory to allocate a buffer to the hold the firmware volume.
+
+**/
 EFI_STATUS
-GetFvbInfo (
+GetGeneratedFvByAddress (
   IN  EFI_PHYSICAL_ADDRESS         FvBaseAddress,
   OUT EFI_FIRMWARE_VOLUME_HEADER   **FvbInfo
   )
@@ -111,11 +125,19 @@ GetFvbInfo (
   UINTN                       Index;
   EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
 
+  if (FvbInfo == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   for (Index = 0; Index < ARRAY_SIZE (mFvbMediaInfoGenerators); Index++) {
     Status = mFvbMediaInfoGenerators[Index](&FvbMediaInfo);
     ASSERT_EFI_ERROR (Status);
     if (!EFI_ERROR (Status) && (FvbMediaInfo.BaseAddress == FvBaseAddress)) {
       FvHeader = AllocateCopyPool (FvbMediaInfo.FvbInfo.HeaderLength, &FvbMediaInfo.FvbInfo);
+      if (FvHeader == NULL) {
+        ASSERT (FvHeader != NULL);
+        return EFI_OUT_OF_RESOURCES;
+      }
 
       //
       // Update the checksum value of FV header.
@@ -136,5 +158,6 @@ GetFvbInfo (
       return EFI_SUCCESS;
     }
   }
+
   return EFI_NOT_FOUND;
 }

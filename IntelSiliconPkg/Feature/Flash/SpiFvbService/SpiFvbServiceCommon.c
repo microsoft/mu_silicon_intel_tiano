@@ -2,9 +2,9 @@
   Common driver source for several Serial Flash devices
   which are compliant with the Intel(R) Serial Flash Interface Compatibility Specification.
 
-Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-Copyright (c) Microsoft Corporation.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -92,13 +92,19 @@ EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL mFvbProtocolTemplate = {
   @param[in]  FvbInstance The pointer to the EFI_FVB_INSTANCE.
 
   @return     Attributes of the FV identified by FvbInstance.
+              Zero is returned if the FvbInstance pointer is NULL.
 
 **/
 EFI_FVB_ATTRIBUTES_2
 FvbGetVolumeAttributes (
-  IN EFI_FVB_INSTANCE         *FvbInstance
+  IN CONST  EFI_FVB_INSTANCE    *FvbInstance
   )
 {
+  if (FvbInstance == NULL) {
+    ASSERT (FvbInstance != NULL);
+    return 0;
+  }
+
   return FvbInstance->FvHeader.Attributes;
 }
 
@@ -109,24 +115,25 @@ FvbGetVolumeAttributes (
   @param[in]  FvbInstance     The pointer to the EFI_FVB_INSTANCE.
   @param[in]  Lba             The logical block address
   @param[out] LbaAddress      On output, contains the physical starting address
-                              of the Lba
-  @param[out] LbaLength       On output, contains the length of the block
+                              of the Lba. This pointer is optional and may be NULL.
+  @param[out] LbaLength       On output, contains the length of the block.
+                              This pointer is optional and may be NULL.
   @param[out] NumOfBlocks     A pointer to a caller allocated UINTN in which the
                               number of consecutive blocks starting with Lba is
                               returned. All blocks in this range have a size of
-                              BlockSize
+                              BlockSize. This pointer is optional and may be NULL.
 
-  @retval   EFI_SUCCESS Successfully returns
-  @retval   EFI_INVALID_PARAMETER Instance not found
+  @retval   EFI_SUCCESS           Successfully returns
+  @retval   EFI_INVALID_PARAMETER FvbInstance is NULL.
 
 **/
 EFI_STATUS
 FvbGetLbaAddress (
-  IN  EFI_FVB_INSTANCE                    *FvbInstance,
+  IN  CONST EFI_FVB_INSTANCE              *FvbInstance,
   IN  EFI_LBA                             Lba,
-  OUT UINTN                               *LbaAddress,
-  OUT UINTN                               *LbaLength,
-  OUT UINTN                               *NumOfBlocks
+  OUT UINTN                               *LbaAddress OPTIONAL,
+  OUT UINTN                               *LbaLength OPTIONAL,
+  OUT UINTN                               *NumOfBlocks OPTIONAL
   )
 {
   UINT32                                  NumBlocks;
@@ -134,10 +141,15 @@ FvbGetLbaAddress (
   UINTN                                   Offset;
   EFI_LBA                                 StartLba;
   EFI_LBA                                 NextLba;
-  EFI_FV_BLOCK_MAP_ENTRY                  *BlockMap;
+  CONST EFI_FV_BLOCK_MAP_ENTRY            *BlockMap;
 
   StartLba  = 0;
   Offset    = 0;
+
+  if (FvbInstance == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   BlockMap  = &(FvbInstance->FvHeader.BlockMap[0]);
 
   //
@@ -158,15 +170,15 @@ FvbGetLbaAddress (
     //
     if (Lba >= StartLba && Lba < NextLba) {
       Offset = Offset + (UINTN)MultU64x32((Lba - StartLba), BlockLength);
-      if (LbaAddress ) {
+      if (LbaAddress != NULL) {
         *LbaAddress = FvbInstance->FvBase + Offset;
       }
 
-      if (LbaLength ) {
+      if (LbaLength != NULL) {
         *LbaLength = BlockLength;
       }
 
-      if (NumOfBlocks ) {
+      if (NumOfBlocks != NULL) {
         *NumOfBlocks = (UINTN)(NextLba - Lba);
       }
       return EFI_SUCCESS;
@@ -190,7 +202,6 @@ FvbGetLbaAddress (
   @param[in]      Buffer                Pointer to a caller allocated buffer that will be
                                         used to hold the data read
 
-
   @retval         EFI_SUCCESS           The firmware volume was read successfully and
                                         contents are in Buffer
   @retval         EFI_BAD_BUFFER_SIZE   Read attempted across a LBA boundary. On output,
@@ -199,16 +210,16 @@ FvbGetLbaAddress (
   @retval         EFI_ACCESS_DENIED     The firmware volume is in the ReadDisabled state
   @retval         EFI_DEVICE_ERROR      The block device is not functioning correctly and
                                         could not be read
-  @retval         EFI_INVALID_PARAMETER Instance not found, or NumBytes, Buffer are NULL
+  @retval         EFI_INVALID_PARAMETER FvbInstance, NumBytes, and/or Buffer are NULL
 
 **/
 EFI_STATUS
 FvbReadBlock (
-  IN EFI_FVB_INSTANCE                     *FvbInstance,
-  IN EFI_LBA                              Lba,
-  IN UINTN                                BlockOffset,
-  IN OUT UINTN                            *NumBytes,
-  IN UINT8                                *Buffer
+  IN CONST  EFI_FVB_INSTANCE              *FvbInstance,
+  IN        EFI_LBA                       Lba,
+  IN        UINTN                         BlockOffset,
+  IN OUT    UINTN                         *NumBytes,
+  IN        UINT8                         *Buffer
   )
 {
   EFI_FVB_ATTRIBUTES_2                    Attributes;
@@ -217,9 +228,10 @@ FvbReadBlock (
   EFI_STATUS                              Status;
   BOOLEAN                                 BadBufferSize = FALSE;
 
-  if ((NumBytes == NULL) || (Buffer == NULL)) {
+  if ((FvbInstance == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
+
   if (*NumBytes == 0) {
     return EFI_INVALID_PARAMETER;
   }
@@ -269,6 +281,7 @@ FvbReadBlock (
                                     of bytes actually written
   @param[in]  Buffer                Pointer to a caller allocated buffer that contains
                                     the source for the write
+
   @retval     EFI_SUCCESS           The firmware volume was written successfully
   @retval     EFI_BAD_BUFFER_SIZE   Write attempted across a LBA boundary. On output,
                                     NumBytes contains the total number of bytes
@@ -276,16 +289,16 @@ FvbReadBlock (
   @retval     EFI_ACCESS_DENIED     The firmware volume is in the WriteDisabled state
   @retval     EFI_DEVICE_ERROR      The block device is not functioning correctly and
                                     could not be written
-  @retval     EFI_INVALID_PARAMETER Instance not found, or NumBytes, Buffer are NULL
+  @retval     EFI_INVALID_PARAMETER FvbInstance, NumBytes, and/or Buffer are NULL
 
 **/
 EFI_STATUS
 FvbWriteBlock (
-  IN EFI_FVB_INSTANCE                     *FvbInstance,
-  IN EFI_LBA                              Lba,
-  IN UINTN                                BlockOffset,
-  IN OUT UINTN                            *NumBytes,
-  IN UINT8                                *Buffer
+  IN CONST  EFI_FVB_INSTANCE              *FvbInstance,
+  IN        EFI_LBA                       Lba,
+  IN        UINTN                         BlockOffset,
+  IN OUT    UINTN                         *NumBytes,
+  IN        UINT8                         *Buffer
   )
 {
   EFI_FVB_ATTRIBUTES_2                    Attributes;
@@ -294,7 +307,7 @@ FvbWriteBlock (
   EFI_STATUS                              Status;
   BOOLEAN                                 BadBufferSize = FALSE;
 
-  if ((NumBytes == NULL) || (Buffer == NULL)) {
+  if ((FvbInstance == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
   if (*NumBytes == 0) {
@@ -350,8 +363,6 @@ FvbWriteBlock (
   }
 }
 
-
-
 /**
   Erases and initializes a firmware volume block.
 
@@ -363,13 +374,13 @@ FvbWriteBlock (
   @retval   EFI_DEVICE_ERROR      The block device is not functioning correctly and
                                   could not be written. Firmware device may have been
                                   partially erased
-  @retval   EFI_INVALID_PARAMETER Instance not found
+  @retval   EFI_INVALID_PARAMETER FvbInstance is NULL
 
 **/
 EFI_STATUS
 FvbEraseBlock (
-  IN EFI_FVB_INSTANCE           *FvbInstance,
-  IN EFI_LBA                    Lba
+  IN CONST  EFI_FVB_INSTANCE    *FvbInstance,
+  IN        EFI_LBA             Lba
   )
 {
 
@@ -377,6 +388,10 @@ FvbEraseBlock (
   UINTN                                   LbaAddress;
   UINTN                                   LbaLength;
   EFI_STATUS                              Status;
+
+  if (FvbInstance == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   //
   // Check if the FV is write enabled
@@ -422,9 +437,9 @@ FvbEraseBlock (
 
   @retval     EFI_SUCCESS           Successfully returns
   @retval     EFI_ACCESS_DENIED     The volume setting is locked and cannot be modified
-  @retval     EFI_INVALID_PARAMETER Instance not found, or The attributes requested are
-                                    in conflict with the capabilities as declared in the
-                                    firmware volume header
+  @retval     EFI_INVALID_PARAMETER FvbInstance or Attributes is NULL.
+                                    Or the attributes requested are in conflict with the
+                                    capabilities as declared in the firmware volume header.
 
 **/
 EFI_STATUS
@@ -438,6 +453,10 @@ FvbSetVolumeAttributes (
   EFI_FVB_ATTRIBUTES_2                      UnchangedAttributes;
   UINT32                                    Capabilities;
   UINT32                                    OldStatus, NewStatus;
+
+  if ((FvbInstance == NULL) || (Attributes == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   AttribPtr     = (EFI_FVB_ATTRIBUTES_2 *) &(FvbInstance->FvHeader.Attributes);
   OldAttributes = *AttribPtr;
@@ -554,6 +573,7 @@ GetVariableFvInfo (
     ASSERT ((BaseAddress != NULL) && (Length != NULL));
     return;
   }
+
   *BaseAddress = 0;
   *Length = 0;
 
@@ -631,8 +651,9 @@ GetVariableFvInfo (
 
   @param[in]  FvHeader   A pointer to a firmware volume header
 
-  @retval     TRUE          The firmware volume is consistent
-  @retval     FALSE         The firmware volume has corrupted.
+  @retval     TRUE          The firmware volume is consistent.
+  @retval     FALSE         The firmware volume has corrupted or an invalid firmware
+                            volume was provided.
 
 **/
 BOOLEAN
@@ -643,6 +664,11 @@ IsFvHeaderValid (
 {
   EFI_PHYSICAL_ADDRESS    NvStorageFvBaseAddress;
   UINT32                  NvStorageSize;
+
+  if (FvHeader == NULL) {
+    ASSERT (FvHeader != NULL);
+    return FALSE;
+  }
 
   GetVariableFvInfo (&NvStorageFvBaseAddress, &NvStorageSize);
 
@@ -679,17 +705,22 @@ IsFvHeaderValid (
   @param[in]  This    A pointer to EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL.
   @param[out] Address Output buffer containing the address.
 
-  retval      EFI_SUCCESS The function always return successfully.
+  @retval   EFI_SUCCESS             The function always return successfully.
+  @retval   EFI_INVALID_PARAMETER   A pointer argument provided is NULL.
 
 **/
 EFI_STATUS
 EFIAPI
 FvbProtocolGetPhysicalAddress (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
-  OUT EFI_PHYSICAL_ADDRESS                     *Address
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  OUT       EFI_PHYSICAL_ADDRESS                  *Address
   )
 {
   EFI_FVB_INSTANCE      *FvbInstance;
+
+  if ((This == NULL) || (Address == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   FvbInstance = FVB_INSTANCE_FROM_THIS (This);
 
@@ -710,28 +741,34 @@ FvbProtocolGetPhysicalAddress (
                           returned. All blocks in this range have a size of
                           BlockSize
 
-  @retval     EFI_SUCCESS The function always return successfully.
+  @retval     EFI_SUCCESS             The function always return successfully.
+  @retval     EFI_INVALID_PARAMETER   A pointer argument provided is NULL.
 
 **/
 EFI_STATUS
 EFIAPI
 FvbProtocolGetBlockSize (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
-  IN  EFI_LBA                                  Lba,
-  OUT UINTN                                    *BlockSize,
-  OUT UINTN                                    *NumOfBlocks
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  IN        EFI_LBA                               Lba,
+  OUT       UINTN                                 *BlockSize,
+  OUT       UINTN                                 *NumOfBlocks
   )
 {
   EFI_FVB_INSTANCE                 *FvbInstance;
 
+  if ((This == NULL) || (BlockSize == NULL) || (NumOfBlocks == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   FvbInstance = FVB_INSTANCE_FROM_THIS (This);
 
-  DEBUG((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "FvbProtocolGetBlockSize: Lba: 0x%lx BlockSize: 0x%x NumOfBlocks: 0x%x\n",
     Lba,
-    BlockSize,
-    NumOfBlocks)
-    );
+    *BlockSize,
+    *NumOfBlocks
+    ));
 
   return FvbGetLbaAddress (
            FvbInstance,
@@ -748,27 +785,33 @@ FvbProtocolGetBlockSize (
   @param[in]    This        Calling context
   @param[out]   Attributes  Output buffer which contains attributes
 
-  @retval       EFI_SUCCESS The function always return successfully.
+  @retval       EFI_SUCCESS             The function always return successfully.
+  @retval       EFI_INVALID_PARAMETER   A pointer argument provided is NULL.
 
 **/
 EFI_STATUS
 EFIAPI
 FvbProtocolGetAttributes (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  OUT EFI_FVB_ATTRIBUTES_2                *Attributes
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  OUT       EFI_FVB_ATTRIBUTES_2                 *Attributes
   )
 {
   EFI_FVB_INSTANCE                 *FvbInstance;
+
+  if ((This == NULL) || (Attributes == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   FvbInstance = FVB_INSTANCE_FROM_THIS (This);
 
   *Attributes = FvbGetVolumeAttributes (FvbInstance);
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "FvbProtocolGetAttributes: This: 0x%x Attributes: 0x%x\n",
     This,
-    *Attributes)
-    );
+    *Attributes
+    ));
 
   return EFI_SUCCESS;
 }
@@ -785,28 +828,34 @@ FvbProtocolGetAttributes (
 EFI_STATUS
 EFIAPI
 FvbProtocolSetAttributes (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN OUT EFI_FVB_ATTRIBUTES_2                   *Attributes
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN OUT    EFI_FVB_ATTRIBUTES_2                 *Attributes
   )
 {
   EFI_STATUS                       Status;
   EFI_FVB_INSTANCE                 *FvbInstance;
 
-  DEBUG((DEBUG_INFO,
+  if ((This == NULL) || (Attributes == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DEBUG ((
+    DEBUG_INFO,
     "FvbProtocolSetAttributes: Before SET -  This: 0x%x Attributes: 0x%x\n",
     This,
-    *Attributes)
-    );
+    *Attributes
+    ));
 
   FvbInstance  = FVB_INSTANCE_FROM_THIS (This);
 
   Status = FvbSetVolumeAttributes (FvbInstance, Attributes);
 
-  DEBUG((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "FvbProtocolSetAttributes: After SET -  This: 0x%x Attributes: 0x%x\n",
     This,
-    *Attributes)
-    );
+    *Attributes
+    ));
 
   return Status;
 }
@@ -823,17 +872,18 @@ FvbProtocolSetAttributes (
   @param[in] ...          Starting LBA followed by Number of Lba to erase.
                           a -1 to terminate the list.
 
-  @retval EFI_SUCCESS       The erase request was successfully completed
-  @retval EFI_ACCESS_DENIED The firmware volume is in the WriteDisabled state
-  @retval EFI_DEVICE_ERROR  The block device is not functioning correctly and
-                            could not be written. Firmware device may have been
-                            partially erased
+  @retval EFI_SUCCESS             The erase request was successfully completed
+  @retval EFI_INVALID_PARAMETER   A pointer argument provided is NULL.
+  @retval EFI_ACCESS_DENIED       The firmware volume is in the WriteDisabled state
+  @retval EFI_DEVICE_ERROR        The block device is not functioning correctly and
+                                  could not be written. Firmware device may have been
+                                  partially erased
 
 **/
 EFI_STATUS
 EFIAPI
 FvbProtocolEraseBlocks (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
   ...
   )
 {
@@ -845,6 +895,10 @@ FvbProtocolEraseBlocks (
   EFI_STATUS                            Status;
 
   DEBUG((DEBUG_INFO, "FvbProtocolEraseBlocks: \n"));
+
+  if (This == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   FvbInstance  = FVB_INSTANCE_FROM_THIS (This);
 
@@ -923,30 +977,35 @@ FvbProtocolEraseBlocks (
   @retval EFI_ACCESS_DENIED     The firmware volume is in the WriteDisabled state
   @retval EFI_DEVICE_ERROR      The block device is not functioning correctly and
                                 could not be written
-  @retval EFI_INVALID_PARAMETER NumBytes or Buffer are NULL
+  @retval EFI_INVALID_PARAMETER A pointer argument provided is NULL.
 
 **/
 EFI_STATUS
 EFIAPI
 FvbProtocolWrite (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN EFI_LBA                                    Lba,
-  IN UINTN                                      Offset,
-  IN OUT UINTN                                  *NumBytes,
-  IN UINT8                                      *Buffer
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  IN        EFI_LBA                               Lba,
+  IN        UINTN                                 Offset,
+  IN OUT    UINTN                                 *NumBytes,
+  IN        UINT8                                 *Buffer
   )
 {
   EFI_FVB_INSTANCE        *FvbInstance;
 
+  if ((This == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   FvbInstance = FVB_INSTANCE_FROM_THIS (This);
 
-  DEBUG((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "FvbProtocolWrite: Lba: 0x%lx Offset: 0x%x NumBytes: 0x%x, Buffer: 0x%x\n",
     Lba,
     Offset,
     *NumBytes,
-    Buffer)
-    );
+    Buffer
+    ));
 
   return FvbWriteBlock (FvbInstance, Lba, Offset, NumBytes, Buffer);
 }
@@ -974,31 +1033,36 @@ FvbProtocolWrite (
   @retval EFI_ACCESS_DENIED     The firmware volume is in the ReadDisabled state
   @retval EFI_DEVICE_ERROR      The block device is not functioning correctly and
                                 could not be read
-  @retval EFI_INVALID_PARAMETER NumBytes or Buffer are NULL
+  @retval EFI_INVALID_PARAMETER A pointer argument provided is NULL.
 
 **/
 EFI_STATUS
 EFIAPI
 FvbProtocolRead (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN EFI_LBA                                    Lba,
-  IN UINTN                                      Offset,
-  IN OUT UINTN                                  *NumBytes,
-  OUT UINT8                                     *Buffer
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  IN        EFI_LBA                               Lba,
+  IN        UINTN                                 Offset,
+  IN        OUT UINTN                             *NumBytes,
+  OUT       UINT8                                 *Buffer
   )
 {
   EFI_FVB_INSTANCE     *FvbInstance;
   EFI_STATUS           Status;
 
+  if ((This == NULL) || (NumBytes == NULL) || (Buffer == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   FvbInstance = FVB_INSTANCE_FROM_THIS (This);
   Status = FvbReadBlock (FvbInstance, Lba, Offset, NumBytes, Buffer);
-  DEBUG((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "FvbProtocolRead: Lba: 0x%lx Offset: 0x%x NumBytes: 0x%x, Buffer: 0x%x\n",
     Lba,
     Offset,
     *NumBytes,
-    Buffer)
-    );
+    Buffer
+    ));
 
   return Status;
 }

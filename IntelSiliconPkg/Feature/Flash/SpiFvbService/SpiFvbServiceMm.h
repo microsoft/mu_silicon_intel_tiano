@@ -6,12 +6,12 @@
 
 **/
 
-#ifndef _SPI_FVB_SERVICE_MM_H_
-#define _SPI_FVB_SERVICE_MM_H_
+#ifndef SPI_FVB_SERVICE_MM_H_
+#define SPI_FVB_SERVICE_MM_H_
 
 /**
   The function does the necessary initialization work for
-  Firmware Volume Block Driver.
+  the Firmware Volume Block Driver.
 
 **/
 VOID
