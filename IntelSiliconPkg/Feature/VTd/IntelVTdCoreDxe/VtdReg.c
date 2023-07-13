@@ -737,7 +737,7 @@ DumpVtdIfError (
     if (HasError) {
       REPORT_STATUS_CODE (EFI_ERROR_CODE, PcdGet32 (PcdErrorCodeVTdError));
       DEBUG((DEBUG_INFO, "\n#### ERROR ####\n"));
-      DumpVtdRegs (Num);
+      DumpVtdRegs (mVtdUnitInformation[Num].VtdUnitBaseAddress);
       DEBUG((DEBUG_INFO, "#### ERROR ####\n\n"));
       //
       // Clear
