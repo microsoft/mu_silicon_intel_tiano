@@ -138,6 +138,10 @@ VtdLibDumpDmarDeviceScopeEntry (
     DmarDeviceScopeEntry->Length
     ));
   VTDLIB_DEBUG ((DEBUG_INFO,
+    "      Flags .............................................. 0x%02x\n",
+    DmarDeviceScopeEntry->Flags
+    ));
+  VTDLIB_DEBUG ((DEBUG_INFO,
     "      Enumeration ID ..................................... 0x%02x\n",
     DmarDeviceScopeEntry->EnumerationId
     ));
