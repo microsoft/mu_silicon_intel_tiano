@@ -107,7 +107,11 @@
   Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibDTpm/Tpm2DeviceLibDTpm.inf
 !endif
 
+[LibraryClasses.AARCH64.PEIM]
+  ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuPeiLib.inf
+
 [LibraryClasses.common.DXE_DRIVER]
+  AcpiPlatformLib|OvmfPkg/Library/AcpiPlatformLib/DxeAcpiPlatformLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
 
 !if $(TPM2_ENABLE) == TRUE
@@ -333,12 +337,7 @@
   ArmPlatformPkg/PrePeiCore/PrePeiCoreUniCore.inf
   MdeModulePkg/Core/Pei/PeiMain.inf
   ArmPlatformPkg/PlatformPei/PlatformPeim.inf
-  ArmVirtPkg/MemoryInitPei/MemoryInitPeim.inf {
-    <LibraryClasses>
-!if $(ARCH) == AARCH64
-      ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuPeiLib.inf
-!endif
-  }
+  ArmVirtPkg/MemoryInitPei/MemoryInitPeim.inf
   ArmPkg/Drivers/CpuPei/CpuPei.inf
 
 !if $(TPM2_ENABLE) == TRUE
@@ -450,6 +449,7 @@
   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
   OvmfPkg/VirtioNetDxe/VirtioNet.inf
   OvmfPkg/VirtioRngDxe/VirtioRng.inf
+  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
 
   #
   # FAT filesystem + GPT/MBR partitioning + UDF filesystem + virtio-fs
