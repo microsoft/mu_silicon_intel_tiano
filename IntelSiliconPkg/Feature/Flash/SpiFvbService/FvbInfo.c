@@ -10,7 +10,7 @@
 
 #include "SpiFvbServiceCommon.h"
 
-#define FIRMWARE_BLOCK_SIZE         SIZE_64KB
+#define FIRMWARE_BLOCK_SIZE   SIZE_64KB
 #define FVB_MEDIA_BLOCK_SIZE  FIRMWARE_BLOCK_SIZE
 
 typedef struct {

@@ -243,7 +243,7 @@ SubmitQueuedInvalidationDescriptor (
   VTD_IQA_REG  IqaReg;
   VTD_IQT_REG  IqtReg;
   VTD_IQH_REG  IqhReg;
-  UINT64         IQBassAddress;
+  UINT64       IQBassAddress;
 
   if (Desc == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -269,12 +269,12 @@ SubmitQueuedInvalidationDescriptor (
     //
     // 128-bit descriptor
     //
-    QueueSize       = (UINTN)(1 << (IqaReg.Bits.QS + 8));
-    Qi128Desc = (QI_DESC *) (UINTN) LShiftU64 (IQBassAddress, VTD_PAGE_SHIFT);
+    QueueSize = (UINTN)(1 << (IqaReg.Bits.QS + 8));
+    Qi128Desc = (QI_DESC *)(UINTN)LShiftU64 (IQBassAddress, VTD_PAGE_SHIFT);
     //
     // Get IQT_REG.QT for 128-bit descriptors
     //
-    QueueTail = (UINTN) (RShiftU64 (IqtReg.Uint64, 4) & 0x7FFF);
+    QueueTail       = (UINTN)(RShiftU64 (IqtReg.Uint64, 4) & 0x7FFF);
     Qi128Desc      += QueueTail;
     Qi128Desc->Low  = Desc->Uint64[0];
     Qi128Desc->High = Desc->Uint64[1];
@@ -296,12 +296,12 @@ SubmitQueuedInvalidationDescriptor (
     //
     // 256-bit descriptor
     //
-    QueueSize            = (UINTN)(1 << (IqaReg.Bits.QS + 7));
-    Qi256Desc = (QI_256_DESC *) (UINTN) LShiftU64 (IQBassAddress, VTD_PAGE_SHIFT);
+    QueueSize = (UINTN)(1 << (IqaReg.Bits.QS + 7));
+    Qi256Desc = (QI_256_DESC *)(UINTN)LShiftU64 (IQBassAddress, VTD_PAGE_SHIFT);
     //
     // Get IQT_REG.QT for 256-bit descriptors
     //
-    QueueTail = (UINTN) (RShiftU64 (IqtReg.Uint64, 5) & 0x3FFF);
+    QueueTail            = (UINTN)(RShiftU64 (IqtReg.Uint64, 5) & 0x3FFF);
     Qi256Desc           += QueueTail;
     Qi256Desc->Uint64[0] = Desc->Uint64[0];
     Qi256Desc->Uint64[1] = Desc->Uint64[1];
@@ -343,9 +343,9 @@ SubmitQueuedInvalidationDescriptor (
     // Check IQA_REG.DW (Descriptor Width) and get IQH_REG.QH
     //
     if ((IqaReg.Uint64 & BIT11) == 0) {
-      QueueHead = (UINTN) (RShiftU64 (IqhReg.Uint64, 4) & 0x7FFF);
+      QueueHead = (UINTN)(RShiftU64 (IqhReg.Uint64, 4) & 0x7FFF);
     } else {
-      QueueHead = (UINTN) (RShiftU64 (IqhReg.Uint64, 5) & 0x3FFF);
+      QueueHead = (UINTN)(RShiftU64 (IqhReg.Uint64, 5) & 0x3FFF);
     }
   } while (QueueTail != QueueHead);
 
@@ -437,7 +437,7 @@ InvalidateIOTLB (
     // Queued Invalidation
     //
     CapReg.Uint64    = MmioRead64 (VTdUnitInfo->VtdUnitBaseAddress + R_CAP_REG);
-    QiDesc.Uint64[0] = QI_IOTLB_DID(0) | (CapReg.Bits.DRD ? QI_IOTLB_DR(1) : QI_IOTLB_DR(0)) | (CapReg.Bits.DWD ? QI_IOTLB_DW(1) : QI_IOTLB_DW(0)) | QI_IOTLB_GRAN(1) | QI_IOTLB_TYPE;
+    QiDesc.Uint64[0] = QI_IOTLB_DID (0) | (CapReg.Bits.DRD ? QI_IOTLB_DR (1) : QI_IOTLB_DR (0)) | (CapReg.Bits.DWD ? QI_IOTLB_DW (1) : QI_IOTLB_DW (0)) | QI_IOTLB_GRAN (1) | QI_IOTLB_TYPE;
     QiDesc.Uint64[1] = QI_IOTLB_ADDR (0) | QI_IOTLB_IH (0) | QI_IOTLB_AM (0);
     QiDesc.Uint64[2] = 0;
     QiDesc.Uint64[3] = 0;

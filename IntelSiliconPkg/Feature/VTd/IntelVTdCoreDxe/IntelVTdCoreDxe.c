@@ -31,12 +31,12 @@
 EFI_STATUS
 EFIAPI
 IoMmuMap (
-  IN     EDKII_IOMMU_PROTOCOL                       *This,
-  IN     EDKII_IOMMU_OPERATION                      Operation,
-  IN     VOID                                       *HostAddress,
-  IN OUT UINTN                                      *NumberOfBytes,
-  OUT    EFI_PHYSICAL_ADDRESS                       *DeviceAddress,
-  OUT    VOID                                       **Mapping
+  IN     EDKII_IOMMU_PROTOCOL   *This,
+  IN     EDKII_IOMMU_OPERATION  Operation,
+  IN     VOID                   *HostAddress,
+  IN OUT UINTN                  *NumberOfBytes,
+  OUT    EFI_PHYSICAL_ADDRESS   *DeviceAddress,
+  OUT    VOID                   **Mapping
   );
 
 /**
@@ -52,8 +52,8 @@ IoMmuMap (
 EFI_STATUS
 EFIAPI
 IoMmuUnmap (
-  IN  EDKII_IOMMU_PROTOCOL                     *This,
-  IN  VOID                                     *Mapping
+  IN  EDKII_IOMMU_PROTOCOL  *This,
+  IN  VOID                  *Mapping
   );
 
 /**
@@ -79,12 +79,12 @@ IoMmuUnmap (
 EFI_STATUS
 EFIAPI
 IoMmuAllocateBuffer (
-  IN     EDKII_IOMMU_PROTOCOL                     *This,
-  IN     EFI_ALLOCATE_TYPE                        Type,
-  IN     EFI_MEMORY_TYPE                          MemoryType,
-  IN     UINTN                                    Pages,
-  IN OUT VOID                                     **HostAddress,
-  IN     UINT64                                   Attributes
+  IN     EDKII_IOMMU_PROTOCOL  *This,
+  IN     EFI_ALLOCATE_TYPE     Type,
+  IN     EFI_MEMORY_TYPE       MemoryType,
+  IN     UINTN                 Pages,
+  IN OUT VOID                  **HostAddress,
+  IN     UINT64                Attributes
   );
 
 /**
@@ -102,9 +102,9 @@ IoMmuAllocateBuffer (
 EFI_STATUS
 EFIAPI
 IoMmuFreeBuffer (
-  IN  EDKII_IOMMU_PROTOCOL                     *This,
-  IN  UINTN                                    Pages,
-  IN  VOID                                     *HostAddress
+  IN  EDKII_IOMMU_PROTOCOL  *This,
+  IN  UINTN                 Pages,
+  IN  VOID                  *HostAddress
   );
 
 /**
@@ -138,23 +138,23 @@ SyncDeviceHandleToMapInfo (
 **/
 EFI_STATUS
 DeviceHandleToSourceId (
-  IN EFI_HANDLE            DeviceHandle,
-  OUT UINT16               *Segment,
-  OUT VTD_SOURCE_ID        *SourceId
+  IN EFI_HANDLE      DeviceHandle,
+  OUT UINT16         *Segment,
+  OUT VTD_SOURCE_ID  *SourceId
   )
 {
-  EFI_PCI_IO_PROTOCOL                      *PciIo;
-  UINTN                                    Seg;
-  UINTN                                    Bus;
-  UINTN                                    Dev;
-  UINTN                                    Func;
-  EFI_STATUS                               Status;
-  EDKII_PLATFORM_VTD_DEVICE_INFO           DeviceInfo;
+  EFI_PCI_IO_PROTOCOL             *PciIo;
+  UINTN                           Seg;
+  UINTN                           Bus;
+  UINTN                           Dev;
+  UINTN                           Func;
+  EFI_STATUS                      Status;
+  EDKII_PLATFORM_VTD_DEVICE_INFO  DeviceInfo;
 
   Status = EFI_NOT_FOUND;
   if (mPlatformVTdPolicy != NULL) {
     Status = mPlatformVTdPolicy->GetDeviceId (mPlatformVTdPolicy, DeviceHandle, &DeviceInfo);
-    if (!EFI_ERROR(Status)) {
+    if (!EFI_ERROR (Status)) {
       *Segment  = DeviceInfo.Segment;
       *SourceId = DeviceInfo.SourceId;
       return EFI_SUCCESS;
@@ -162,16 +162,18 @@ DeviceHandleToSourceId (
   }
 
   Status = gBS->HandleProtocol (DeviceHandle, &gEfiPciIoProtocolGuid, (VOID **)&PciIo);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
+
   Status = PciIo->GetLocation (PciIo, &Seg, &Bus, &Dev, &Func);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
-  *Segment = (UINT16)Seg;
-  SourceId->Bits.Bus = (UINT8)Bus;
-  SourceId->Bits.Device = (UINT8)Dev;
+
+  *Segment                = (UINT16)Seg;
+  SourceId->Bits.Bus      = (UINT8)Bus;
+  SourceId->Bits.Device   = (UINT8)Dev;
   SourceId->Bits.Function = (UINT8)Func;
 
   return EFI_SUCCESS;
@@ -229,14 +231,14 @@ VTdSetAttribute (
   EFI_STATUS                  Status;
   UINT16                      Segment;
   VTD_SOURCE_ID               SourceId;
-  CHAR8                       PerfToken[sizeof("VTD(S0000.B00.D00.F00)")];
+  CHAR8                       PerfToken[sizeof ("VTD(S0000.B00.D00.F00)")];
   UINT32                      Identifier;
   VTD_PROTOCOL_SET_ATTRIBUTE  LogSetAttribute;
 
   DumpVtdIfError ();
 
   Status = DeviceHandleToSourceId (DeviceHandle, &Segment, &SourceId);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -256,23 +258,24 @@ VTdSetAttribute (
       ASSERT_EFI_ERROR (EFI_NOT_READY);
       return EFI_NOT_READY;
     }
+
     Status = RequestAccessAttribute (Segment, SourceId, DeviceAddress, Length, IoMmuAccess);
   } else {
     PERF_CODE (
-      AsciiSPrint (PerfToken, sizeof(PerfToken), "S%04xB%02xD%02xF%01x", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function);
+      AsciiSPrint (PerfToken, sizeof (PerfToken), "S%04xB%02xD%02xF%01x", Segment, SourceId.Bits.Bus, SourceId.Bits.Device, SourceId.Bits.Function);
       Identifier = (Segment << 16) | SourceId.Uint16;
       PERF_START_EX (gImageHandle, PerfToken, "IntelVTD", 0, Identifier);
-    );
+      );
 
     Status = SetAccessAttribute (Segment, SourceId, DeviceAddress, Length, IoMmuAccess);
 
     PERF_CODE (
       Identifier = (Segment << 16) | SourceId.Uint16;
       PERF_END_EX (gImageHandle, PerfToken, "IntelVTD", 0, Identifier);
-    );
+      );
   }
 
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     SyncDeviceHandleToMapInfo (
       DeviceHandle,
       DeviceAddress,
@@ -281,11 +284,11 @@ VTdSetAttribute (
       );
   }
 
-  LogSetAttribute.SourceId.Uint16  = SourceId.Uint16;
-  LogSetAttribute.DeviceAddress    = DeviceAddress;
-  LogSetAttribute.Length           = Length;
-  LogSetAttribute.IoMmuAccess      = IoMmuAccess;
-  LogSetAttribute.Status           = Status;
+  LogSetAttribute.SourceId.Uint16 = SourceId.Uint16;
+  LogSetAttribute.DeviceAddress   = DeviceAddress;
+  LogSetAttribute.Length          = Length;
+  LogSetAttribute.IoMmuAccess     = IoMmuAccess;
+  LogSetAttribute.Status          = Status;
   VTdLogAddDataEvent (VTDLOG_DXE_IOMMU_SET_ATTRIBUTE, 0, &LogSetAttribute, sizeof (VTD_PROTOCOL_SET_ATTRIBUTE));
 
   return Status;
@@ -345,12 +348,12 @@ IoMmuSetAttribute (
   OriginalTpl = gBS->RaiseTPL (VTD_TPL_LEVEL);
 
   Status = GetDeviceInfoFromMapping (Mapping, &DeviceAddress, &NumberOfPages);
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     Status = VTdSetAttribute (
                This,
                DeviceHandle,
                DeviceAddress,
-               EFI_PAGES_TO_SIZE(NumberOfPages),
+               EFI_PAGES_TO_SIZE (NumberOfPages),
                IoMmuAccess
                );
   }
@@ -390,7 +393,7 @@ IntelVTdInitialize (
   EFI_STATUS  Status;
   EFI_HANDLE  Handle;
 
-  if ((PcdGet8(PcdVTdPolicyPropertyMask) & BIT0) == 0) {
+  if ((PcdGet8 (PcdVTdPolicyPropertyMask) & BIT0) == 0) {
     return EFI_UNSUPPORTED;
   }
 
@@ -401,7 +404,8 @@ IntelVTdInitialize (
   Handle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &Handle,
-                  &gEdkiiIoMmuProtocolGuid, &mIntelVTd,
+                  &gEdkiiIoMmuProtocolGuid,
+                  &mIntelVTd,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);

@@ -97,7 +97,7 @@ EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  mFvbProtocolTemplate = {
 **/
 EFI_FVB_ATTRIBUTES_2
 FvbGetVolumeAttributes (
-  IN CONST  EFI_FVB_INSTANCE    *FvbInstance
+  IN CONST  EFI_FVB_INSTANCE  *FvbInstance
   )
 {
   if (FvbInstance == NULL) {
@@ -129,19 +129,19 @@ FvbGetVolumeAttributes (
 **/
 EFI_STATUS
 FvbGetLbaAddress (
-  IN  CONST EFI_FVB_INSTANCE              *FvbInstance,
-  IN  EFI_LBA                             Lba,
-  OUT UINTN                               *LbaAddress OPTIONAL,
-  OUT UINTN                               *LbaLength OPTIONAL,
-  OUT UINTN                               *NumOfBlocks OPTIONAL
+  IN  CONST EFI_FVB_INSTANCE  *FvbInstance,
+  IN  EFI_LBA                 Lba,
+  OUT UINTN                   *LbaAddress OPTIONAL,
+  OUT UINTN                   *LbaLength OPTIONAL,
+  OUT UINTN                   *NumOfBlocks OPTIONAL
   )
 {
-  UINT32                  NumBlocks;
-  UINT32                  BlockLength;
-  UINTN                   Offset;
-  EFI_LBA                 StartLba;
-  EFI_LBA                 NextLba;
-  CONST EFI_FV_BLOCK_MAP_ENTRY            *BlockMap;
+  UINT32                        NumBlocks;
+  UINT32                        BlockLength;
+  UINTN                         Offset;
+  EFI_LBA                       StartLba;
+  EFI_LBA                       NextLba;
+  CONST EFI_FV_BLOCK_MAP_ENTRY  *BlockMap;
 
   StartLba = 0;
   Offset   = 0;
@@ -216,11 +216,11 @@ FvbGetLbaAddress (
 **/
 EFI_STATUS
 FvbReadBlock (
-  IN CONST  EFI_FVB_INSTANCE              *FvbInstance,
-  IN EFI_LBA                              Lba,
-  IN UINTN                                BlockOffset,
-  IN OUT UINTN                            *NumBytes,
-  IN UINT8                                *Buffer
+  IN CONST  EFI_FVB_INSTANCE  *FvbInstance,
+  IN EFI_LBA                  Lba,
+  IN UINTN                    BlockOffset,
+  IN OUT UINTN                *NumBytes,
+  IN UINT8                    *Buffer
   )
 {
   EFI_FVB_ATTRIBUTES_2  Attributes;
@@ -297,11 +297,11 @@ FvbReadBlock (
 **/
 EFI_STATUS
 FvbWriteBlock (
-  IN CONST  EFI_FVB_INSTANCE              *FvbInstance,
-  IN EFI_LBA                              Lba,
-  IN UINTN                                BlockOffset,
-  IN OUT UINTN                            *NumBytes,
-  IN UINT8                                *Buffer
+  IN CONST  EFI_FVB_INSTANCE  *FvbInstance,
+  IN EFI_LBA                  Lba,
+  IN UINTN                    BlockOffset,
+  IN OUT UINTN                *NumBytes,
+  IN UINT8                    *Buffer
   )
 {
   EFI_FVB_ATTRIBUTES_2  Attributes;
@@ -385,8 +385,8 @@ FvbWriteBlock (
 **/
 EFI_STATUS
 FvbEraseBlock (
-  IN CONST  EFI_FVB_INSTANCE    *FvbInstance,
-  IN EFI_LBA                    Lba
+  IN CONST  EFI_FVB_INSTANCE  *FvbInstance,
+  IN EFI_LBA                  Lba
   )
 {
   EFI_FVB_ATTRIBUTES_2  Attributes;
@@ -722,8 +722,8 @@ IsFvHeaderValid (
 EFI_STATUS
 EFIAPI
 FvbProtocolGetPhysicalAddress (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
-  OUT       EFI_PHYSICAL_ADDRESS                  *Address
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  OUT       EFI_PHYSICAL_ADDRESS                *Address
   )
 {
   EFI_FVB_INSTANCE  *FvbInstance;
@@ -758,10 +758,10 @@ FvbProtocolGetPhysicalAddress (
 EFI_STATUS
 EFIAPI
 FvbProtocolGetBlockSize (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
-  IN        EFI_LBA                               Lba,
-  OUT       UINTN                                 *BlockSize,
-  OUT       UINTN                                 *NumOfBlocks
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  IN        EFI_LBA                             Lba,
+  OUT       UINTN                               *BlockSize,
+  OUT       UINTN                               *NumOfBlocks
   )
 {
   EFI_FVB_INSTANCE  *FvbInstance;
@@ -802,8 +802,8 @@ FvbProtocolGetBlockSize (
 EFI_STATUS
 EFIAPI
 FvbProtocolGetAttributes (
-  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  OUT       EFI_FVB_ATTRIBUTES_2                 *Attributes
+  IN CONST  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  OUT       EFI_FVB_ATTRIBUTES_2                *Attributes
   )
 {
   EFI_FVB_INSTANCE  *FvbInstance;
@@ -838,8 +838,8 @@ FvbProtocolGetAttributes (
 EFI_STATUS
 EFIAPI
 FvbProtocolSetAttributes (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN OUT EFI_FVB_ATTRIBUTES_2                   *Attributes
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  IN OUT EFI_FVB_ATTRIBUTES_2                  *Attributes
   )
 {
   EFI_STATUS        Status;
@@ -856,7 +856,7 @@ FvbProtocolSetAttributes (
     *Attributes
     ));
 
-  FvbInstance  = FVB_INSTANCE_FROM_THIS (This);
+  FvbInstance = FVB_INSTANCE_FROM_THIS (This);
 
   Status = FvbSetVolumeAttributes (FvbInstance, Attributes);
 
@@ -893,7 +893,7 @@ FvbProtocolSetAttributes (
 EFI_STATUS
 EFIAPI
 FvbProtocolEraseBlocks (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
   ...
   )
 {
@@ -993,11 +993,11 @@ FvbProtocolEraseBlocks (
 EFI_STATUS
 EFIAPI
 FvbProtocolWrite (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN EFI_LBA                                    Lba,
-  IN UINTN                                      Offset,
-  IN OUT UINTN                                  *NumBytes,
-  IN UINT8                                      *Buffer
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  IN EFI_LBA                                   Lba,
+  IN UINTN                                     Offset,
+  IN OUT UINTN                                 *NumBytes,
+  IN UINT8                                     *Buffer
   )
 {
   EFI_FVB_INSTANCE  *FvbInstance;
@@ -1049,11 +1049,11 @@ FvbProtocolWrite (
 EFI_STATUS
 EFIAPI
 FvbProtocolRead (
-  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
-  IN EFI_LBA                                    Lba,
-  IN UINTN                                      Offset,
-  IN OUT UINTN                                  *NumBytes,
-  OUT UINT8                                     *Buffer
+  IN CONST EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  IN EFI_LBA                                   Lba,
+  IN UINTN                                     Offset,
+  IN OUT UINTN                                 *NumBytes,
+  OUT UINT8                                    *Buffer
   )
 {
   EFI_FVB_INSTANCE  *FvbInstance;
