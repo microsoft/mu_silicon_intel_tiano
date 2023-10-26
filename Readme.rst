@@ -18,10 +18,10 @@ Branch Status - release/202308
   In Development
 
 :Entered Development:
-  May 2023
+  October 2023
 
 :Anticipated Stabilization:
-  August 2023
+  February 2024
 
 Branch Changes - release/202308
 ===============================
@@ -34,12 +34,13 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- Incomplete
+- Added Vtd core drivers
 
 Bug Fixes-dev
 -------------
 
-- Incomplete
+- Fixed build error with IntelVtdDmarPei when optimizations are disabled
+- Fixed wrong parameter errors and parameter transfer errors in IntelSiliconPkg/Vtd
 
 2308_RefBoot Changes
 --------------------
