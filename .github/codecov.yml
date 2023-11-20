@@ -1,0 +1,14 @@
+## @file
+# codecov upload configuration file to carryforward coverage results of
+# packages that do not upload coverage results for a given pull request.
+##
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+flags:
+  IntelFsp2Pkg:
+    carryforward: true
+  IntelFsp2WrapperPkg:
+    carryforward: true
+  IntelSiliconPkg:
+    carryforward: true
