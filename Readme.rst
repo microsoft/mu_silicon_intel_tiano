@@ -11,7 +11,7 @@ Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverag
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
-Branch Status - release/202308
+Branch Status - release/202311
 ==============================
 
 :Status:
@@ -23,7 +23,7 @@ Branch Status - release/202308
 :Anticipated Stabilization:
   February 2024
 
-Branch Changes - release/202308
+Branch Changes - release/202311
 ===============================
 
 Breaking Changes-dev
@@ -34,28 +34,27 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- Added Vtd core drivers
+- Incomplete
 
 Bug Fixes-dev
 -------------
 
-- Fixed build error with IntelVtdDmarPei when optimizations are disabled
-- Fixed wrong parameter errors and parameter transfer errors in IntelSiliconPkg/Vtd
+- Incomplete
 
-2308_RefBoot Changes
+2311_RefBoot Changes
 --------------------
 
 - Incomplete
 
-2308_CIBuild Changes
+2311_CIBuild Changes
 --------------------
 
-- Incompletet
+- Incomplete
 
-2308_Rebase Changes
+2311_Rebase Changes
 -------------------
 
-| Starting commit: e284ae6c1b
+| Starting commit: 2f6db33cae
 | Destination commit: TBA
 
 
@@ -65,8 +64,8 @@ Repo Maintenance
 Upstream Sync Details
 ---------------------
 
-- edk2 - 5c9676 (edk2-stable202308)
-- edk2_platforms - e509ac5a72 ("Platform/SbsaQemu: add GIC ITS support", 2023-08-22)
+- edk2 - 8736b8f (edk2-stable202311)
+- edk2_platforms - 10e2eb030d ("multiple Arm platforms: set WritePolicyValid for all cache types", 2023-11-22)
 
 Instructions
 ------------
@@ -174,12 +173,12 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=53&&branchName=release%2F202308
-.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20VS2019?branchName=release%2F202308
+.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=53&&branchName=release%2F202311
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20VS2019?branchName=release%2F202311
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/53.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=54&branchName=release%2F202308
-.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20Ubuntu%20GCC5?branchName=release%2F202308
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=54&branchName=release%2F202311
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20Ubuntu%20GCC5?branchName=release%2F202311
 .. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/54.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
