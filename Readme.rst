@@ -29,27 +29,27 @@ Branch Changes - release/202311
 Breaking Changes-dev
 --------------------
 
-- Incomplete
+- Nothing
 
 Main Changes-dev
 ----------------
 
-- Incomplete
+- Nothing
 
 Bug Fixes-dev
 -------------
 
-- Incomplete
+- Nothing
 
 2311_RefBoot Changes
 --------------------
 
-- Incomplete
+- Nothing
 
 2311_CIBuild Changes
 --------------------
 
-- Incomplete
+- Nothing
 
 2311_Rebase Changes
 -------------------
