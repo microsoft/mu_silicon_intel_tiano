@@ -1,0 +1,23 @@
+###################################################
+# Line Ending Only Changes                        #
+###################################################
+# Fixed new line endings being LF instead of CRLF
+53954a8aba9aeca7c784fad5bcce0b2015f330ea
+# Fix line endings in repo (LF -> CRLF)
+18949932d64eff23d78934a897ce7ff1ec1b2845
+# IntelFsp2WrapperPkg: Convert files to CRLF line ending
+ca467f68f4ce520ad0250678c91e9623a0195902
+# IntelFsp2Pkg: Convert files to CRLF line ending
+4aabee6980fb60aecc58e750560205abcf681236
+
+###################################################
+# Code Formatting (Uncrustify) Only Changes       #
+###################################################
+# Mu Change: Uncrustify
+ab8572f969c2c8c7bd7d64e0510245214d2a67eb
+# Ran uncrustify on the repo to get it to meet our coding standards
+e0ac3003f94c8abe3c1ebdbd4505b055814ca09c
+# IntelFsp2WrapperPkg: Apply uncrustify changes
+7c7184e201a90a1d2376e615e55e3f4074731468
+# IntelFsp2Pkg: Apply uncrustify changes
+111f2228ddf487b0ac3491e416bb3dcdcfa4f979
