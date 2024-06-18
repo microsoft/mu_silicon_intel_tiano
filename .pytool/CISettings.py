@@ -5,39 +5,43 @@
 # Copyright (c) 2020 - 2021, ARM Limited. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
+import glob  # MU_CHANGE
 import os
 import logging
 import sys
 from edk2toolext.environment import shell_environment
 from edk2toolext.invocables.edk2_ci_build import CiBuildSettingsManager
+from edk2toolext.invocables.edk2_ci_setup import CiSetupSettingsManager     # MU_CHANGE
 from edk2toolext.invocables.edk2_setup import SetupSettingsManager, RequiredSubmodule
 from edk2toolext.invocables.edk2_update import UpdateSettingsManager
 from edk2toolext.invocables.edk2_pr_eval import PrEvalSettingsManager
 from edk2toollib.utility_functions import GetHostInfo
 from pathlib import Path
 
+ # MU_CHANGE [BEGIN]
+#try:
+#    # Temporarily needed until edk2 can update to the latest edk2-pytools
+#    # that has the CodeQL helpers.
+#    #
+#    # May not be present until submodules are populated.
+#    #
+#    root = Path(__file__).parent.parent.resolve()
+#    sys.path.append(str(root/'BaseTools'/'Plugin'/'CodeQL'/'integration'))
+#    import stuart_codeql as codeql_helpers
+#except ImportError:
+#    pass
+from edk2toolext import codeql as codeql_helpers
+ # MU_CHANGE [END]
 
-try:
-    # Temporarily needed until edk2 can update to the latest edk2-pytools
-    # that has the CodeQL helpers.
-    #
-    # May not be present until submodules are populated.
-    #
-    root = Path(__file__).parent.parent.resolve()
-    sys.path.append(str(root/'BaseTools'/'Plugin'/'CodeQL'/'integration'))
-    import stuart_codeql as codeql_helpers
-except ImportError:
-    pass
-
-
-class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManager, PrEvalSettingsManager):
+# MU_CHANGE - Add CiSetupSettingsManager superclass.
+class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManager, PrEvalSettingsManager):
 
     def __init__(self):
         self.ActualPackages = []
         self.ActualTargets = []
         self.ActualArchitectures = []
         self.ActualToolChainTag = ""
-        self.UseBuiltInBaseTools = None
+#        self.UseBuiltInBaseTools = None # MU_CHANGE
         self.ActualScopes = None
 
     # ####################################################################################### #
@@ -45,22 +49,24 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
     # ####################################################################################### #
 
     def AddCommandLineOptions(self, parserObj):
-        group = parserObj.add_mutually_exclusive_group()
-        group.add_argument("-force_piptools", "--fpt", dest="force_piptools", action="store_true", default=False, help="Force the system to use pip tools")
-        group.add_argument("-no_piptools", "--npt", dest="no_piptools", action="store_true", default=False, help="Force the system to not use pip tools")
-
+ # MU_CHANGE [BEGIN]
+#        group = parserObj.add_mutually_exclusive_group()
+#        group.add_argument("-force_piptools", "--fpt", dest="force_piptools", action="store_true", default=False, help="Force the system to use pip tools")
+#        group.add_argument("-no_piptools", "--npt", dest="no_piptools", action="store_true", default=False, help="Force the system to not use pip tools")
+ # MU_CHANGE [END]
         try:
             codeql_helpers.add_command_line_option(parserObj)
         except NameError:
             pass
 
     def RetrieveCommandLineOptions(self, args):
-        super().RetrieveCommandLineOptions(args)
-        if args.force_piptools:
-            self.UseBuiltInBaseTools = True
-        if args.no_piptools:
-            self.UseBuiltInBaseTools = False
-
+ # MU_CHANGE [BEGIN]
+#        super().RetrieveCommandLineOptions(args)
+#        if args.force_piptools:
+#            self.UseBuiltInBaseTools = True
+#        if args.no_piptools:
+#            self.UseBuiltInBaseTools = False
+ # MU_CHANGE [END]
         try:
             self.codeql = codeql_helpers.is_codeql_enabled_on_command_line(args)
         except NameError:
@@ -73,6 +79,12 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
     def GetPackagesSupported(self):
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
+# MU_CHANGE [BEGIN]
+        return ("IntelFsp2Pkg",                  
+                "IntelFsp2WrapperPkg",           # MU_CHANGE
+                "IntelSiliconPkg"                # MU_CHANGE
+                )
+# MU_CHANGE [END]
 
         return ("ArmPkg",
                 "ArmPlatformPkg",
@@ -177,23 +189,31 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             self.ActualToolChainTag = shell_environment.GetBuildVars().GetValue("TOOL_CHAIN_TAG", "")
 
             is_linux = GetHostInfo().os.upper() == "LINUX"
+# MU_CHANGE [BEGIN]
+#            if self.UseBuiltInBaseTools is None:
+#                is_linux = GetHostInfo().os.upper() == "LINUX"
+#                # try and import the pip module for basetools
+#                try:
+#                    import edk2basetools
+#                    self.UseBuiltInBaseTools = True
+#                except ImportError:
+#                    self.UseBuiltInBaseTools = False
+#                    pass
+#
+#            if self.UseBuiltInBaseTools == True:
+#                scopes += ('pipbuild-unix',) if is_linux else ('pipbuild-win',)
+#                logging.warning("Using Pip Tools based BaseTools")
+#            else:
+#                logging.warning("Falling back to using in-tree BaseTools")
 
-            if self.UseBuiltInBaseTools is None:
-                is_linux = GetHostInfo().os.upper() == "LINUX"
-                # try and import the pip module for basetools
-                try:
-                    import edk2basetools
-                    self.UseBuiltInBaseTools = True
-                except ImportError:
-                    self.UseBuiltInBaseTools = False
-                    pass
-
-            if self.UseBuiltInBaseTools == True:
-                scopes += ('pipbuild-unix',) if is_linux else ('pipbuild-win',)
-                logging.warning("Using Pip Tools based BaseTools")
-            else:
-                logging.warning("Falling back to using in-tree BaseTools")
-
+            if is_linux and self.ActualToolChainTag.upper().startswith("GCC"):
+                if "AARCH64" in self.ActualArchitectures:
+                    scopes += ("gcc_aarch64_linux",)
+                if "ARM" in self.ActualArchitectures:
+                    scopes += ("gcc_arm_linux",)
+                if "RISCV64" in self.ActualArchitectures:
+                    scopes += ("gcc_riscv64_unknown",)
+# MU_CHANGE [END]
             try:
                 scopes += codeql_helpers.get_scopes(self.codeql)
 
@@ -202,6 +222,16 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                         "STUART_CODEQL_AUDIT_ONLY",
                         "TRUE",
                         "Set in CISettings.py")
+# MU_CHANGE [BEGIN]
+                    codeql_filter_files = [str(n) for n in glob.glob(
+                        os.path.join(self.GetWorkspaceRoot(),
+                            '**/CodeQlFilters.yml'),
+                        recursive=True)]
+                    shell_environment.GetBuildVars().SetValue(
+                        "STUART_CODEQL_FILTER_FILES",
+                        ','.join(codeql_filter_files),
+                        "Set in CISettings.py")
+# MU_CHANGE [END]
             except NameError:
                 pass
 
@@ -213,43 +243,75 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         If no RequiredSubmodules return an empty iterable
         '''
         rs = []
-        rs.append(RequiredSubmodule(
-            "ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3", False))
-        rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/OpensslLib/openssl", False))
-        rs.append(RequiredSubmodule(
-            "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
-        rs.append(RequiredSubmodule(
-            "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest", False))
-        rs.append(RequiredSubmodule(
-            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma", False))
-        rs.append(RequiredSubmodule(
-            "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
-        rs.append(RequiredSubmodule(
-            "BaseTools/Source/C/BrotliCompress/brotli", False))
-        rs.append(RequiredSubmodule(
-            "RedfishPkg/Library/JsonLib/jansson", False))
-        rs.append(RequiredSubmodule(
-            "UnitTestFrameworkPkg/Library/SubhookLib/subhook", False))
-        rs.append(RequiredSubmodule(
-            "MdePkg/Library/BaseFdtLib/libfdt", False))
-        rs.append(RequiredSubmodule(
-            "MdePkg/Library/MipiSysTLib/mipisyst", False))
-        rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/MbedTlsLib/mbedtls", False))
-        rs.append(RequiredSubmodule(
-            "SecurityPkg/DeviceSecurity/SpdmLib/libspdm", False))
+# MU_CHANGE [BEGIN]
+#        rs.append(RequiredSubmodule(
+#            "ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3", False))
+#        rs.append(RequiredSubmodule(
+#            "CryptoPkg/Library/OpensslLib/openssl", False))
+#        rs.append(RequiredSubmodule(
+#            "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
+#        rs.append(RequiredSubmodule(
+#            "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest", False))
+#        rs.append(RequiredSubmodule(
+#            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma", False))
+#        rs.append(RequiredSubmodule(
+#            "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
+#        rs.append(RequiredSubmodule(
+#            "BaseTools/Source/C/BrotliCompress/brotli", False))
+#        rs.append(RequiredSubmodule(
+#            "RedfishPkg/Library/JsonLib/jansson", False))
+#        rs.append(RequiredSubmodule(
+#            "UnitTestFrameworkPkg/Library/SubhookLib/subhook", False))
+#        rs.append(RequiredSubmodule(
+#            "MdePkg/Library/BaseFdtLib/libfdt", False))
+#        rs.append(RequiredSubmodule(
+#            "MdePkg/Library/MipiSysTLib/mipisyst", False))
+#        rs.append(RequiredSubmodule(
+#            "CryptoPkg/Library/MbedTlsLib/mbedtls", False))
+#        rs.append(RequiredSubmodule(
+#            "SecurityPkg/DeviceSecurity/SpdmLib/libspdm", False))
+# MU_CHANGE [END] 
         return rs
 
     def GetName(self):
-        return "Edk2"
+        return "SiliconIntelTiano" # MU_CHANGE
 
     def GetDependencies(self):
+        # MU_CHANGE BEGIN
+        ''' Return Git Repository Dependencies
+
+        Return an iterable of dictionary objects with the following fields
+        {
+            Path: <required> Workspace relative path
+            Url: <required> Url of git repo
+            Commit: <optional> Commit to checkout of repo
+            Branch: <optional> Branch to checkout (will checkout most recent commit in branch)
+            Full: <optional> Boolean to do shallow or Full checkout.  (default is False)
+            ReferencePath: <optional> Workspace relative path to git repo to use as "reference"
+        }
+        '''
         return [
+            {
+                "Path": "Common/MU_TIANO",
+                "Url": "https://github.com/microsoft/mu_tiano_plus.git",
+                "Branch": "release/202405"
+            },
+            {
+                "Path": "MU_BASECORE",
+                "Url": "https://github.com/microsoft/mu_basecore.git",
+                "Branch": "release/202405"
+            }
         ]
+        # MU_CHANGE END
 
     def GetPackagesPath(self):
-        return ()
+        # MU_CHANGE BEGIN
+        ''' Return a list of workspace relative paths that should be mapped as edk2 PackagesPath '''
+        result = []
+        for a in self.GetDependencies():
+            result.append(a["Path"])
+        return result
+        # MU_CHANGE END
 
     def GetWorkspaceRoot(self):
         ''' get WorkspacePath '''
@@ -257,6 +319,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
 
     def FilterPackagesToTest(self, changedFilesList: list, potentialPackagesList: list) -> list:
         ''' Filter potential packages to test based on changed files. '''
+        return [] # MU_CHANGE
         build_these_packages = []
         possible_packages = potentialPackagesList.copy()
         for f in changedFilesList:
