@@ -7,14 +7,14 @@
 
 #include "DmaProtection.h"
 
-UINT64                                  mBelow4GMemoryLimit;
-UINT64                                  mAbove4GMemoryLimit;
+UINT64  mBelow4GMemoryLimit;
+UINT64  mAbove4GMemoryLimit;
 
-EDKII_PLATFORM_VTD_POLICY_PROTOCOL      *mPlatformVTdPolicy;
+EDKII_PLATFORM_VTD_POLICY_PROTOCOL  *mPlatformVTdPolicy;
 
-VTD_ACCESS_REQUEST                      *mAccessRequest = NULL;
-UINTN                                   mAccessRequestCount = 0;
-UINTN                                   mAccessRequestMaxCount = 0;
+VTD_ACCESS_REQUEST  *mAccessRequest        = NULL;
+UINTN               mAccessRequestCount    = 0;
+UINTN               mAccessRequestMaxCount = 0;
 
 /**
   Append VTd Access Request to global.
@@ -38,15 +38,15 @@ UINTN                                   mAccessRequestMaxCount = 0;
 **/
 EFI_STATUS
 RequestAccessAttribute (
-  IN UINT16                 Segment,
-  IN VTD_SOURCE_ID          SourceId,
-  IN UINT64                 BaseAddress,
-  IN UINT64                 Length,
-  IN UINT64                 IoMmuAccess
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId,
+  IN UINT64         BaseAddress,
+  IN UINT64         Length,
+  IN UINT64         IoMmuAccess
   )
 {
-  VTD_ACCESS_REQUEST        *NewAccessRequest;
-  UINTN                     Index;
+  VTD_ACCESS_REQUEST  *NewAccessRequest;
+  UINTN               Index;
 
   //
   // Optimization for memory.
@@ -60,7 +60,8 @@ RequestAccessAttribute (
           (mAccessRequest[Index].SourceId.Uint16 == SourceId.Uint16) &&
           (mAccessRequest[Index].BaseAddress == BaseAddress) &&
           (mAccessRequest[Index].Length == Length) &&
-          (mAccessRequest[Index].IoMmuAccess != 0)) {
+          (mAccessRequest[Index].IoMmuAccess != 0))
+      {
         //
         // Remove this record [Index].
         // No need to add the new record.
@@ -72,7 +73,8 @@ RequestAccessAttribute (
             sizeof (VTD_ACCESS_REQUEST) * (mAccessRequestCount - 1 - Index)
             );
         }
-        ZeroMem (&mAccessRequest[mAccessRequestCount - 1], sizeof(VTD_ACCESS_REQUEST));
+
+        ZeroMem (&mAccessRequest[mAccessRequestCount - 1], sizeof (VTD_ACCESS_REQUEST));
         mAccessRequestCount--;
         return EFI_SUCCESS;
       }
@@ -80,24 +82,26 @@ RequestAccessAttribute (
   }
 
   if (mAccessRequestCount >= mAccessRequestMaxCount) {
-    NewAccessRequest = AllocateZeroPool (sizeof(*NewAccessRequest) * (mAccessRequestMaxCount + MAX_VTD_ACCESS_REQUEST));
+    NewAccessRequest = AllocateZeroPool (sizeof (*NewAccessRequest) * (mAccessRequestMaxCount + MAX_VTD_ACCESS_REQUEST));
     if (NewAccessRequest == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
+
     mAccessRequestMaxCount += MAX_VTD_ACCESS_REQUEST;
     if (mAccessRequest != NULL) {
-      CopyMem (NewAccessRequest, mAccessRequest, sizeof(*NewAccessRequest) * mAccessRequestCount);
+      CopyMem (NewAccessRequest, mAccessRequest, sizeof (*NewAccessRequest) * mAccessRequestCount);
       FreePool (mAccessRequest);
     }
+
     mAccessRequest = NewAccessRequest;
   }
 
   ASSERT (mAccessRequestCount < mAccessRequestMaxCount);
 
-  mAccessRequest[mAccessRequestCount].Segment = Segment;
-  mAccessRequest[mAccessRequestCount].SourceId = SourceId;
+  mAccessRequest[mAccessRequestCount].Segment     = Segment;
+  mAccessRequest[mAccessRequestCount].SourceId    = SourceId;
   mAccessRequest[mAccessRequestCount].BaseAddress = BaseAddress;
-  mAccessRequest[mAccessRequestCount].Length = Length;
+  mAccessRequest[mAccessRequestCount].Length      = Length;
   mAccessRequest[mAccessRequestCount].IoMmuAccess = IoMmuAccess;
 
   mAccessRequestCount++;
@@ -150,8 +154,9 @@ ProcessRequestedAccessAttribute (
   if (mAccessRequest != NULL) {
     FreePool (mAccessRequest);
   }
-  mAccessRequest = NULL;
-  mAccessRequestCount = 0;
+
+  mAccessRequest         = NULL;
+  mAccessRequestCount    = 0;
   mAccessRequestMaxCount = 0;
 
   DEBUG ((DEBUG_INFO, "ProcessRequestedAccessAttribute Done\n"));
@@ -168,21 +173,21 @@ ProcessRequestedAccessAttribute (
 **/
 VOID
 ReturnUefiMemoryMap (
-  OUT UINT64   *Below4GMemoryLimit,
-  OUT UINT64   *Above4GMemoryLimit
+  OUT UINT64  *Below4GMemoryLimit,
+  OUT UINT64  *Above4GMemoryLimit
   )
 {
-  EFI_STATUS                  Status;
-  EFI_MEMORY_DESCRIPTOR       *EfiMemoryMap;
-  EFI_MEMORY_DESCRIPTOR       *EfiMemoryMapEnd;
-  EFI_MEMORY_DESCRIPTOR       *EfiEntry;
-  EFI_MEMORY_DESCRIPTOR       *NextEfiEntry;
-  EFI_MEMORY_DESCRIPTOR       TempEfiEntry;
-  UINTN                       EfiMemoryMapSize;
-  UINTN                       EfiMapKey;
-  UINTN                       EfiDescriptorSize;
-  UINT32                      EfiDescriptorVersion;
-  UINT64                      MemoryBlockLength;
+  EFI_STATUS             Status;
+  EFI_MEMORY_DESCRIPTOR  *EfiMemoryMap;
+  EFI_MEMORY_DESCRIPTOR  *EfiMemoryMapEnd;
+  EFI_MEMORY_DESCRIPTOR  *EfiEntry;
+  EFI_MEMORY_DESCRIPTOR  *NextEfiEntry;
+  EFI_MEMORY_DESCRIPTOR  TempEfiEntry;
+  UINTN                  EfiMemoryMapSize;
+  UINTN                  EfiMapKey;
+  UINTN                  EfiDescriptorSize;
+  UINT32                 EfiDescriptorVersion;
+  UINT64                 MemoryBlockLength;
 
   *Below4GMemoryLimit = 0;
   *Above4GMemoryLimit = 0;
@@ -190,15 +195,15 @@ ReturnUefiMemoryMap (
   //
   // Get the EFI memory map.
   //
-  EfiMemoryMapSize  = 0;
-  EfiMemoryMap      = NULL;
-  Status = gBS->GetMemoryMap (
-                  &EfiMemoryMapSize,
-                  EfiMemoryMap,
-                  &EfiMapKey,
-                  &EfiDescriptorSize,
-                  &EfiDescriptorVersion
-                  );
+  EfiMemoryMapSize = 0;
+  EfiMemoryMap     = NULL;
+  Status           = gBS->GetMemoryMap (
+                            &EfiMemoryMapSize,
+                            EfiMemoryMap,
+                            &EfiMapKey,
+                            &EfiDescriptorSize,
+                            &EfiDescriptorVersion
+                            );
   ASSERT (Status == EFI_BUFFER_TOO_SMALL);
 
   do {
@@ -208,7 +213,7 @@ ReturnUefiMemoryMap (
     // EfiMemoryMapEnd which is dependent upon EfiMemoryMapSize. Otherwize
     // we process bogus entries and create bogus E820 entries.
     //
-    EfiMemoryMap = (EFI_MEMORY_DESCRIPTOR *) AllocatePool (EfiMemoryMapSize);
+    EfiMemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (EfiMemoryMapSize);
     if (EfiMemoryMap == NULL) {
       ASSERT (EfiMemoryMap != NULL);
       return;
@@ -225,6 +230,7 @@ ReturnUefiMemoryMap (
       FreePool (EfiMemoryMap);
     }
   } while (Status == EFI_BUFFER_TOO_SMALL);
+
   ASSERT_EFI_ERROR (Status);
 
   //
@@ -232,7 +238,7 @@ ReturnUefiMemoryMap (
   //
   EfiEntry        = EfiMemoryMap;
   NextEfiEntry    = NEXT_MEMORY_DESCRIPTOR (EfiEntry, EfiDescriptorSize);
-  EfiMemoryMapEnd = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) EfiMemoryMap + EfiMemoryMapSize);
+  EfiMemoryMapEnd = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)EfiMemoryMap + EfiMemoryMapSize);
   while (EfiEntry < EfiMemoryMapEnd) {
     while (NextEfiEntry < EfiMemoryMapEnd) {
       if (EfiEntry->PhysicalStart > NextEfiEntry->PhysicalStart) {
@@ -244,42 +250,44 @@ ReturnUefiMemoryMap (
       NextEfiEntry = NEXT_MEMORY_DESCRIPTOR (NextEfiEntry, EfiDescriptorSize);
     }
 
-    EfiEntry      = NEXT_MEMORY_DESCRIPTOR (EfiEntry, EfiDescriptorSize);
-    NextEfiEntry  = NEXT_MEMORY_DESCRIPTOR (EfiEntry, EfiDescriptorSize);
+    EfiEntry     = NEXT_MEMORY_DESCRIPTOR (EfiEntry, EfiDescriptorSize);
+    NextEfiEntry = NEXT_MEMORY_DESCRIPTOR (EfiEntry, EfiDescriptorSize);
   }
 
   DEBUG ((DEBUG_INFO, "MemoryMap:\n"));
   EfiEntry        = EfiMemoryMap;
-  EfiMemoryMapEnd = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) EfiMemoryMap + EfiMemoryMapSize);
+  EfiMemoryMapEnd = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)EfiMemoryMap + EfiMemoryMapSize);
   while (EfiEntry < EfiMemoryMapEnd) {
-    MemoryBlockLength = (UINT64) (LShiftU64 (EfiEntry->NumberOfPages, 12));
+    MemoryBlockLength = (UINT64)(LShiftU64 (EfiEntry->NumberOfPages, 12));
     DEBUG ((DEBUG_INFO, "Entry(0x%02x) 0x%016lx - 0x%016lx\n", EfiEntry->Type, EfiEntry->PhysicalStart, EfiEntry->PhysicalStart + MemoryBlockLength));
     switch (EfiEntry->Type) {
-    case EfiLoaderCode:
-    case EfiLoaderData:
-    case EfiBootServicesCode:
-    case EfiBootServicesData:
-    case EfiConventionalMemory:
-    case EfiRuntimeServicesCode:
-    case EfiRuntimeServicesData:
-    case EfiACPIReclaimMemory:
-    case EfiACPIMemoryNVS:
-    case EfiReservedMemoryType:
-      if ((EfiEntry->PhysicalStart + MemoryBlockLength) <= BASE_1MB) {
-        //
-        // Skip the memory block is under 1MB
-        //
-      } else if (EfiEntry->PhysicalStart >= BASE_4GB) {
-        if (*Above4GMemoryLimit < EfiEntry->PhysicalStart + MemoryBlockLength) {
-          *Above4GMemoryLimit = EfiEntry->PhysicalStart + MemoryBlockLength;
+      case EfiLoaderCode:
+      case EfiLoaderData:
+      case EfiBootServicesCode:
+      case EfiBootServicesData:
+      case EfiConventionalMemory:
+      case EfiRuntimeServicesCode:
+      case EfiRuntimeServicesData:
+      case EfiACPIReclaimMemory:
+      case EfiACPIMemoryNVS:
+      case EfiReservedMemoryType:
+        if ((EfiEntry->PhysicalStart + MemoryBlockLength) <= BASE_1MB) {
+          //
+          // Skip the memory block is under 1MB
+          //
+        } else if (EfiEntry->PhysicalStart >= BASE_4GB) {
+          if (*Above4GMemoryLimit < EfiEntry->PhysicalStart + MemoryBlockLength) {
+            *Above4GMemoryLimit = EfiEntry->PhysicalStart + MemoryBlockLength;
+          }
+        } else {
+          if (*Below4GMemoryLimit < EfiEntry->PhysicalStart + MemoryBlockLength) {
+            *Below4GMemoryLimit = EfiEntry->PhysicalStart + MemoryBlockLength;
+          }
         }
-      } else {
-        if (*Below4GMemoryLimit < EfiEntry->PhysicalStart + MemoryBlockLength) {
-          *Below4GMemoryLimit = EfiEntry->PhysicalStart + MemoryBlockLength;
-        }
-      }
-      break;
+
+        break;
     }
+
     EfiEntry = NEXT_MEMORY_DESCRIPTOR (EfiEntry, EfiDescriptorSize);
   }
 
@@ -289,7 +297,7 @@ ReturnUefiMemoryMap (
   DEBUG ((DEBUG_INFO, "Below4GMemoryLimit:  0x%016lx\n", *Below4GMemoryLimit));
   DEBUG ((DEBUG_INFO, "Above4GMemoryLimit:  0x%016lx\n", *Above4GMemoryLimit));
 
-  return ;
+  return;
 }
 
 /**
@@ -306,20 +314,20 @@ ReturnUefiMemoryMap (
 EFI_STATUS
 EFIAPI
 ScanBusCallbackAlwaysEnablePageAttribute (
-  IN VOID           *Context,
-  IN UINT16         Segment,
-  IN UINT8          Bus,
-  IN UINT8          Device,
-  IN UINT8          Function
+  IN VOID    *Context,
+  IN UINT16  Segment,
+  IN UINT8   Bus,
+  IN UINT8   Device,
+  IN UINT8   Function
   )
 {
-  VTD_SOURCE_ID           SourceId;
-  EFI_STATUS              Status;
+  VTD_SOURCE_ID  SourceId;
+  EFI_STATUS     Status;
 
-  SourceId.Bits.Bus = Bus;
-  SourceId.Bits.Device = Device;
+  SourceId.Bits.Bus      = Bus;
+  SourceId.Bits.Device   = Device;
   SourceId.Bits.Function = Function;
-  Status = AlwaysEnablePageAttribute (Segment, SourceId);
+  Status                 = AlwaysEnablePageAttribute (Segment, SourceId);
   return Status;
 }
 
@@ -332,15 +340,15 @@ ScanBusCallbackAlwaysEnablePageAttribute (
 **/
 EFI_STATUS
 AlwaysEnablePageAttributeDeviceScope (
-  IN  EDKII_PLATFORM_VTD_DEVICE_SCOPE   *DeviceScope
+  IN  EDKII_PLATFORM_VTD_DEVICE_SCOPE  *DeviceScope
   )
 {
-  UINT8                             Bus;
-  UINT8                             Device;
-  UINT8                             Function;
-  VTD_SOURCE_ID                     SourceId;
-  UINT8                             SecondaryBusNumber;
-  EFI_STATUS                        Status;
+  UINT8          Bus;
+  UINT8          Device;
+  UINT8          Function;
+  VTD_SOURCE_ID  SourceId;
+  UINT8          SecondaryBusNumber;
+  EFI_STATUS     Status;
 
   Status = GetPciBusDeviceFunction (DeviceScope->SegmentNumber, &DeviceScope->DeviceScope, &Bus, &Device, &Function);
 
@@ -348,14 +356,14 @@ AlwaysEnablePageAttributeDeviceScope (
     //
     // Need scan the bridge and add all devices.
     //
-    SecondaryBusNumber = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS(DeviceScope->SegmentNumber, Bus, Device, Function, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
-    Status = ScanPciBus (NULL, DeviceScope->SegmentNumber, SecondaryBusNumber, ScanBusCallbackAlwaysEnablePageAttribute);
+    SecondaryBusNumber = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS (DeviceScope->SegmentNumber, Bus, Device, Function, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
+    Status             = ScanPciBus (NULL, DeviceScope->SegmentNumber, SecondaryBusNumber, ScanBusCallbackAlwaysEnablePageAttribute);
     return Status;
   } else {
     SourceId.Bits.Bus      = Bus;
     SourceId.Bits.Device   = Device;
     SourceId.Bits.Function = Function;
-    Status = AlwaysEnablePageAttribute (DeviceScope->SegmentNumber, SourceId);
+    Status                 = AlwaysEnablePageAttribute (DeviceScope->SegmentNumber, SourceId);
     return Status;
   }
 }
@@ -369,7 +377,7 @@ AlwaysEnablePageAttributeDeviceScope (
 **/
 EFI_STATUS
 AlwaysEnablePageAttributePciDeviceId (
-  IN  EDKII_PLATFORM_VTD_PCI_DEVICE_ID   *PciDeviceId
+  IN  EDKII_PLATFORM_VTD_PCI_DEVICE_ID  *PciDeviceId
   )
 {
   UINTN            VtdIndex;
@@ -385,14 +393,16 @@ AlwaysEnablePageAttributePciDeviceId (
           ((PciDeviceId->DeviceId == 0xFFFF) || (PciDeviceId->DeviceId == PciDeviceData->PciDeviceId.DeviceId)) &&
           ((PciDeviceId->RevisionId == 0xFF) || (PciDeviceId->RevisionId == PciDeviceData->PciDeviceId.RevisionId)) &&
           ((PciDeviceId->SubsystemVendorId == 0xFFFF) || (PciDeviceId->SubsystemVendorId == PciDeviceData->PciDeviceId.SubsystemVendorId)) &&
-          ((PciDeviceId->SubsystemDeviceId == 0xFFFF) || (PciDeviceId->SubsystemDeviceId == PciDeviceData->PciDeviceId.SubsystemDeviceId)) ) {
+          ((PciDeviceId->SubsystemDeviceId == 0xFFFF) || (PciDeviceId->SubsystemDeviceId == PciDeviceData->PciDeviceId.SubsystemDeviceId)))
+      {
         Status = AlwaysEnablePageAttribute (mVtdUnitInformation[VtdIndex].Segment, PciDeviceData->PciSourceId);
-        if (EFI_ERROR(Status)) {
+        if (EFI_ERROR (Status)) {
           continue;
         }
       }
     }
   }
+
   return EFI_SUCCESS;
 }
 
@@ -405,16 +415,16 @@ AlwaysEnablePageAttributePciDeviceId (
 **/
 EFI_STATUS
 AlwaysEnablePageAttributeExceptionDeviceInfo (
-  IN  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO   *DeviceInfo
+  IN  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO  *DeviceInfo
   )
 {
   switch (DeviceInfo->Type) {
-  case EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_DEVICE_SCOPE:
-    return AlwaysEnablePageAttributeDeviceScope ((VOID *)(DeviceInfo + 1));
-  case EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_PCI_DEVICE_ID:
-    return AlwaysEnablePageAttributePciDeviceId ((VOID *)(DeviceInfo + 1));
-  default:
-    return EFI_UNSUPPORTED;
+    case EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_DEVICE_SCOPE:
+      return AlwaysEnablePageAttributeDeviceScope ((VOID *)(DeviceInfo + 1));
+    case EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_PCI_DEVICE_ID:
+      return AlwaysEnablePageAttributePciDeviceId ((VOID *)(DeviceInfo + 1));
+    default:
+      return EFI_UNSUPPORTED;
   }
 }
 
@@ -426,11 +436,11 @@ InitializePlatformVTdPolicy (
   VOID
   )
 {
-  EFI_STATUS                               Status;
-  UINTN                                    DeviceInfoCount;
-  VOID                                     *DeviceInfo;
-  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO *ThisDeviceInfo;
-  UINTN                                    Index;
+  EFI_STATUS                                Status;
+  UINTN                                     DeviceInfoCount;
+  VOID                                      *DeviceInfo;
+  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO  *ThisDeviceInfo;
+  UINTN                                     Index;
 
   //
   // It is optional.
@@ -440,18 +450,20 @@ InitializePlatformVTdPolicy (
                   NULL,
                   (VOID **)&mPlatformVTdPolicy
                   );
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     DEBUG ((DEBUG_INFO, "InitializePlatformVTdPolicy\n"));
     Status = mPlatformVTdPolicy->GetExceptionDeviceList (mPlatformVTdPolicy, &DeviceInfoCount, &DeviceInfo);
-    if (!EFI_ERROR(Status)) {
+    if (!EFI_ERROR (Status)) {
       ThisDeviceInfo = DeviceInfo;
       for (Index = 0; Index < DeviceInfoCount; Index++) {
         if (ThisDeviceInfo->Type == EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_END) {
           break;
         }
+
         AlwaysEnablePageAttributeExceptionDeviceInfo (ThisDeviceInfo);
         ThisDeviceInfo = (VOID *)((UINTN)ThisDeviceInfo + ThisDeviceInfo->Length);
       }
+
       FreePool (DeviceInfo);
     }
   }
@@ -483,7 +495,7 @@ SetupVtd (
   ASSERT_EFI_ERROR (Status);
 
   ReturnUefiMemoryMap (&Below4GMemoryLimit, &Above4GMemoryLimit);
-  Below4GMemoryLimit = ALIGN_VALUE_UP(Below4GMemoryLimit, SIZE_256MB);
+  Below4GMemoryLimit = ALIGN_VALUE_UP (Below4GMemoryLimit, SIZE_256MB);
   DEBUG ((DEBUG_INFO, " Adjusted Below4GMemoryLimit: 0x%016lx\n", Below4GMemoryLimit));
 
   mBelow4GMemoryLimit = Below4GMemoryLimit;
@@ -527,13 +539,13 @@ SetupVtd (
   }
 
   for (Index = 0; Index < mVtdUnitNumber; Index++) {
-    DEBUG ((DEBUG_INFO,"VTD Unit %d (Segment: %04x)\n", Index, mVtdUnitInformation[Index].Segment));
+    DEBUG ((DEBUG_INFO, "VTD Unit %d (Segment: %04x)\n", Index, mVtdUnitInformation[Index].Segment));
 
     if (mVtdUnitInformation[Index].ExtRootEntryTable != NULL) {
       VtdLibDumpDmarExtContextEntryTable (NULL, NULL, mVtdUnitInformation[Index].ExtRootEntryTable, mVtdUnitInformation[Index].Is5LevelPaging);
 
-      RootTableInfo.BaseAddress = mVtdUnitInformation[Index].VtdUnitBaseAddress;
-      RootTableInfo.TableAddress = (UINT64) (UINTN) mVtdUnitInformation[Index].RootEntryTable;
+      RootTableInfo.BaseAddress    = mVtdUnitInformation[Index].VtdUnitBaseAddress;
+      RootTableInfo.TableAddress   = (UINT64)(UINTN)mVtdUnitInformation[Index].RootEntryTable;
       RootTableInfo.Is5LevelPaging = mVtdUnitInformation[Index].Is5LevelPaging;
       VTdLogAddDataEvent (VTDLOG_DXE_ROOT_TABLE, 1, &RootTableInfo, sizeof (VTD_ROOT_TABLE_INFO));
     }
@@ -541,8 +553,8 @@ SetupVtd (
     if (mVtdUnitInformation[Index].RootEntryTable != NULL) {
       VtdLibDumpDmarContextEntryTable (NULL, NULL, mVtdUnitInformation[Index].RootEntryTable, mVtdUnitInformation[Index].Is5LevelPaging);
 
-      RootTableInfo.BaseAddress = mVtdUnitInformation[Index].VtdUnitBaseAddress;
-      RootTableInfo.TableAddress = (UINT64) (UINTN) mVtdUnitInformation[Index].RootEntryTable;
+      RootTableInfo.BaseAddress    = mVtdUnitInformation[Index].VtdUnitBaseAddress;
+      RootTableInfo.TableAddress   = (UINT64)(UINTN)mVtdUnitInformation[Index].RootEntryTable;
       RootTableInfo.Is5LevelPaging = mVtdUnitInformation[Index].Is5LevelPaging;
       VTdLogAddDataEvent (VTDLOG_DXE_ROOT_TABLE, 0, &RootTableInfo, sizeof (VTD_ROOT_TABLE_INFO));
     }
@@ -556,6 +568,7 @@ SetupVtd (
   if (EFI_ERROR (Status)) {
     return;
   }
+
   DEBUG ((DEBUG_INFO, "DumpVtdRegs\n"));
   DumpVtdRegsAll ();
 }
@@ -572,19 +585,21 @@ SetupVtd (
 VOID
 EFIAPI
 AcpiNotificationFunc (
-  IN EFI_EVENT        Event,
-  IN VOID             *Context
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
   )
 {
-  EFI_STATUS          Status;
+  EFI_STATUS  Status;
 
   Status = GetDmarAcpiTable ();
   if (EFI_ERROR (Status)) {
     if (Status == EFI_ALREADY_STARTED) {
       gBS->CloseEvent (Event);
     }
+
     return;
   }
+
   SetupVtd ();
   gBS->CloseEvent (Event);
 }
@@ -598,11 +613,11 @@ AcpiNotificationFunc (
 VOID
 EFIAPI
 OnExitBootServices (
-  IN EFI_EVENT                               Event,
-  IN VOID                                    *Context
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
   )
 {
-  UINTN   VtdIndex;
+  UINTN  VtdIndex;
 
   DEBUG ((DEBUG_INFO, "Vtd OnExitBootServices\n"));
 
@@ -617,7 +632,7 @@ OnExitBootServices (
     InvalidateIOTLB (VtdIndex);
   }
 
-  if ((PcdGet8(PcdVTdPolicyPropertyMask) & BIT1) == 0) {
+  if ((PcdGet8 (PcdVTdPolicyPropertyMask) & BIT1) == 0) {
     DisableDmar ();
     DumpVtdRegsAll ();
   }
@@ -632,8 +647,8 @@ OnExitBootServices (
 VOID
 EFIAPI
 OnLegacyBoot (
-  EFI_EVENT                               Event,
-  VOID                                    *Context
+  EFI_EVENT  Event,
+  VOID       *Context
   )
 {
   DEBUG ((DEBUG_INFO, "Vtd OnLegacyBoot\n"));
@@ -701,5 +716,5 @@ InitializeDmaProtection (
              );
   ASSERT_EFI_ERROR (Status);
 
-  return ;
+  return;
 }

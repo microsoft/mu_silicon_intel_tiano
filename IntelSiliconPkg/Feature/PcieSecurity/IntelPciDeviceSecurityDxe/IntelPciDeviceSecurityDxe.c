@@ -43,7 +43,7 @@ typedef struct {
 #define PCI_DEVICE_INSTANCE_SIGNATURE  SIGNATURE_32 ('P', 'D', 'I', 'S')
 #define PCI_DEVICE_INSTANCE_FROM_LINK(a)  CR (a, PCI_DEVICE_INSTANCE, Link, PCI_DEVICE_INSTANCE_SIGNATURE)
 
-LIST_ENTRY mSecurityEventMeasurementDeviceList = INITIALIZE_LIST_HEAD_VARIABLE(mSecurityEventMeasurementDeviceList);;
+LIST_ENTRY                             mSecurityEventMeasurementDeviceList = INITIALIZE_LIST_HEAD_VARIABLE (mSecurityEventMeasurementDeviceList);
 EDKII_DEVICE_SECURITY_POLICY_PROTOCOL  *mDeviceSecurityPolicy;
 
 /**
@@ -53,23 +53,23 @@ EDKII_DEVICE_SECURITY_POLICY_PROTOCOL  *mDeviceSecurityPolicy;
   @param PciDeviceList    The list to record the the device
 **/
 VOID
-RecordPciDeviceInList(
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN LIST_ENTRY                   *PciDeviceList
+RecordPciDeviceInList (
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN LIST_ENTRY           *PciDeviceList
   )
 {
-  UINTN                 PciSegment;
-  UINTN                 PciBus;
-  UINTN                 PciDevice;
-  UINTN                 PciFunction;
-  EFI_STATUS            Status;
-  PCI_DEVICE_INSTANCE   *NewPciDevice;
+  UINTN                PciSegment;
+  UINTN                PciBus;
+  UINTN                PciDevice;
+  UINTN                PciFunction;
+  EFI_STATUS           Status;
+  PCI_DEVICE_INSTANCE  *NewPciDevice;
 
   Status = PciIo->GetLocation (PciIo, &PciSegment, &PciBus, &PciDevice, &PciFunction);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
-  NewPciDevice = AllocateZeroPool(sizeof(*NewPciDevice));
-  ASSERT(NewPciDevice != NULL);
+  NewPciDevice = AllocateZeroPool (sizeof (*NewPciDevice));
+  ASSERT (NewPciDevice != NULL);
 
   NewPciDevice->Signature   = PCI_DEVICE_INSTANCE_SIGNATURE;
   NewPciDevice->PciSegment  = PciSegment;
@@ -77,7 +77,7 @@ RecordPciDeviceInList(
   NewPciDevice->PciDevice   = PciDevice;
   NewPciDevice->PciFunction = PciFunction;
 
-  InsertTailList(PciDeviceList, &NewPciDevice->Link);
+  InsertTailList (PciDeviceList, &NewPciDevice->Link);
 }
 
 /**
@@ -90,33 +90,34 @@ RecordPciDeviceInList(
   @retval FALSE The PCI device is NOT in the list.
 **/
 BOOLEAN
-IsPciDeviceInList(
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN LIST_ENTRY                   *PciDeviceList
+IsPciDeviceInList (
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN LIST_ENTRY           *PciDeviceList
   )
 {
-  UINTN                 PciSegment;
-  UINTN                 PciBus;
-  UINTN                 PciDevice;
-  UINTN                 PciFunction;
-  EFI_STATUS            Status;
-  LIST_ENTRY            *Link;
-  PCI_DEVICE_INSTANCE   *CurrentPciDevice;
+  UINTN                PciSegment;
+  UINTN                PciBus;
+  UINTN                PciDevice;
+  UINTN                PciFunction;
+  EFI_STATUS           Status;
+  LIST_ENTRY           *Link;
+  PCI_DEVICE_INSTANCE  *CurrentPciDevice;
 
   Status = PciIo->GetLocation (PciIo, &PciSegment, &PciBus, &PciDevice, &PciFunction);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
-  Link = GetFirstNode(PciDeviceList);
-  while (!IsNull(PciDeviceList, Link)) {
-    CurrentPciDevice = PCI_DEVICE_INSTANCE_FROM_LINK(Link);
+  Link = GetFirstNode (PciDeviceList);
+  while (!IsNull (PciDeviceList, Link)) {
+    CurrentPciDevice = PCI_DEVICE_INSTANCE_FROM_LINK (Link);
 
-    if (CurrentPciDevice->PciSegment == PciSegment && CurrentPciDevice->PciBus == PciBus &&
-        CurrentPciDevice->PciDevice == PciDevice && CurrentPciDevice->PciFunction == PciFunction) {
-      DEBUG((DEBUG_INFO, "PCI device duplicated (Loc - %04x:%02x:%02x:%02x)\n", PciSegment, PciBus, PciDevice, PciFunction));
+    if ((CurrentPciDevice->PciSegment == PciSegment) && (CurrentPciDevice->PciBus == PciBus) &&
+        (CurrentPciDevice->PciDevice == PciDevice) && (CurrentPciDevice->PciFunction == PciFunction))
+    {
+      DEBUG ((DEBUG_INFO, "PCI device duplicated (Loc - %04x:%02x:%02x:%02x)\n", PciSegment, PciBus, PciDevice, PciFunction));
       return TRUE;
     }
 
-    Link = GetNextNode(PciDeviceList, Link);
+    Link = GetNextNode (PciDeviceList, Link);
   }
 
   return FALSE;
@@ -132,28 +133,30 @@ IsPciDeviceInList(
 */
 UINT32
 GetPciCapId (
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN UINT8                        CapId
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN UINT8                CapId
   )
 {
-  EFI_PCI_CAPABILITY_HDR                    PciCapIdHdr;
-  UINT32                                    PciCapIdOffset;
-  EFI_STATUS                                Status;
+  EFI_PCI_CAPABILITY_HDR  PciCapIdHdr;
+  UINT32                  PciCapIdOffset;
+  EFI_STATUS              Status;
 
   PciCapIdHdr.CapabilityID = ~CapId;
-  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, PCI_CAPBILITY_POINTER_OFFSET, 1, &PciCapIdHdr.NextItemPtr);
-  ASSERT_EFI_ERROR(Status);
-  if (PciCapIdHdr.NextItemPtr == 0 || PciCapIdHdr.NextItemPtr == 0xFF) {
+  Status                   = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, PCI_CAPBILITY_POINTER_OFFSET, 1, &PciCapIdHdr.NextItemPtr);
+  ASSERT_EFI_ERROR (Status);
+  if ((PciCapIdHdr.NextItemPtr == 0) || (PciCapIdHdr.NextItemPtr == 0xFF)) {
     return 0;
   }
+
   PciCapIdOffset = 0;
   do {
     if (PciCapIdHdr.CapabilityID == CapId) {
       break;
     }
+
     PciCapIdOffset = PciCapIdHdr.NextItemPtr;
-    Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint16, PciCapIdOffset, 1, &PciCapIdHdr);
-    ASSERT_EFI_ERROR(Status);
+    Status         = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint16, PciCapIdOffset, 1, &PciCapIdHdr);
+    ASSERT_EFI_ERROR (Status);
   } while (PciCapIdHdr.NextItemPtr != 0 && PciCapIdHdr.NextItemPtr != 0xFF);
 
   if (PciCapIdHdr.CapabilityID == CapId) {
@@ -173,8 +176,8 @@ GetPciCapId (
 */
 UINT32
 GetPciExpressExtCapId (
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN UINT16                       CapId
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN UINT16               CapId
   )
 {
   UINT32                                    PcieCapIdOffset;
@@ -186,17 +189,18 @@ GetPciExpressExtCapId (
     return 0;
   }
 
-  PciExpressExtCapIdHdr.CapabilityId = ~CapId;
-  PciExpressExtCapIdHdr.CapabilityVersion = 0xF;
+  PciExpressExtCapIdHdr.CapabilityId         = ~CapId;
+  PciExpressExtCapIdHdr.CapabilityVersion    = 0xF;
   PciExpressExtCapIdHdr.NextCapabilityOffset = 0x100;
-  PcieCapIdOffset = 0;
+  PcieCapIdOffset                            = 0;
   do {
     if (PciExpressExtCapIdHdr.CapabilityId == CapId) {
       break;
     }
+
     PcieCapIdOffset = PciExpressExtCapIdHdr.NextCapabilityOffset;
-    Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, PcieCapIdOffset, 1, &PciExpressExtCapIdHdr);
-    ASSERT_EFI_ERROR(Status);
+    Status          = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, PcieCapIdOffset, 1, &PciExpressExtCapIdHdr);
+    ASSERT_EFI_ERROR (Status);
   } while (PciExpressExtCapIdHdr.NextCapabilityOffset != 0 && PciExpressExtCapIdHdr.NextCapabilityOffset != 0xFFF);
 
   if (PciExpressExtCapIdHdr.CapabilityId == CapId) {
@@ -216,15 +220,15 @@ GetPciExpressExtCapId (
 **/
 UINT8
 DvSecPciRead8 (
-  IN EFI_PCI_IO_PROTOCOL *PciIo,
-  IN UINT32              Offset
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN UINT32               Offset
   )
 {
   EFI_STATUS  Status;
   UINT8       Data;
 
   Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, Offset, 1, &Data);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   return Data;
 }
@@ -238,15 +242,15 @@ DvSecPciRead8 (
 **/
 VOID
 DvSecPciWrite8 (
-  IN EFI_PCI_IO_PROTOCOL *PciIo,
-  IN UINT32              Offset,
-  IN UINT8               Data
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN UINT32               Offset,
+  IN UINT8                Data
   )
 {
   EFI_STATUS  Status;
 
   Status = PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, Offset, 1, &Data);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 }
 
 /**
@@ -258,18 +262,19 @@ DvSecPciWrite8 (
 **/
 UINTN
 DigestSizeFromTcgAlgId (
-  IN UINT16                                    TcgAlgId
+  IN UINT16  TcgAlgId
   )
 {
   switch (TcgAlgId) {
-  case TPM_ALG_SHA256:
-    return SHA256_DIGEST_SIZE;
-  case TPM_ALG_SHA384:
-  case TPM_ALG_SHA512:
-  case TPM_ALG_SM3_256:
-  default:
-    break;
+    case TPM_ALG_SHA256:
+      return SHA256_DIGEST_SIZE;
+    case TPM_ALG_SHA384:
+    case TPM_ALG_SHA512:
+    case TPM_ALG_SM3_256:
+    default:
+      break;
   }
+
   return 0;
 }
 
@@ -282,18 +287,19 @@ DigestSizeFromTcgAlgId (
 **/
 UINT32
 TcgAlgIdToSpdmHashAlgo (
-  IN UINT16                                    TcgAlgId
+  IN UINT16  TcgAlgId
   )
 {
   switch (TcgAlgId) {
-  case TPM_ALG_SHA256:
-    return SPDM_ALGORITHMS_BASE_HASH_ALGO_TPM_ALG_SHA_256;
-  case TPM_ALG_SHA384:
-  case TPM_ALG_SHA512:
-  case TPM_ALG_SM3_256:
-  default:
-    break;
+    case TPM_ALG_SHA256:
+      return SPDM_ALGORITHMS_BASE_HASH_ALGO_TPM_ALG_SHA_256;
+    case TPM_ALG_SHA384:
+    case TPM_ALG_SHA512:
+    case TPM_ALG_SM3_256:
+    default:
+      break;
   }
+
   return 0;
 }
 
@@ -309,50 +315,50 @@ TcgAlgIdToSpdmHashAlgo (
 **/
 VOID
 ExtendDigestRegister (
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN EDKII_DEVICE_SECURITY_POLICY *DeviceSecurityPolicy,
-  IN UINT16                       TcgAlgId,
-  IN UINT8                        DigestSel,
-  IN UINT8                        *Digest,
-  OUT EDKII_DEVICE_SECURITY_STATE *DeviceSecurityState
+  IN EFI_PCI_IO_PROTOCOL           *PciIo,
+  IN EDKII_DEVICE_SECURITY_POLICY  *DeviceSecurityPolicy,
+  IN UINT16                        TcgAlgId,
+  IN UINT8                         DigestSel,
+  IN UINT8                         *Digest,
+  OUT EDKII_DEVICE_SECURITY_STATE  *DeviceSecurityState
   )
 {
-  UINT32                                                   PcrIndex;
-  UINT32                                                   EventType;
-  EDKII_DEVICE_SECURITY_PCI_EVENT_DATA                     EventLog;
-  EFI_STATUS                                               Status;
-  PCI_TYPE00                                               PciData;
+  UINT32                                PcrIndex;
+  UINT32                                EventType;
+  EDKII_DEVICE_SECURITY_PCI_EVENT_DATA  EventLog;
+  EFI_STATUS                            Status;
+  PCI_TYPE00                            PciData;
 
-  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0, sizeof(PciData), &PciData);
-  ASSERT_EFI_ERROR(Status);
+  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0, sizeof (PciData), &PciData);
+  ASSERT_EFI_ERROR (Status);
 
   //
   // Use PCR 2 for Firmware Blob code.
   //
-  PcrIndex = 2;
+  PcrIndex  = 2;
   EventType = EV_EFI_SPDM_FIRMWARE_BLOB;
 
-  CopyMem (EventLog.EventData.Signature, TCG_DEVICE_SECURITY_EVENT_DATA_SIGNATURE, sizeof(EventLog.EventData.Signature));
-  EventLog.EventData.Version                  = TCG_DEVICE_SECURITY_EVENT_DATA_VERSION;
-  EventLog.EventData.Length                   = sizeof(EDKII_DEVICE_SECURITY_PCI_EVENT_DATA);
-  EventLog.EventData.SpdmHashAlgo             = TcgAlgIdToSpdmHashAlgo (TcgAlgId);
-  EventLog.EventData.DeviceType               = TCG_DEVICE_SECURITY_EVENT_DATA_DEVICE_TYPE_PCI;
+  CopyMem (EventLog.EventData.Signature, TCG_DEVICE_SECURITY_EVENT_DATA_SIGNATURE, sizeof (EventLog.EventData.Signature));
+  EventLog.EventData.Version      = TCG_DEVICE_SECURITY_EVENT_DATA_VERSION;
+  EventLog.EventData.Length       = sizeof (EDKII_DEVICE_SECURITY_PCI_EVENT_DATA);
+  EventLog.EventData.SpdmHashAlgo = TcgAlgIdToSpdmHashAlgo (TcgAlgId);
+  EventLog.EventData.DeviceType   = TCG_DEVICE_SECURITY_EVENT_DATA_DEVICE_TYPE_PCI;
 
   EventLog.CommonHeader.Index                      = DigestSel;
   EventLog.CommonHeader.MeasurementSpecification   = SPDM_MEASUREMENT_BLOCK_HEADER_SPECIFICATION_DMTF;
-  EventLog.CommonHeader.MeasurementSize            = sizeof(SPDM_MEASUREMENT_BLOCK_DMTF_HEADER) + SHA256_DIGEST_SIZE;
+  EventLog.CommonHeader.MeasurementSize            = sizeof (SPDM_MEASUREMENT_BLOCK_DMTF_HEADER) + SHA256_DIGEST_SIZE;
   EventLog.DmtfHeader.DMTFSpecMeasurementValueType = SPDM_MEASUREMENT_BLOCK_MEASUREMENT_TYPE_MUTABLE_FIRMWARE;
   EventLog.DmtfHeader.DMTFSpecMeasurementValueSize = SHA256_DIGEST_SIZE;
   CopyMem (&EventLog.Digest, Digest, SHA256_DIGEST_SIZE);
 
-  EventLog.PciContext.Version           = TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT_VERSION;
-  EventLog.PciContext.Length            = sizeof(TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT);
-  EventLog.PciContext.VendorId          = PciData.Hdr.VendorId;
-  EventLog.PciContext.DeviceId          = PciData.Hdr.DeviceId;
-  EventLog.PciContext.RevisionID        = PciData.Hdr.RevisionID;
-  EventLog.PciContext.ClassCode[0]      = PciData.Hdr.ClassCode[0];
-  EventLog.PciContext.ClassCode[1]      = PciData.Hdr.ClassCode[1];
-  EventLog.PciContext.ClassCode[2]      = PciData.Hdr.ClassCode[2];
+  EventLog.PciContext.Version      = TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT_VERSION;
+  EventLog.PciContext.Length       = sizeof (TCG_DEVICE_SECURITY_EVENT_DATA_PCI_CONTEXT);
+  EventLog.PciContext.VendorId     = PciData.Hdr.VendorId;
+  EventLog.PciContext.DeviceId     = PciData.Hdr.DeviceId;
+  EventLog.PciContext.RevisionID   = PciData.Hdr.RevisionID;
+  EventLog.PciContext.ClassCode[0] = PciData.Hdr.ClassCode[0];
+  EventLog.PciContext.ClassCode[1] = PciData.Hdr.ClassCode[1];
+  EventLog.PciContext.ClassCode[2] = PciData.Hdr.ClassCode[2];
   if ((PciData.Hdr.HeaderType & HEADER_LAYOUT_CODE) == HEADER_TYPE_DEVICE) {
     EventLog.PciContext.SubsystemVendorID = PciData.Device.SubsystemVendorID;
     EventLog.PciContext.SubsystemID       = PciData.Device.SubsystemID;
@@ -369,8 +375,8 @@ ExtendDigestRegister (
              Digest,
              SHA256_DIGEST_SIZE
              );
-  DEBUG((DEBUG_INFO, "TpmMeasureAndLogData - %r\n", Status));
-  if (EFI_ERROR(Status)) {
+  DEBUG ((DEBUG_INFO, "TpmMeasureAndLogData - %r\n", Status));
+  if (EFI_ERROR (Status)) {
     DeviceSecurityState->MeasurementState = EDKII_DEVICE_SECURITY_STATE_ERROR_TCG_EXTEND_TPM_PCR;
   } else {
     RecordPciDeviceInList (PciIo, &mSecurityEventMeasurementDeviceList);
@@ -387,47 +393,48 @@ ExtendDigestRegister (
 **/
 VOID
 DoMeasurementsFromDigestRegister (
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN UINT32                       DvSecOffset,
-  IN EDKII_DEVICE_SECURITY_POLICY *DeviceSecurityPolicy,
-  OUT EDKII_DEVICE_SECURITY_STATE *DeviceSecurityState
+  IN EFI_PCI_IO_PROTOCOL           *PciIo,
+  IN UINT32                        DvSecOffset,
+  IN EDKII_DEVICE_SECURITY_POLICY  *DeviceSecurityPolicy,
+  OUT EDKII_DEVICE_SECURITY_STATE  *DeviceSecurityState
   )
 {
-  UINT8                                     Modified;
-  UINT8                                     Valid;
-  UINT16                                    TcgAlgId;
-  UINT8                                     NumDigest;
-  UINT8                                     DigestSel;
-  UINT8                                     Digest[SHA256_DIGEST_SIZE];
-  UINTN                                     DigestSize;
-  EFI_STATUS                                Status;
+  UINT8       Modified;
+  UINT8       Valid;
+  UINT16      TcgAlgId;
+  UINT8       NumDigest;
+  UINT8       DigestSel;
+  UINT8       Digest[SHA256_DIGEST_SIZE];
+  UINTN       DigestSize;
+  EFI_STATUS  Status;
 
   TcgAlgId = DvSecPciRead8 (
                PciIo,
-               DvSecOffset + sizeof(INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF(INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, TcgAlgId)
+               DvSecOffset + sizeof (INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF (INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, TcgAlgId)
                );
-  DEBUG((DEBUG_INFO, "  TcgAlgId      - 0x%04x\n", TcgAlgId));
+  DEBUG ((DEBUG_INFO, "  TcgAlgId      - 0x%04x\n", TcgAlgId));
   DigestSize = DigestSizeFromTcgAlgId (TcgAlgId);
   if (DigestSize == 0) {
-    DEBUG((DEBUG_INFO, "Unsupported Algorithm - 0x%04x\n", TcgAlgId));
+    DEBUG ((DEBUG_INFO, "Unsupported Algorithm - 0x%04x\n", TcgAlgId));
     DeviceSecurityState->MeasurementState = EDKII_DEVICE_SECURITY_STATE_ERROR_PCI_NO_CAPABILITIES;
-    return ;
+    return;
   }
-  DEBUG((DEBUG_INFO, "  (DigestSize: 0x%x)\n", DigestSize));
+
+  DEBUG ((DEBUG_INFO, "  (DigestSize: 0x%x)\n", DigestSize));
 
   DeviceSecurityState->MeasurementState = EDKII_DEVICE_SECURITY_STATE_SUCCESS;
 
   NumDigest = DvSecPciRead8 (
                 PciIo,
-                DvSecOffset + sizeof(INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF(INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, FirmwareID)
+                DvSecOffset + sizeof (INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF (INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, FirmwareID)
                 );
-  DEBUG((DEBUG_INFO, "  NumDigest     - 0x%02x\n", NumDigest));
+  DEBUG ((DEBUG_INFO, "  NumDigest     - 0x%02x\n", NumDigest));
 
   Valid = DvSecPciRead8 (
             PciIo,
-            DvSecOffset + sizeof(INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF(INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, Valid)
+            DvSecOffset + sizeof (INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF (INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, Valid)
             );
-  DEBUG((DEBUG_INFO, "  Valid         - 0x%02x\n", Valid));
+  DEBUG ((DEBUG_INFO, "  Valid         - 0x%02x\n", Valid));
 
   //
   // Only 2 are supported as maximum.
@@ -438,38 +445,40 @@ DoMeasurementsFromDigestRegister (
   }
 
   for (DigestSel = 0; DigestSel < NumDigest; DigestSel++) {
-    DEBUG((DEBUG_INFO, "  DigestSel     - 0x%02x\n", DigestSel));
+    DEBUG ((DEBUG_INFO, "  DigestSel     - 0x%02x\n", DigestSel));
     if ((DigestSel == 0) && ((Valid & INTEL_PCI_DIGEST_0_VALID) == 0)) {
       continue;
     }
+
     if ((DigestSel == 1) && ((Valid & INTEL_PCI_DIGEST_1_VALID) == 0)) {
       continue;
     }
+
     while (TRUE) {
       //
       // Host MUST clear DIGEST_MODIFIED before read DIGEST.
       //
       DvSecPciWrite8 (
         PciIo,
-        DvSecOffset + sizeof(INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF(INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, Modified),
+        DvSecOffset + sizeof (INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF (INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, Modified),
         INTEL_PCI_DIGEST_MODIFIED
         );
 
       Status = PciIo->Pci.Read (
                             PciIo,
                             EfiPciIoWidthUint8,
-                            (UINT32)(DvSecOffset + sizeof(INTEL_PCI_DIGEST_CAPABILITY_HEADER) + sizeof(INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE) + DigestSize * DigestSel),
+                            (UINT32)(DvSecOffset + sizeof (INTEL_PCI_DIGEST_CAPABILITY_HEADER) + sizeof (INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE) + DigestSize * DigestSel),
                             DigestSize,
                             Digest
                             );
-      ASSERT_EFI_ERROR(Status);
+      ASSERT_EFI_ERROR (Status);
 
       //
       // After read DIGEST, Host MUST consult DIGEST_MODIFIED.
       //
       Modified = DvSecPciRead8 (
                    PciIo,
-                   DvSecOffset + sizeof(INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF(INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, Modified)
+                   DvSecOffset + sizeof (INTEL_PCI_DIGEST_CAPABILITY_HEADER) + OFFSET_OF (INTEL_PCI_DIGEST_CAPABILITY_STRUCTURE, Modified)
                    );
       if ((Modified & INTEL_PCI_DIGEST_MODIFIED) == 0) {
         break;
@@ -481,14 +490,15 @@ DoMeasurementsFromDigestRegister (
     //
     {
       UINTN  Index;
-      DEBUG((DEBUG_INFO, "  Digest        - "));
+      DEBUG ((DEBUG_INFO, "  Digest        - "));
       for (Index = 0; Index < DigestSize; Index++) {
-        DEBUG((DEBUG_INFO, "%02x", *(Digest + Index)));
+        DEBUG ((DEBUG_INFO, "%02x", *(Digest + Index)));
       }
-      DEBUG((DEBUG_INFO, "\n"));
+
+      DEBUG ((DEBUG_INFO, "\n"));
     }
 
-    DEBUG((DEBUG_INFO, "ExtendDigestRegister...\n"));
+    DEBUG ((DEBUG_INFO, "ExtendDigestRegister...\n"));
     ExtendDigestRegister (PciIo, DeviceSecurityPolicy, TcgAlgId, DigestSel, Digest, DeviceSecurityState);
   }
 }
@@ -502,39 +512,41 @@ DoMeasurementsFromDigestRegister (
 **/
 VOID
 DoDeviceMeasurement (
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN EDKII_DEVICE_SECURITY_POLICY *DeviceSecurityPolicy,
-  OUT EDKII_DEVICE_SECURITY_STATE *DeviceSecurityState
+  IN EFI_PCI_IO_PROTOCOL           *PciIo,
+  IN EDKII_DEVICE_SECURITY_POLICY  *DeviceSecurityPolicy,
+  OUT EDKII_DEVICE_SECURITY_STATE  *DeviceSecurityState
   )
 {
-  UINT32                                    DvSecOffset;
-  INTEL_PCI_DIGEST_CAPABILITY_HEADER        DvSecHdr;
-  EFI_STATUS                                Status;
+  UINT32                              DvSecOffset;
+  INTEL_PCI_DIGEST_CAPABILITY_HEADER  DvSecHdr;
+  EFI_STATUS                          Status;
 
   if (IsPciDeviceInList (PciIo, &mSecurityEventMeasurementDeviceList)) {
     DeviceSecurityState->MeasurementState = EDKII_DEVICE_SECURITY_STATE_SUCCESS;
-    return ;
+    return;
   }
 
   DvSecOffset = GetPciExpressExtCapId (PciIo, INTEL_PCI_CAPID_DVSEC);
-  DEBUG((DEBUG_INFO, "DvSec Capability - 0x%x\n", DvSecOffset));
+  DEBUG ((DEBUG_INFO, "DvSec Capability - 0x%x\n", DvSecOffset));
   if (DvSecOffset == 0) {
     DeviceSecurityState->MeasurementState = EDKII_DEVICE_SECURITY_STATE_ERROR_PCI_NO_CAPABILITIES;
-    return ;
+    return;
   }
-  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint16, DvSecOffset, sizeof(DvSecHdr)/sizeof(UINT16), &DvSecHdr);
-  ASSERT_EFI_ERROR(Status);
-  DEBUG((DEBUG_INFO, "  CapId         - 0x%04x\n", DvSecHdr.CapId));
-  DEBUG((DEBUG_INFO, "  CapVersion    - 0x%01x\n", DvSecHdr.CapVersion));
-  DEBUG((DEBUG_INFO, "  NextOffset    - 0x%03x\n", DvSecHdr.NextOffset));
-  DEBUG((DEBUG_INFO, "  DvSecVendorId - 0x%04x\n", DvSecHdr.DvSecVendorId));
-  DEBUG((DEBUG_INFO, "  DvSecRevision - 0x%01x\n", DvSecHdr.DvSecRevision));
-  DEBUG((DEBUG_INFO, "  DvSecLength   - 0x%03x\n", DvSecHdr.DvSecLength));
-  DEBUG((DEBUG_INFO, "  DvSecId       - 0x%04x\n", DvSecHdr.DvSecId));
+
+  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint16, DvSecOffset, sizeof (DvSecHdr)/sizeof (UINT16), &DvSecHdr);
+  ASSERT_EFI_ERROR (Status);
+  DEBUG ((DEBUG_INFO, "  CapId         - 0x%04x\n", DvSecHdr.CapId));
+  DEBUG ((DEBUG_INFO, "  CapVersion    - 0x%01x\n", DvSecHdr.CapVersion));
+  DEBUG ((DEBUG_INFO, "  NextOffset    - 0x%03x\n", DvSecHdr.NextOffset));
+  DEBUG ((DEBUG_INFO, "  DvSecVendorId - 0x%04x\n", DvSecHdr.DvSecVendorId));
+  DEBUG ((DEBUG_INFO, "  DvSecRevision - 0x%01x\n", DvSecHdr.DvSecRevision));
+  DEBUG ((DEBUG_INFO, "  DvSecLength   - 0x%03x\n", DvSecHdr.DvSecLength));
+  DEBUG ((DEBUG_INFO, "  DvSecId       - 0x%04x\n", DvSecHdr.DvSecId));
   if ((DvSecHdr.DvSecVendorId != INTEL_PCI_DVSEC_VENDORID_INTEL) &&
-      (DvSecHdr.DvSecId != INTEL_PCI_DVSEC_DVSECID_MEASUREMENT)) {
+      (DvSecHdr.DvSecId != INTEL_PCI_DVSEC_DVSECID_MEASUREMENT))
+  {
     DeviceSecurityState->MeasurementState = EDKII_DEVICE_SECURITY_STATE_ERROR_PCI_NO_CAPABILITIES;
-    return ;
+    return;
   }
 
   DoMeasurementsFromDigestRegister (PciIo, DvSecOffset, DeviceSecurityPolicy, DeviceSecurityState);
@@ -549,9 +561,9 @@ DoDeviceMeasurement (
 **/
 VOID
 DoDeviceAuthentication (
-  IN EFI_PCI_IO_PROTOCOL          *PciIo,
-  IN EDKII_DEVICE_SECURITY_POLICY *DeviceSecurityPolicy,
-  OUT EDKII_DEVICE_SECURITY_STATE *DeviceSecurityState
+  IN EFI_PCI_IO_PROTOCOL           *PciIo,
+  IN EDKII_DEVICE_SECURITY_POLICY  *DeviceSecurityPolicy,
+  OUT EDKII_DEVICE_SECURITY_STATE  *DeviceSecurityState
   )
 {
   DeviceSecurityState->AuthenticationState = EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_UNSUPPORTED;
@@ -601,10 +613,10 @@ DeviceAuthentication (
   IN EDKII_DEVICE_IDENTIFIER         *DeviceId
   )
 {
-  EDKII_DEVICE_SECURITY_POLICY           DeviceSecurityPolicy;
-  EDKII_DEVICE_SECURITY_STATE            DeviceSecurityState;
-  EFI_PCI_IO_PROTOCOL                    *PciIo;
-  EFI_STATUS                             Status;
+  EDKII_DEVICE_SECURITY_POLICY  DeviceSecurityPolicy;
+  EDKII_DEVICE_SECURITY_STATE   DeviceSecurityState;
+  EFI_PCI_IO_PROTOCOL           *PciIo;
+  EFI_STATUS                    Status;
 
   if (mDeviceSecurityPolicy == NULL) {
     return EFI_SUCCESS;
@@ -619,45 +631,47 @@ DeviceAuthentication (
                   &gEdkiiDeviceIdentifierTypePciGuid,
                   (VOID **)&PciIo
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "Locate - DeviceIdentifierTypePci - %r\n", Status));
     return EFI_SUCCESS;
   }
 
-  DeviceSecurityState.Revision = EDKII_DEVICE_SECURITY_STATE_REVISION;
-  DeviceSecurityState.MeasurementState = 0x0;
+  DeviceSecurityState.Revision            = EDKII_DEVICE_SECURITY_STATE_REVISION;
+  DeviceSecurityState.MeasurementState    = 0x0;
   DeviceSecurityState.AuthenticationState = 0x0;
 
   Status = mDeviceSecurityPolicy->GetDevicePolicy (mDeviceSecurityPolicy, DeviceId, &DeviceSecurityPolicy);
-  if (EFI_ERROR(Status)) {
-    DEBUG((DEBUG_ERROR, "mDeviceSecurityPolicy->GetDevicePolicy - %r\n", Status));
-    DeviceSecurityState.MeasurementState = EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_GET_POLICY_PROTOCOL;
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "mDeviceSecurityPolicy->GetDevicePolicy - %r\n", Status));
+    DeviceSecurityState.MeasurementState    = EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_GET_POLICY_PROTOCOL;
     DeviceSecurityState.AuthenticationState = EDKII_DEVICE_SECURITY_STATE_ERROR_UEFI_GET_POLICY_PROTOCOL;
   } else {
     if ((DeviceSecurityPolicy.MeasurementPolicy & EDKII_DEVICE_MEASUREMENT_REQUIRED) != 0) {
       DoDeviceMeasurement (PciIo, &DeviceSecurityPolicy, &DeviceSecurityState);
-      DEBUG((DEBUG_ERROR, "MeasurementState - 0x%08x\n", DeviceSecurityState.MeasurementState));
+      DEBUG ((DEBUG_ERROR, "MeasurementState - 0x%08x\n", DeviceSecurityState.MeasurementState));
     }
+
     if ((DeviceSecurityPolicy.AuthenticationPolicy & EDKII_DEVICE_AUTHENTICATION_REQUIRED) != 0) {
       DoDeviceAuthentication (PciIo, &DeviceSecurityPolicy, &DeviceSecurityState);
-      DEBUG((DEBUG_ERROR, "AuthenticationState - 0x%08x\n", DeviceSecurityState.AuthenticationState));
+      DEBUG ((DEBUG_ERROR, "AuthenticationState - 0x%08x\n", DeviceSecurityState.AuthenticationState));
     }
   }
 
   Status = mDeviceSecurityPolicy->NotifyDeviceState (mDeviceSecurityPolicy, DeviceId, &DeviceSecurityState);
-  if (EFI_ERROR(Status)) {
-    DEBUG((DEBUG_ERROR, "mDeviceSecurityPolicy->NotifyDeviceState - %r\n", Status));
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "mDeviceSecurityPolicy->NotifyDeviceState - %r\n", Status));
   }
 
   if ((DeviceSecurityState.MeasurementState == 0) &&
-      (DeviceSecurityState.AuthenticationState == 0)) {
+      (DeviceSecurityState.AuthenticationState == 0))
+  {
     return EFI_SUCCESS;
   } else {
     return EFI_SECURITY_VIOLATION;
   }
 }
 
-EDKII_DEVICE_SECURITY_PROTOCOL mDeviceSecurity = {
+EDKII_DEVICE_SECURITY_PROTOCOL  mDeviceSecurity = {
   EDKII_DEVICE_SECURITY_PROTOCOL_REVISION,
   DeviceAuthentication
 };
@@ -684,7 +698,7 @@ MainEntryPoint (
   EFI_STATUS  Status;
 
   Status = gBS->LocateProtocol (&gEdkiiDeviceSecurityPolicyProtocolGuid, NULL, (VOID **)&mDeviceSecurityPolicy);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
@@ -693,7 +707,7 @@ MainEntryPoint (
                   EFI_NATIVE_INTERFACE,
                   (VOID **)&mDeviceSecurity
                   );
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   return Status;
 }

@@ -26,11 +26,11 @@
 **/
 UINT32
 GetPlmrAlignment (
-  IN UINT8         HostAddressWidth,
-  IN UINTN         VtdUnitBaseAddress
+  IN UINT8  HostAddressWidth,
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32        Data32;
+  UINT32  Data32;
 
   MmioWrite32 (VtdUnitBaseAddress + R_PMEN_LOW_BASE_REG, 0xFFFFFFFF);
   Data32 = MmioRead32 (VtdUnitBaseAddress + R_PMEN_LOW_BASE_REG);
@@ -49,11 +49,11 @@ GetPlmrAlignment (
 **/
 UINT64
 GetPhmrAlignment (
-  IN UINT8         HostAddressWidth,
-  IN UINTN         VtdUnitBaseAddress
+  IN UINT8  HostAddressWidth,
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT64        Data64;
+  UINT64  Data64;
 
   MmioWrite64 (VtdUnitBaseAddress + R_PMEN_HIGH_BASE_REG, 0xFFFFFFFFFFFFFFFF);
   Data64 = MmioRead64 (VtdUnitBaseAddress + R_PMEN_HIGH_BASE_REG);
@@ -73,24 +73,26 @@ GetPhmrAlignment (
 **/
 UINT32
 GetLowMemoryAlignment (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
-  UINTN         Index;
-  UINT32        Alignment;
-  UINT32        FinalAlignment;
+  UINTN   Index;
+  UINT32  Alignment;
+  UINT32  FinalAlignment;
 
   FinalAlignment = 0;
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     Alignment = GetPlmrAlignment (VTdInfo->HostAddressWidth, (UINTN)VTdInfo->VTdEngineAddress[Index]);
     if (FinalAlignment < Alignment) {
       FinalAlignment = Alignment;
     }
   }
+
   return FinalAlignment;
 }
 
@@ -104,24 +106,26 @@ GetLowMemoryAlignment (
 **/
 UINT64
 GetHighMemoryAlignment (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
-  UINTN         Index;
-  UINT64        Alignment;
-  UINT64        FinalAlignment;
+  UINTN   Index;
+  UINT64  Alignment;
+  UINT64  FinalAlignment;
 
   FinalAlignment = 0;
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     Alignment = GetPhmrAlignment (VTdInfo->HostAddressWidth, (UINTN)VTdInfo->VTdEngineAddress[Index]);
     if (FinalAlignment < Alignment) {
       FinalAlignment = Alignment;
     }
   }
+
   return FinalAlignment;
 }
 
@@ -135,30 +139,30 @@ GetHighMemoryAlignment (
 **/
 EFI_STATUS
 EnablePmr (
-  IN UINTN         VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32        Reg32;
-  VTD_CAP_REG   CapReg;
+  UINT32       Reg32;
+  VTD_CAP_REG  CapReg;
 
   DEBUG ((DEBUG_INFO, "EnablePmr - %x\n", VtdUnitBaseAddress));
 
   CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
-  if (CapReg.Bits.PLMR == 0 || CapReg.Bits.PHMR == 0) {
+  if ((CapReg.Bits.PLMR == 0) || (CapReg.Bits.PHMR == 0)) {
     return EFI_UNSUPPORTED;
   }
 
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_PMEN_ENABLE_REG);
   if (Reg32 == 0xFFFFFFFF) {
     DEBUG ((DEBUG_ERROR, "R_PMEN_ENABLE_REG - 0x%x\n", Reg32));
-    ASSERT(FALSE);
+    ASSERT (FALSE);
   }
 
   if ((Reg32 & BIT0) == 0) {
     MmioWrite32 (VtdUnitBaseAddress + R_PMEN_ENABLE_REG, BIT31);
     do {
       Reg32 = MmioRead32 (VtdUnitBaseAddress + R_PMEN_ENABLE_REG);
-    } while((Reg32 & BIT0) == 0);
+    } while ((Reg32 & BIT0) == 0);
   }
 
   DEBUG ((DEBUG_INFO, "EnablePmr - Done\n"));
@@ -176,28 +180,28 @@ EnablePmr (
 **/
 EFI_STATUS
 DisablePmr (
-  IN UINTN         VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32        Reg32;
-  VTD_CAP_REG   CapReg;
+  UINT32       Reg32;
+  VTD_CAP_REG  CapReg;
 
   CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
-  if (CapReg.Bits.PLMR == 0 || CapReg.Bits.PHMR == 0) {
+  if ((CapReg.Bits.PLMR == 0) || (CapReg.Bits.PHMR == 0)) {
     return EFI_UNSUPPORTED;
   }
 
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_PMEN_ENABLE_REG);
   if (Reg32 == 0xFFFFFFFF) {
     DEBUG ((DEBUG_ERROR, "R_PMEN_ENABLE_REG - 0x%x\n", Reg32));
-    ASSERT(FALSE);
+    ASSERT (FALSE);
   }
 
   if ((Reg32 & BIT0) != 0) {
     MmioWrite32 (VtdUnitBaseAddress + R_PMEN_ENABLE_REG, 0x0);
     do {
       Reg32 = MmioRead32 (VtdUnitBaseAddress + R_PMEN_ENABLE_REG);
-    } while((Reg32 & BIT0) != 0);
+    } while ((Reg32 & BIT0) != 0);
   }
 
   return EFI_SUCCESS;
@@ -218,22 +222,22 @@ DisablePmr (
 **/
 EFI_STATUS
 SetPmrRegion (
-  IN UINT8         HostAddressWidth,
-  IN UINTN         VtdUnitBaseAddress,
-  IN UINT32        LowMemoryBase,
-  IN UINT32        LowMemoryLength,
-  IN UINT64        HighMemoryBase,
-  IN UINT64        HighMemoryLength
+  IN UINT8   HostAddressWidth,
+  IN UINTN   VtdUnitBaseAddress,
+  IN UINT32  LowMemoryBase,
+  IN UINT32  LowMemoryLength,
+  IN UINT64  HighMemoryBase,
+  IN UINT64  HighMemoryLength
   )
 {
-  VTD_CAP_REG   CapReg;
-  UINT32        PlmrAlignment;
-  UINT64        PhmrAlignment;
+  VTD_CAP_REG  CapReg;
+  UINT32       PlmrAlignment;
+  UINT64       PhmrAlignment;
 
   DEBUG ((DEBUG_INFO, "VtdUnitBaseAddress - 0x%x\n", VtdUnitBaseAddress));
 
   CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
-  if (CapReg.Bits.PLMR == 0 || CapReg.Bits.PHMR == 0) {
+  if ((CapReg.Bits.PLMR == 0) || (CapReg.Bits.PHMR == 0)) {
     DEBUG ((DEBUG_ERROR, "PLMR/PHMR unsupported\n"));
     return EFI_UNSUPPORTED;
   }
@@ -243,25 +247,27 @@ SetPmrRegion (
   PhmrAlignment = GetPhmrAlignment (HostAddressWidth, VtdUnitBaseAddress);
   DEBUG ((DEBUG_INFO, "PhmrAlignment - 0x%lx\n", PhmrAlignment));
 
-  if ((LowMemoryBase    != ALIGN_VALUE(LowMemoryBase, PlmrAlignment)) ||
-      (LowMemoryLength  != ALIGN_VALUE(LowMemoryLength, PlmrAlignment)) ||
-      (HighMemoryBase   != ALIGN_VALUE(HighMemoryBase, PhmrAlignment)) ||
-      (HighMemoryLength != ALIGN_VALUE(HighMemoryLength, PhmrAlignment))) {
+  if ((LowMemoryBase    != ALIGN_VALUE (LowMemoryBase, PlmrAlignment)) ||
+      (LowMemoryLength  != ALIGN_VALUE (LowMemoryLength, PlmrAlignment)) ||
+      (HighMemoryBase   != ALIGN_VALUE (HighMemoryBase, PhmrAlignment)) ||
+      (HighMemoryLength != ALIGN_VALUE (HighMemoryLength, PhmrAlignment)))
+  {
     DEBUG ((DEBUG_ERROR, "PLMR/PHMR alignment issue\n"));
     return EFI_UNSUPPORTED;
   }
 
-  if (LowMemoryBase == 0 && LowMemoryLength == 0) {
+  if ((LowMemoryBase == 0) && (LowMemoryLength == 0)) {
     LowMemoryBase = 0xFFFFFFFF;
   }
-  if (HighMemoryBase == 0 && HighMemoryLength == 0) {
+
+  if ((HighMemoryBase == 0) && (HighMemoryLength == 0)) {
     HighMemoryBase = 0xFFFFFFFFFFFFFFFF;
   }
 
-  MmioWrite32 (VtdUnitBaseAddress + R_PMEN_LOW_BASE_REG,    LowMemoryBase);
-  MmioWrite32 (VtdUnitBaseAddress + R_PMEN_LOW_LIMITE_REG,  LowMemoryBase + LowMemoryLength - 1);
+  MmioWrite32 (VtdUnitBaseAddress + R_PMEN_LOW_BASE_REG, LowMemoryBase);
+  MmioWrite32 (VtdUnitBaseAddress + R_PMEN_LOW_LIMITE_REG, LowMemoryBase + LowMemoryLength - 1);
   DEBUG ((DEBUG_INFO, "PLMR set done\n"));
-  MmioWrite64 (VtdUnitBaseAddress + R_PMEN_HIGH_BASE_REG,   HighMemoryBase);
+  MmioWrite64 (VtdUnitBaseAddress + R_PMEN_HIGH_BASE_REG, HighMemoryBase);
   MmioWrite64 (VtdUnitBaseAddress + R_PMEN_HIGH_LIMITE_REG, HighMemoryBase + HighMemoryLength - 1);
   DEBUG ((DEBUG_INFO, "PHMR set done\n"));
 
@@ -283,12 +289,12 @@ SetPmrRegion (
 **/
 EFI_STATUS
 SetDmaProtectedRange (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask,
-  IN UINT32        LowMemoryBase,
-  IN UINT32        LowMemoryLength,
-  IN UINT64        HighMemoryBase,
-  IN UINT64        HighMemoryLength
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask,
+  IN UINT32    LowMemoryBase,
+  IN UINT32    LowMemoryLength,
+  IN UINT64    HighMemoryBase,
+  IN UINT64    HighMemoryLength
   )
 {
   UINTN       Index;
@@ -297,9 +303,10 @@ SetDmaProtectedRange (
   DEBUG ((DEBUG_INFO, "SetDmaProtectedRange(0x%lx) - [0x%x, 0x%x] [0x%016lx, 0x%016lx]\n", EngineMask, LowMemoryBase, LowMemoryLength, HighMemoryBase, HighMemoryLength));
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     DisablePmr ((UINTN)VTdInfo->VTdEngineAddress[Index]);
     Status = SetPmrRegion (
                VTdInfo->HostAddressWidth,
@@ -309,11 +316,12 @@ SetDmaProtectedRange (
                HighMemoryBase,
                HighMemoryLength
                );
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
+
     Status = EnablePmr ((UINTN)VTdInfo->VTdEngineAddress[Index]);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
   }
@@ -331,8 +339,8 @@ SetDmaProtectedRange (
 **/
 EFI_STATUS
 DisableDmaProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
   UINTN       Index;
@@ -343,11 +351,12 @@ DisableDmaProtection (
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
     DEBUG ((DEBUG_INFO, "Disabling...%d\n", Index));
 
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     Status = DisablePmr ((UINTN)VTdInfo->VTdEngineAddress[Index]);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
   }
@@ -365,14 +374,14 @@ DisableDmaProtection (
 **/
 BOOLEAN
 IsPmrEnabled (
-  IN UINTN         VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32        Reg32;
-  VTD_CAP_REG   CapReg;
+  UINT32       Reg32;
+  VTD_CAP_REG  CapReg;
 
   CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
-  if (CapReg.Bits.PLMR == 0 || CapReg.Bits.PHMR == 0) {
+  if ((CapReg.Bits.PLMR == 0) || (CapReg.Bits.PHMR == 0)) {
     return FALSE;
   }
 
@@ -394,24 +403,25 @@ IsPmrEnabled (
 **/
 UINT64
 GetDmaProtectionEnabledEngineMask (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
-  UINTN       Index;
-  BOOLEAN     Result;
-  UINT64      EnabledEngineMask;
+  UINTN    Index;
+  BOOLEAN  Result;
+  UINT64   EnabledEngineMask;
 
   DEBUG ((DEBUG_INFO, "GetDmaProtectionEnabledEngineMask - 0x%lx\n", EngineMask));
 
   EnabledEngineMask = 0;
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     Result = IsPmrEnabled ((UINTN)VTdInfo->VTdEngineAddress[Index]);
     if (Result) {
-      EnabledEngineMask |= LShiftU64(1, Index);
+      EnabledEngineMask |= LShiftU64 (1, Index);
     }
   }
 

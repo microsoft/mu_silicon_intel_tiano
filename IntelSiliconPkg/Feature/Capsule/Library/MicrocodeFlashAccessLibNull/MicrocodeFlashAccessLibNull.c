@@ -26,11 +26,11 @@
 EFI_STATUS
 EFIAPI
 MicrocodeFlashWrite (
-  IN EFI_PHYSICAL_ADDRESS         FlashAddress,
-  IN VOID                         *Buffer,
-  IN UINTN                        Length
+  IN EFI_PHYSICAL_ADDRESS  FlashAddress,
+  IN VOID                  *Buffer,
+  IN UINTN                 Length
   )
 {
-  CopyMem((VOID *)(UINTN)(FlashAddress), Buffer, Length);
+  CopyMem ((VOID *)(UINTN)(FlashAddress), Buffer, Length);
   return EFI_SUCCESS;
 }
