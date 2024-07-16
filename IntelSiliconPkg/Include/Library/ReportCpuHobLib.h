@@ -24,4 +24,3 @@ ReportCpuHob (
   );
 
 #endif
-

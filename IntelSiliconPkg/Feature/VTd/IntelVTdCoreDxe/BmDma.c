@@ -9,32 +9,32 @@
 #include "DmaProtection.h"
 
 // TBD: May make it a policy
-#define DMA_MEMORY_TOP          MAX_UINTN
-//#define DMA_MEMORY_TOP          0x0000000001FFFFFFULL
+#define DMA_MEMORY_TOP  MAX_UINTN
+// #define DMA_MEMORY_TOP          0x0000000001FFFFFFULL
 
 #define MAP_HANDLE_INFO_SIGNATURE  SIGNATURE_32 ('H', 'M', 'A', 'P')
 typedef struct {
-  UINT32                                    Signature;
-  LIST_ENTRY                                Link;
-  EFI_HANDLE                                DeviceHandle;
-  UINT64                                    IoMmuAccess;
+  UINT32        Signature;
+  LIST_ENTRY    Link;
+  EFI_HANDLE    DeviceHandle;
+  UINT64        IoMmuAccess;
 } MAP_HANDLE_INFO;
-#define MAP_HANDLE_INFO_FROM_LINK(a) CR (a, MAP_HANDLE_INFO, Link, MAP_HANDLE_INFO_SIGNATURE)
+#define MAP_HANDLE_INFO_FROM_LINK(a)  CR (a, MAP_HANDLE_INFO, Link, MAP_HANDLE_INFO_SIGNATURE)
 
 #define MAP_INFO_SIGNATURE  SIGNATURE_32 ('D', 'M', 'A', 'P')
 typedef struct {
-  UINT32                                    Signature;
-  LIST_ENTRY                                Link;
-  EDKII_IOMMU_OPERATION                     Operation;
-  UINTN                                     NumberOfBytes;
-  UINTN                                     NumberOfPages;
-  EFI_PHYSICAL_ADDRESS                      HostAddress;
-  EFI_PHYSICAL_ADDRESS                      DeviceAddress;
-  LIST_ENTRY                                HandleList;
+  UINT32                   Signature;
+  LIST_ENTRY               Link;
+  EDKII_IOMMU_OPERATION    Operation;
+  UINTN                    NumberOfBytes;
+  UINTN                    NumberOfPages;
+  EFI_PHYSICAL_ADDRESS     HostAddress;
+  EFI_PHYSICAL_ADDRESS     DeviceAddress;
+  LIST_ENTRY               HandleList;
 } MAP_INFO;
-#define MAP_INFO_FROM_LINK(a) CR (a, MAP_INFO, Link, MAP_INFO_SIGNATURE)
+#define MAP_INFO_FROM_LINK(a)  CR (a, MAP_INFO, Link, MAP_INFO_SIGNATURE)
 
-LIST_ENTRY                        gMaps = INITIALIZE_LIST_HEAD_VARIABLE(gMaps);
+LIST_ENTRY  gMaps = INITIALIZE_LIST_HEAD_VARIABLE (gMaps);
 
 /**
   This function fills DeviceHandle/IoMmuAccess to the MAP_HANDLE_INFO,
@@ -54,29 +54,31 @@ SyncDeviceHandleToMapInfo (
   IN UINT64                IoMmuAccess
   )
 {
-  MAP_INFO                 *MapInfo;
-  MAP_HANDLE_INFO          *MapHandleInfo;
-  LIST_ENTRY               *Link;
-  EFI_TPL                  OriginalTpl;
+  MAP_INFO         *MapInfo;
+  MAP_HANDLE_INFO  *MapHandleInfo;
+  LIST_ENTRY       *Link;
+  EFI_TPL          OriginalTpl;
 
   //
   // Find MapInfo according to DeviceAddress
   //
   OriginalTpl = gBS->RaiseTPL (VTD_TPL_LEVEL);
-  MapInfo = NULL;
+  MapInfo     = NULL;
   for (Link = GetFirstNode (&gMaps)
        ; !IsNull (&gMaps, Link)
        ; Link = GetNextNode (&gMaps, Link)
-       ) {
+       )
+  {
     MapInfo = MAP_INFO_FROM_LINK (Link);
     if (MapInfo->DeviceAddress == DeviceAddress) {
       break;
     }
   }
+
   if ((MapInfo == NULL) || (MapInfo->DeviceAddress != DeviceAddress)) {
     DEBUG ((DEBUG_ERROR, "SyncDeviceHandleToMapInfo: DeviceAddress(0x%lx) - not found\n", DeviceAddress));
     gBS->RestoreTPL (OriginalTpl);
-    return ;
+    return;
   }
 
   //
@@ -86,16 +88,18 @@ SyncDeviceHandleToMapInfo (
   for (Link = GetFirstNode (&MapInfo->HandleList)
        ; !IsNull (&MapInfo->HandleList, Link)
        ; Link = GetNextNode (&MapInfo->HandleList, Link)
-       ) {
+       )
+  {
     MapHandleInfo = MAP_HANDLE_INFO_FROM_LINK (Link);
     if (MapHandleInfo->DeviceHandle == DeviceHandle) {
       break;
     }
   }
+
   if ((MapHandleInfo != NULL) && (MapHandleInfo->DeviceHandle == DeviceHandle)) {
-    MapHandleInfo->IoMmuAccess       = IoMmuAccess;
+    MapHandleInfo->IoMmuAccess = IoMmuAccess;
     gBS->RestoreTPL (OriginalTpl);
-    return ;
+    return;
   }
 
   //
@@ -106,17 +110,17 @@ SyncDeviceHandleToMapInfo (
   if (MapHandleInfo == NULL) {
     DEBUG ((DEBUG_ERROR, "SyncDeviceHandleToMapInfo: %r\n", EFI_OUT_OF_RESOURCES));
     gBS->RestoreTPL (OriginalTpl);
-    return ;
+    return;
   }
 
-  MapHandleInfo->Signature         = MAP_HANDLE_INFO_SIGNATURE;
-  MapHandleInfo->DeviceHandle      = DeviceHandle;
-  MapHandleInfo->IoMmuAccess       = IoMmuAccess;
+  MapHandleInfo->Signature    = MAP_HANDLE_INFO_SIGNATURE;
+  MapHandleInfo->DeviceHandle = DeviceHandle;
+  MapHandleInfo->IoMmuAccess  = IoMmuAccess;
 
   InsertTailList (&MapInfo->HandleList, &MapHandleInfo->Link);
   gBS->RestoreTPL (OriginalTpl);
 
-  return ;
+  return;
 }
 
 /**
@@ -142,23 +146,24 @@ SyncDeviceHandleToMapInfo (
 EFI_STATUS
 EFIAPI
 IoMmuMap (
-  IN     EDKII_IOMMU_PROTOCOL                       *This,
-  IN     EDKII_IOMMU_OPERATION                      Operation,
-  IN     VOID                                       *HostAddress,
-  IN OUT UINTN                                      *NumberOfBytes,
-  OUT    EFI_PHYSICAL_ADDRESS                       *DeviceAddress,
-  OUT    VOID                                       **Mapping
+  IN     EDKII_IOMMU_PROTOCOL   *This,
+  IN     EDKII_IOMMU_OPERATION  Operation,
+  IN     VOID                   *HostAddress,
+  IN OUT UINTN                  *NumberOfBytes,
+  OUT    EFI_PHYSICAL_ADDRESS   *DeviceAddress,
+  OUT    VOID                   **Mapping
   )
 {
-  EFI_STATUS                                        Status;
-  EFI_PHYSICAL_ADDRESS                              PhysicalAddress;
-  MAP_INFO                                          *MapInfo;
-  EFI_PHYSICAL_ADDRESS                              DmaMemoryTop;
-  BOOLEAN                                           NeedRemap;
-  EFI_TPL                                           OriginalTpl;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  PhysicalAddress;
+  MAP_INFO              *MapInfo;
+  EFI_PHYSICAL_ADDRESS  DmaMemoryTop;
+  BOOLEAN               NeedRemap;
+  EFI_TPL               OriginalTpl;
 
-  if (NumberOfBytes == NULL || DeviceAddress == NULL ||
-      Mapping == NULL) {
+  if ((NumberOfBytes == NULL) || (DeviceAddress == NULL) ||
+      (Mapping == NULL))
+  {
     DEBUG ((DEBUG_ERROR, "IoMmuMap: %r\n", EFI_INVALID_PARAMETER));
     return EFI_INVALID_PARAMETER;
   }
@@ -168,22 +173,25 @@ IoMmuMap (
   //
   // Make sure that Operation is valid
   //
-  if ((UINT32) Operation >= EdkiiIoMmuOperationMaximum) {
+  if ((UINT32)Operation >= EdkiiIoMmuOperationMaximum) {
     DEBUG ((DEBUG_ERROR, "IoMmuMap: %r\n", EFI_INVALID_PARAMETER));
     return EFI_INVALID_PARAMETER;
   }
-  NeedRemap = FALSE;
-  PhysicalAddress = (EFI_PHYSICAL_ADDRESS) (UINTN) HostAddress;
+
+  NeedRemap       = FALSE;
+  PhysicalAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress;
 
   DmaMemoryTop = DMA_MEMORY_TOP;
 
   //
   // Alignment check
   //
-  if ((*NumberOfBytes != ALIGN_VALUE(*NumberOfBytes, SIZE_4KB)) ||
-      (PhysicalAddress != ALIGN_VALUE(PhysicalAddress, SIZE_4KB))) {
+  if ((*NumberOfBytes != ALIGN_VALUE (*NumberOfBytes, SIZE_4KB)) ||
+      (PhysicalAddress != ALIGN_VALUE (PhysicalAddress, SIZE_4KB)))
+  {
     if ((Operation == EdkiiIoMmuOperationBusMasterCommonBuffer) ||
-        (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64)) {
+        (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64))
+    {
       //
       // The input buffer might be a subset from IoMmuAllocateBuffer.
       // Skip the check.
@@ -197,21 +205,23 @@ IoMmuMap (
     NeedRemap = TRUE;
   }
 
-  if (((Operation != EdkiiIoMmuOperationBusMasterRead64 &&
-        Operation != EdkiiIoMmuOperationBusMasterWrite64 &&
-        Operation != EdkiiIoMmuOperationBusMasterCommonBuffer64)) &&
-      ((PhysicalAddress + *NumberOfBytes) > SIZE_4GB)) {
+  if ((((Operation != EdkiiIoMmuOperationBusMasterRead64) &&
+        (Operation != EdkiiIoMmuOperationBusMasterWrite64) &&
+        (Operation != EdkiiIoMmuOperationBusMasterCommonBuffer64))) &&
+      ((PhysicalAddress + *NumberOfBytes) > SIZE_4GB))
+  {
     //
     // If the root bridge or the device cannot handle performing DMA above
     // 4GB but any part of the DMA transfer being mapped is above 4GB, then
     // map the DMA transfer to a buffer below 4GB.
     //
-    NeedRemap = TRUE;
+    NeedRemap    = TRUE;
     DmaMemoryTop = MIN (DmaMemoryTop, SIZE_4GB - 1);
   }
 
-  if (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer ||
-      Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64) {
+  if ((Operation == EdkiiIoMmuOperationBusMasterCommonBuffer) ||
+      (Operation == EdkiiIoMmuOperationBusMasterCommonBuffer64))
+  {
     if (NeedRemap) {
       //
       // Common Buffer operations can not be remapped.  If the common buffer
@@ -237,13 +247,13 @@ IoMmuMap (
   //
   // Initialize the MAP_INFO structure
   //
-  MapInfo->Signature         = MAP_INFO_SIGNATURE;
-  MapInfo->Operation         = Operation;
-  MapInfo->NumberOfBytes     = *NumberOfBytes;
-  MapInfo->NumberOfPages     = EFI_SIZE_TO_PAGES (MapInfo->NumberOfBytes);
-  MapInfo->HostAddress       = PhysicalAddress;
-  MapInfo->DeviceAddress     = DmaMemoryTop;
-  InitializeListHead(&MapInfo->HandleList);
+  MapInfo->Signature     = MAP_INFO_SIGNATURE;
+  MapInfo->Operation     = Operation;
+  MapInfo->NumberOfBytes = *NumberOfBytes;
+  MapInfo->NumberOfPages = EFI_SIZE_TO_PAGES (MapInfo->NumberOfBytes);
+  MapInfo->HostAddress   = PhysicalAddress;
+  MapInfo->DeviceAddress = DmaMemoryTop;
+  InitializeListHead (&MapInfo->HandleList);
 
   //
   // Allocate a buffer below 4GB to map the transfer to.
@@ -267,11 +277,12 @@ IoMmuMap (
     // then copy the contents of the real buffer into the mapped buffer
     // so the Bus Master can read the contents of the real buffer.
     //
-    if (Operation == EdkiiIoMmuOperationBusMasterRead ||
-        Operation == EdkiiIoMmuOperationBusMasterRead64) {
+    if ((Operation == EdkiiIoMmuOperationBusMasterRead) ||
+        (Operation == EdkiiIoMmuOperationBusMasterRead64))
+    {
       CopyMem (
-        (VOID *) (UINTN) MapInfo->DeviceAddress,
-        (VOID *) (UINTN) MapInfo->HostAddress,
+        (VOID *)(UINTN)MapInfo->DeviceAddress,
+        (VOID *)(UINTN)MapInfo->HostAddress,
         MapInfo->NumberOfBytes
         );
     }
@@ -290,11 +301,11 @@ IoMmuMap (
   //
   // Return a pointer to the MAP_INFO structure in Mapping
   //
-  *Mapping       = MapInfo;
+  *Mapping = MapInfo;
 
   DEBUG ((DEBUG_VERBOSE, "IoMmuMap: 0x%08x - 0x%08x <==\n", *DeviceAddress, *Mapping));
 
-  VTdLogAddEvent (VTDLOG_DXE_IOMMU_MAP, (UINT64) (*DeviceAddress), (UINT64) Operation);
+  VTdLogAddEvent (VTDLOG_DXE_IOMMU_MAP, (UINT64)(*DeviceAddress), (UINT64)Operation);
 
   return EFI_SUCCESS;
 }
@@ -312,14 +323,14 @@ IoMmuMap (
 EFI_STATUS
 EFIAPI
 IoMmuUnmap (
-  IN  EDKII_IOMMU_PROTOCOL                     *This,
-  IN  VOID                                     *Mapping
+  IN  EDKII_IOMMU_PROTOCOL  *This,
+  IN  VOID                  *Mapping
   )
 {
-  MAP_INFO                 *MapInfo;
-  MAP_HANDLE_INFO          *MapHandleInfo;
-  LIST_ENTRY               *Link;
-  EFI_TPL                  OriginalTpl;
+  MAP_INFO         *MapInfo;
+  MAP_HANDLE_INFO  *MapHandleInfo;
+  LIST_ENTRY       *Link;
+  EFI_TPL          OriginalTpl;
 
   DEBUG ((DEBUG_VERBOSE, "IoMmuUnmap: 0x%08x\n", Mapping));
 
@@ -329,16 +340,18 @@ IoMmuUnmap (
   }
 
   OriginalTpl = gBS->RaiseTPL (VTD_TPL_LEVEL);
-  MapInfo = NULL;
+  MapInfo     = NULL;
   for (Link = GetFirstNode (&gMaps)
        ; !IsNull (&gMaps, Link)
        ; Link = GetNextNode (&gMaps, Link)
-       ) {
+       )
+  {
     MapInfo = MAP_INFO_FROM_LINK (Link);
     if (MapInfo == Mapping) {
       break;
     }
   }
+
   //
   // Mapping is not a valid value returned by Map()
   //
@@ -347,6 +360,7 @@ IoMmuUnmap (
     DEBUG ((DEBUG_ERROR, "IoMmuUnmap: %r\n", EFI_INVALID_PARAMETER));
     return EFI_INVALID_PARAMETER;
   }
+
   RemoveEntryList (&MapInfo->Link);
   gBS->RestoreTPL (OriginalTpl);
 
@@ -365,11 +379,12 @@ IoMmuUnmap (
     // then copy the contents of the mapped buffer into the real buffer
     // so the processor can read the contents of the real buffer.
     //
-    if (MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite ||
-        MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite64) {
+    if ((MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite) ||
+        (MapInfo->Operation == EdkiiIoMmuOperationBusMasterWrite64))
+    {
       CopyMem (
-        (VOID *) (UINTN) MapInfo->HostAddress,
-        (VOID *) (UINTN) MapInfo->DeviceAddress,
+        (VOID *)(UINTN)MapInfo->HostAddress,
+        (VOID *)(UINTN)MapInfo->DeviceAddress,
         MapInfo->NumberOfBytes
         );
     }
@@ -409,16 +424,16 @@ IoMmuUnmap (
 EFI_STATUS
 EFIAPI
 IoMmuAllocateBuffer (
-  IN     EDKII_IOMMU_PROTOCOL                     *This,
-  IN     EFI_ALLOCATE_TYPE                        Type,
-  IN     EFI_MEMORY_TYPE                          MemoryType,
-  IN     UINTN                                    Pages,
-  IN OUT VOID                                     **HostAddress,
-  IN     UINT64                                   Attributes
+  IN     EDKII_IOMMU_PROTOCOL  *This,
+  IN     EFI_ALLOCATE_TYPE     Type,
+  IN     EFI_MEMORY_TYPE       MemoryType,
+  IN     UINTN                 Pages,
+  IN OUT VOID                  **HostAddress,
+  IN     UINT64                Attributes
   )
 {
-  EFI_STATUS                Status;
-  EFI_PHYSICAL_ADDRESS      PhysicalAddress;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  PhysicalAddress;
 
   DEBUG ((DEBUG_VERBOSE, "IoMmuAllocateBuffer: ==> 0x%08x\n", Pages));
 
@@ -442,8 +457,9 @@ IoMmuAllocateBuffer (
   // The only valid memory types are EfiBootServicesData and
   // EfiRuntimeServicesData
   //
-  if (MemoryType != EfiBootServicesData &&
-      MemoryType != EfiRuntimeServicesData) {
+  if ((MemoryType != EfiBootServicesData) &&
+      (MemoryType != EfiRuntimeServicesData))
+  {
     DEBUG ((DEBUG_ERROR, "IoMmuAllocateBuffer: %r\n", EFI_INVALID_PARAMETER));
     return EFI_INVALID_PARAMETER;
   }
@@ -455,6 +471,7 @@ IoMmuAllocateBuffer (
     //
     PhysicalAddress = MIN (PhysicalAddress, SIZE_4GB - 1);
   }
+
   Status = gBS->AllocatePages (
                   AllocateMaxAddress,
                   MemoryType,
@@ -462,9 +479,9 @@ IoMmuAllocateBuffer (
                   &PhysicalAddress
                   );
   if (!EFI_ERROR (Status)) {
-    *HostAddress = (VOID *) (UINTN) PhysicalAddress;
+    *HostAddress = (VOID *)(UINTN)PhysicalAddress;
 
-    VTdLogAddEvent (VTDLOG_DXE_IOMMU_ALLOC_BUFFER, (UINT64) Pages, (UINT64) (*HostAddress));
+    VTdLogAddEvent (VTDLOG_DXE_IOMMU_ALLOC_BUFFER, (UINT64)Pages, (UINT64)(*HostAddress));
   }
 
   DEBUG ((DEBUG_VERBOSE, "IoMmuAllocateBuffer: 0x%08x <==\n", *HostAddress));
@@ -487,16 +504,16 @@ IoMmuAllocateBuffer (
 EFI_STATUS
 EFIAPI
 IoMmuFreeBuffer (
-  IN  EDKII_IOMMU_PROTOCOL                     *This,
-  IN  UINTN                                    Pages,
-  IN  VOID                                     *HostAddress
+  IN  EDKII_IOMMU_PROTOCOL  *This,
+  IN  UINTN                 Pages,
+  IN  VOID                  *HostAddress
   )
 {
   DEBUG ((DEBUG_VERBOSE, "IoMmuFreeBuffer: 0x%\n", Pages));
 
-  VTdLogAddEvent (VTDLOG_DXE_IOMMU_FREE_BUFFER, Pages, (UINT64) HostAddress);
+  VTdLogAddEvent (VTDLOG_DXE_IOMMU_FREE_BUFFER, Pages, (UINT64)HostAddress);
 
-  return gBS->FreePages ((EFI_PHYSICAL_ADDRESS) (UINTN) HostAddress, Pages);
+  return gBS->FreePages ((EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress, Pages);
 }
 
 /**
@@ -511,13 +528,13 @@ IoMmuFreeBuffer (
 **/
 EFI_STATUS
 GetDeviceInfoFromMapping (
-  IN  VOID                                     *Mapping,
-  OUT EFI_PHYSICAL_ADDRESS                     *DeviceAddress,
-  OUT UINTN                                    *NumberOfPages
+  IN  VOID                  *Mapping,
+  OUT EFI_PHYSICAL_ADDRESS  *DeviceAddress,
+  OUT UINTN                 *NumberOfPages
   )
 {
-  MAP_INFO                 *MapInfo;
-  LIST_ENTRY               *Link;
+  MAP_INFO    *MapInfo;
+  LIST_ENTRY  *Link;
 
   if (Mapping == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -527,12 +544,14 @@ GetDeviceInfoFromMapping (
   for (Link = GetFirstNode (&gMaps)
        ; !IsNull (&gMaps, Link)
        ; Link = GetNextNode (&gMaps, Link)
-       ) {
+       )
+  {
     MapInfo = MAP_INFO_FROM_LINK (Link);
     if (MapInfo == Mapping) {
       break;
     }
   }
+
   //
   // Mapping is not a valid value returned by Map()
   //
@@ -544,4 +563,3 @@ GetDeviceInfoFromMapping (
   *NumberOfPages = MapInfo->NumberOfPages;
   return EFI_SUCCESS;
 }
-

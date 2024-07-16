@@ -11,9 +11,9 @@
 //
 // MicrocodeFmp driver private data
 //
-MICROCODE_FMP_PRIVATE_DATA *mMicrocodeFmpPrivate = NULL;
+MICROCODE_FMP_PRIVATE_DATA  *mMicrocodeFmpPrivate = NULL;
 
-EFI_FIRMWARE_MANAGEMENT_PROTOCOL mFirmwareManagementProtocol = {
+EFI_FIRMWARE_MANAGEMENT_PROTOCOL  mFirmwareManagementProtocol = {
   FmpGetImageInfo,
   FmpGetImage,
   FmpSetImage,
@@ -85,42 +85,43 @@ FmpGetImageInfo (
   OUT       CHAR16                            **PackageVersionName
   )
 {
-  MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate;
-  UINTN                      Index;
+  MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate;
+  UINTN                       Index;
 
-  MicrocodeFmpPrivate = MICROCODE_FMP_PRIVATE_DATA_FROM_FMP(This);
+  MicrocodeFmpPrivate = MICROCODE_FMP_PRIVATE_DATA_FROM_FMP (This);
 
-  if(ImageInfoSize == NULL) {
+  if (ImageInfoSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (*ImageInfoSize < sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount) {
-    *ImageInfoSize = sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount;
+  if (*ImageInfoSize < sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount) {
+    *ImageInfoSize = sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount;
     return EFI_BUFFER_TOO_SMALL;
   }
 
-  if (ImageInfo == NULL ||
-      DescriptorVersion == NULL ||
-      DescriptorCount == NULL ||
-      DescriptorSize == NULL ||
-      PackageVersion == NULL ||
-      PackageVersionName == NULL) {
+  if ((ImageInfo == NULL) ||
+      (DescriptorVersion == NULL) ||
+      (DescriptorCount == NULL) ||
+      (DescriptorSize == NULL) ||
+      (PackageVersion == NULL) ||
+      (PackageVersionName == NULL))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
-  *ImageInfoSize      = sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount;
-  *DescriptorSize     = sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR);
-  *DescriptorCount    = MicrocodeFmpPrivate->DescriptorCount;
-  *DescriptorVersion  = EFI_FIRMWARE_IMAGE_DESCRIPTOR_VERSION;
+  *ImageInfoSize     = sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount;
+  *DescriptorSize    = sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR);
+  *DescriptorCount   = MicrocodeFmpPrivate->DescriptorCount;
+  *DescriptorVersion = EFI_FIRMWARE_IMAGE_DESCRIPTOR_VERSION;
 
   //
   // supports 1 ImageInfo descriptor
   //
-  CopyMem(&ImageInfo[0], MicrocodeFmpPrivate->ImageDescriptor, sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount);
+  CopyMem (&ImageInfo[0], MicrocodeFmpPrivate->ImageDescriptor, sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR) * MicrocodeFmpPrivate->DescriptorCount);
   for (Index = 0; Index < MicrocodeFmpPrivate->DescriptorCount; Index++) {
     if ((ImageInfo[Index].AttributesSetting & IMAGE_ATTRIBUTE_IN_USE) != 0) {
       ImageInfo[Index].LastAttemptVersion = MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion;
-      ImageInfo[Index].LastAttemptStatus = MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus;
+      ImageInfo[Index].LastAttemptStatus  = MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus;
     }
   }
 
@@ -129,7 +130,7 @@ FmpGetImageInfo (
   //
   *PackageVersion = MicrocodeFmpPrivate->PackageVersion;
   if (MicrocodeFmpPrivate->PackageVersionName != NULL) {
-    *PackageVersionName = AllocateCopyPool(StrSize(MicrocodeFmpPrivate->PackageVersionName), MicrocodeFmpPrivate->PackageVersionName);
+    *PackageVersionName = AllocateCopyPool (StrSize (MicrocodeFmpPrivate->PackageVersionName), MicrocodeFmpPrivate->PackageVersionName);
   }
 
   return EFI_SUCCESS;
@@ -167,16 +168,16 @@ FmpGetImage (
   IN  OUT  UINTN                        *ImageSize
   )
 {
-  MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate;
-  MICROCODE_INFO             *MicrocodeInfo;
+  MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate;
+  MICROCODE_INFO              *MicrocodeInfo;
 
-  if (Image == NULL || ImageSize == NULL) {
+  if ((Image == NULL) || (ImageSize == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  MicrocodeFmpPrivate = MICROCODE_FMP_PRIVATE_DATA_FROM_FMP(This);
+  MicrocodeFmpPrivate = MICROCODE_FMP_PRIVATE_DATA_FROM_FMP (This);
 
-  if (ImageIndex == 0 || ImageIndex > MicrocodeFmpPrivate->DescriptorCount || ImageSize == NULL || Image == NULL) {
+  if ((ImageIndex == 0) || (ImageIndex > MicrocodeFmpPrivate->DescriptorCount) || (ImageSize == NULL) || (Image == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -241,43 +242,43 @@ FmpGetImage (
 EFI_STATUS
 EFIAPI
 FmpSetImage (
-  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL                 *This,
-  IN  UINT8                                            ImageIndex,
-  IN  CONST VOID                                       *Image,
-  IN  UINTN                                            ImageSize,
-  IN  CONST VOID                                       *VendorCode,
-  IN  EFI_FIRMWARE_MANAGEMENT_UPDATE_IMAGE_PROGRESS    Progress,
-  OUT CHAR16                                           **AbortReason
+  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL               *This,
+  IN  UINT8                                          ImageIndex,
+  IN  CONST VOID                                     *Image,
+  IN  UINTN                                          ImageSize,
+  IN  CONST VOID                                     *VendorCode,
+  IN  EFI_FIRMWARE_MANAGEMENT_UPDATE_IMAGE_PROGRESS  Progress,
+  OUT CHAR16                                         **AbortReason
   )
 {
-  EFI_STATUS                 Status;
-  EFI_STATUS                 VarStatus;
-  MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate;
+  EFI_STATUS                  Status;
+  EFI_STATUS                  VarStatus;
+  MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate;
 
-  if (Image == NULL || AbortReason == NULL) {
+  if ((Image == NULL) || (AbortReason == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  MicrocodeFmpPrivate = MICROCODE_FMP_PRIVATE_DATA_FROM_FMP(This);
-  *AbortReason     = NULL;
+  MicrocodeFmpPrivate = MICROCODE_FMP_PRIVATE_DATA_FROM_FMP (This);
+  *AbortReason        = NULL;
 
-  if (ImageIndex == 0 || ImageIndex > MicrocodeFmpPrivate->DescriptorCount || Image == NULL) {
+  if ((ImageIndex == 0) || (ImageIndex > MicrocodeFmpPrivate->DescriptorCount) || (Image == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = MicrocodeWrite(MicrocodeFmpPrivate, (VOID *)Image, ImageSize, &MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion, &MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus, AbortReason);
-  DEBUG((DEBUG_INFO, "SetImage - LastAttempt Version - 0x%x, Status - 0x%x\n", MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion, MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus));
-  VarStatus = gRT->SetVariable(
+  Status = MicrocodeWrite (MicrocodeFmpPrivate, (VOID *)Image, ImageSize, &MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion, &MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus, AbortReason);
+  DEBUG ((DEBUG_INFO, "SetImage - LastAttempt Version - 0x%x, Status - 0x%x\n", MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion, MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus));
+  VarStatus = gRT->SetVariable (
                      MICROCODE_FMP_LAST_ATTEMPT_VARIABLE_NAME,
                      &gEfiCallerIdGuid,
                      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-                     sizeof(MicrocodeFmpPrivate->LastAttempt),
+                     sizeof (MicrocodeFmpPrivate->LastAttempt),
                      &MicrocodeFmpPrivate->LastAttempt
                      );
-  DEBUG((DEBUG_INFO, "SetLastAttempt - %r\n", VarStatus));
+  DEBUG ((DEBUG_INFO, "SetLastAttempt - %r\n", VarStatus));
 
-  if (!EFI_ERROR(Status)) {
-    InitializeMicrocodeDescriptor(MicrocodeFmpPrivate);
+  if (!EFI_ERROR (Status)) {
+    InitializeMicrocodeDescriptor (MicrocodeFmpPrivate);
     DumpPrivateInfo (MicrocodeFmpPrivate);
   }
 
@@ -352,12 +353,12 @@ FmpCheckImage (
 EFI_STATUS
 EFIAPI
 FmpGetPackageInfo (
-  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL *This,
-  OUT UINT32                           *PackageVersion,
-  OUT CHAR16                           **PackageVersionName,
-  OUT UINT32                           *PackageVersionNameMaxLen,
-  OUT UINT64                           *AttributesSupported,
-  OUT UINT64                           *AttributesSetting
+  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL  *This,
+  OUT UINT32                            *PackageVersion,
+  OUT CHAR16                            **PackageVersionName,
+  OUT UINT32                            *PackageVersionNameMaxLen,
+  OUT UINT64                            *AttributesSupported,
+  OUT UINT64                            *AttributesSetting
   )
 {
   return EFI_UNSUPPORTED;
@@ -397,12 +398,12 @@ FmpGetPackageInfo (
 EFI_STATUS
 EFIAPI
 FmpSetPackageInfo (
-  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL   *This,
-  IN  CONST VOID                         *Image,
-  IN  UINTN                              ImageSize,
-  IN  CONST VOID                         *VendorCode,
-  IN  UINT32                             PackageVersion,
-  IN  CONST CHAR16                       *PackageVersionName
+  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL  *This,
+  IN  CONST VOID                        *Image,
+  IN  UINTN                             ImageSize,
+  IN  CONST VOID                        *VendorCode,
+  IN  UINT32                            PackageVersion,
+  IN  CONST CHAR16                      *PackageVersionName
   )
 {
   return EFI_UNSUPPORTED;
@@ -416,17 +417,17 @@ FmpSetPackageInfo (
 **/
 VOID
 SortFitMicrocodeInfo (
-  IN MICROCODE_FMP_PRIVATE_DATA     *MicrocodeFmpPrivate
+  IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
-  FIT_MICROCODE_INFO        *FitMicrocodeEntry;
-  FIT_MICROCODE_INFO        *NextFitMicrocodeEntry;
-  FIT_MICROCODE_INFO        TempFitMicrocodeEntry;
-  FIT_MICROCODE_INFO        *FitMicrocodeEntryEnd;
+  FIT_MICROCODE_INFO  *FitMicrocodeEntry;
+  FIT_MICROCODE_INFO  *NextFitMicrocodeEntry;
+  FIT_MICROCODE_INFO  TempFitMicrocodeEntry;
+  FIT_MICROCODE_INFO  *FitMicrocodeEntryEnd;
 
-  FitMicrocodeEntry = MicrocodeFmpPrivate->FitMicrocodeInfo;
+  FitMicrocodeEntry     = MicrocodeFmpPrivate->FitMicrocodeInfo;
   NextFitMicrocodeEntry = FitMicrocodeEntry + 1;
-  FitMicrocodeEntryEnd = MicrocodeFmpPrivate->FitMicrocodeInfo + MicrocodeFmpPrivate->FitMicrocodeEntryCount;
+  FitMicrocodeEntryEnd  = MicrocodeFmpPrivate->FitMicrocodeInfo + MicrocodeFmpPrivate->FitMicrocodeEntryCount;
   while (FitMicrocodeEntry < FitMicrocodeEntryEnd) {
     while (NextFitMicrocodeEntry < FitMicrocodeEntryEnd) {
       if (FitMicrocodeEntry->MicrocodeEntryPoint > NextFitMicrocodeEntry->MicrocodeEntryPoint) {
@@ -454,43 +455,46 @@ SortFitMicrocodeInfo (
 **/
 EFI_STATUS
 InitializeFitMicrocodeInfo (
-  IN MICROCODE_FMP_PRIVATE_DATA     *MicrocodeFmpPrivate
+  IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
-  UINT64                            FitPointer;
-  FIRMWARE_INTERFACE_TABLE_ENTRY    *FitEntry;
-  UINT32                            EntryNum;
-  UINT32                            MicrocodeEntryNum;
-  UINT32                            Index;
-  UINTN                             Address;
-  VOID                              *MicrocodePatchAddress;
-  UINTN                             MicrocodePatchRegionSize;
-  FIT_MICROCODE_INFO                *FitMicrocodeInfo;
-  FIT_MICROCODE_INFO                *FitMicrocodeInfoNext;
-  CPU_MICROCODE_HEADER              *MicrocodeEntryPoint;
-  CPU_MICROCODE_HEADER              *MicrocodeEntryPointNext;
-  UINTN                             FitMicrocodeIndex;
-  MICROCODE_INFO                    *MicrocodeInfo;
-  UINTN                             MicrocodeIndex;
+  UINT64                          FitPointer;
+  FIRMWARE_INTERFACE_TABLE_ENTRY  *FitEntry;
+  UINT32                          EntryNum;
+  UINT32                          MicrocodeEntryNum;
+  UINT32                          Index;
+  UINTN                           Address;
+  VOID                            *MicrocodePatchAddress;
+  UINTN                           MicrocodePatchRegionSize;
+  FIT_MICROCODE_INFO              *FitMicrocodeInfo;
+  FIT_MICROCODE_INFO              *FitMicrocodeInfoNext;
+  CPU_MICROCODE_HEADER            *MicrocodeEntryPoint;
+  CPU_MICROCODE_HEADER            *MicrocodeEntryPointNext;
+  UINTN                           FitMicrocodeIndex;
+  MICROCODE_INFO                  *MicrocodeInfo;
+  UINTN                           MicrocodeIndex;
 
   if (MicrocodeFmpPrivate->FitMicrocodeInfo != NULL) {
     FreePool (MicrocodeFmpPrivate->FitMicrocodeInfo);
-    MicrocodeFmpPrivate->FitMicrocodeInfo = NULL;
+    MicrocodeFmpPrivate->FitMicrocodeInfo       = NULL;
     MicrocodeFmpPrivate->FitMicrocodeEntryCount = 0;
   }
 
-  FitPointer = *(UINT64 *) (UINTN) FIT_POINTER_ADDRESS;
+  FitPointer = *(UINT64 *)(UINTN)FIT_POINTER_ADDRESS;
   if ((FitPointer == 0) ||
       (FitPointer == 0xFFFFFFFFFFFFFFFF) ||
-      (FitPointer == 0xEEEEEEEEEEEEEEEE)) {
+      (FitPointer == 0xEEEEEEEEEEEEEEEE))
+  {
     //
     // No FIT table.
     //
     return EFI_SUCCESS;
   }
-  FitEntry = (FIRMWARE_INTERFACE_TABLE_ENTRY *) (UINTN) FitPointer;
+
+  FitEntry = (FIRMWARE_INTERFACE_TABLE_ENTRY *)(UINTN)FitPointer;
   if ((FitEntry[0].Type != FIT_TYPE_00_HEADER) ||
-      (FitEntry[0].Address != FIT_TYPE_00_SIGNATURE)) {
+      (FitEntry[0].Address != FIT_TYPE_00_SIGNATURE))
+  {
     //
     // Invalid FIT table, treat it as no FIT table.
     //
@@ -508,6 +512,7 @@ InitializeFitMicrocodeInfo (
       MicrocodeEntryNum++;
     }
   }
+
   if (MicrocodeEntryNum == 0) {
     //
     // No FIT microcode entry.
@@ -525,7 +530,7 @@ InitializeFitMicrocodeInfo (
 
   MicrocodeFmpPrivate->FitMicrocodeEntryCount = MicrocodeEntryNum;
 
-  MicrocodePatchAddress = MicrocodeFmpPrivate->MicrocodePatchAddress;
+  MicrocodePatchAddress    = MicrocodeFmpPrivate->MicrocodePatchAddress;
   MicrocodePatchRegionSize = MicrocodeFmpPrivate->MicrocodePatchRegionSize;
 
   //
@@ -534,9 +539,10 @@ InitializeFitMicrocodeInfo (
   MicrocodeEntryNum = 0;
   for (Index = 0; Index < EntryNum; Index++) {
     if (FitEntry[Index].Type == FIT_TYPE_01_MICROCODE) {
-      Address = (UINTN) FitEntry[Index].Address;
-      if ((Address < (UINTN) MicrocodePatchAddress) ||
-          (Address >= ((UINTN) MicrocodePatchAddress + MicrocodePatchRegionSize))) {
+      Address = (UINTN)FitEntry[Index].Address;
+      if ((Address < (UINTN)MicrocodePatchAddress) ||
+          (Address >= ((UINTN)MicrocodePatchAddress + MicrocodePatchRegionSize)))
+      {
         DEBUG ((
           DEBUG_ERROR,
           "InitializeFitMicrocodeInfo - Address (0x%x) is not in Microcode Region\n",
@@ -544,9 +550,10 @@ InitializeFitMicrocodeInfo (
           ));
         goto ErrorExit;
       }
-      FitMicrocodeInfo = &MicrocodeFmpPrivate->FitMicrocodeInfo[MicrocodeEntryNum];
-      FitMicrocodeInfo->MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *) Address;
-      if ((*(UINT32 *) Address) == 0xFFFFFFFF) {
+
+      FitMicrocodeInfo                      = &MicrocodeFmpPrivate->FitMicrocodeInfo[MicrocodeEntryNum];
+      FitMicrocodeInfo->MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *)Address;
+      if ((*(UINT32 *)Address) == 0xFFFFFFFF) {
         //
         // It is the empty slot as long as the first dword is 0xFFFF_FFFF.
         //
@@ -554,6 +561,7 @@ InitializeFitMicrocodeInfo (
       } else {
         FitMicrocodeInfo->Empty = FALSE;
       }
+
       MicrocodeEntryNum++;
     }
   }
@@ -567,10 +575,11 @@ InitializeFitMicrocodeInfo (
       FitMicrocodeInfo = &MicrocodeFmpPrivate->FitMicrocodeInfo[FitMicrocodeIndex];
       if (MicrocodeInfo->MicrocodeEntryPoint == FitMicrocodeInfo->MicrocodeEntryPoint) {
         FitMicrocodeInfo->TotalSize = MicrocodeInfo->TotalSize;
-        FitMicrocodeInfo->InUse = MicrocodeInfo->InUse;
+        FitMicrocodeInfo->InUse     = MicrocodeInfo->InUse;
         break;
       }
     }
+
     if (FitMicrocodeIndex >= MicrocodeFmpPrivate->FitMicrocodeEntryCount) {
       DEBUG ((
         DEBUG_ERROR,
@@ -587,14 +596,15 @@ InitializeFitMicrocodeInfo (
   // Check overlap.
   //
   for (FitMicrocodeIndex = 0; FitMicrocodeIndex < MicrocodeFmpPrivate->FitMicrocodeEntryCount - 1; FitMicrocodeIndex++) {
-    FitMicrocodeInfo = &MicrocodeFmpPrivate->FitMicrocodeInfo[FitMicrocodeIndex];
-    MicrocodeEntryPoint = FitMicrocodeInfo->MicrocodeEntryPoint;
-    FitMicrocodeInfoNext = &MicrocodeFmpPrivate->FitMicrocodeInfo[FitMicrocodeIndex + 1];
+    FitMicrocodeInfo        = &MicrocodeFmpPrivate->FitMicrocodeInfo[FitMicrocodeIndex];
+    MicrocodeEntryPoint     = FitMicrocodeInfo->MicrocodeEntryPoint;
+    FitMicrocodeInfoNext    = &MicrocodeFmpPrivate->FitMicrocodeInfo[FitMicrocodeIndex + 1];
     MicrocodeEntryPointNext = FitMicrocodeInfoNext->MicrocodeEntryPoint;
     if ((MicrocodeEntryPoint >= MicrocodeEntryPointNext) ||
         ((FitMicrocodeInfo->TotalSize != 0) &&
-         ((UINTN) MicrocodeEntryPoint + FitMicrocodeInfo->TotalSize) >
-          (UINTN) MicrocodeEntryPointNext)) {
+         (((UINTN)MicrocodeEntryPoint + FitMicrocodeInfo->TotalSize) >
+          (UINTN)MicrocodeEntryPointNext)))
+    {
       DEBUG ((
         DEBUG_ERROR,
         "InitializeFitMicrocodeInfo - There is overlap between FIT microcode entries (0x%x 0x%x)\n",
@@ -609,7 +619,7 @@ InitializeFitMicrocodeInfo (
 
 ErrorExit:
   FreePool (MicrocodeFmpPrivate->FitMicrocodeInfo);
-  MicrocodeFmpPrivate->FitMicrocodeInfo = NULL;
+  MicrocodeFmpPrivate->FitMicrocodeInfo       = NULL;
   MicrocodeFmpPrivate->FitMicrocodeEntryCount = 0;
   return EFI_DEVICE_ERROR;
 }
@@ -621,7 +631,7 @@ ErrorExit:
 **/
 VOID
 InitializedProcessorMicrocodeIndex (
-  IN MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate
+  IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
   UINTN       CpuIndex;
@@ -634,21 +644,23 @@ InitializedProcessorMicrocodeIndex (
     if (MicrocodeFmpPrivate->ProcessorInfo[CpuIndex].MicrocodeIndex != (UINTN)-1) {
       continue;
     }
+
     for (MicrocodeIndex = 0; MicrocodeIndex < MicrocodeFmpPrivate->DescriptorCount; MicrocodeIndex++) {
       if (!MicrocodeFmpPrivate->MicrocodeInfo[MicrocodeIndex].InUse) {
         continue;
       }
+
       TargetCpuIndex = CpuIndex;
-      Status = VerifyMicrocode(
-                 MicrocodeFmpPrivate,
-                 MicrocodeFmpPrivate->MicrocodeInfo[MicrocodeIndex].MicrocodeEntryPoint,
-                 MicrocodeFmpPrivate->MicrocodeInfo[MicrocodeIndex].TotalSize,
-                 FALSE,
-                 &AttemptStatus,
-                 NULL,
-                 &TargetCpuIndex
-                 );
-      if (!EFI_ERROR(Status)) {
+      Status         = VerifyMicrocode (
+                         MicrocodeFmpPrivate,
+                         MicrocodeFmpPrivate->MicrocodeInfo[MicrocodeIndex].MicrocodeEntryPoint,
+                         MicrocodeFmpPrivate->MicrocodeInfo[MicrocodeIndex].TotalSize,
+                         FALSE,
+                         &AttemptStatus,
+                         NULL,
+                         &TargetCpuIndex
+                         );
+      if (!EFI_ERROR (Status)) {
         MicrocodeFmpPrivate->ProcessorInfo[CpuIndex].MicrocodeIndex = MicrocodeIndex;
       }
     }
@@ -665,38 +677,40 @@ InitializedProcessorMicrocodeIndex (
 **/
 EFI_STATUS
 InitializeMicrocodeDescriptor (
-  IN MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate
+  IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
-  EFI_STATUS Status;
-  UINT8      CurrentMicrocodeCount;
+  EFI_STATUS  Status;
+  UINT8       CurrentMicrocodeCount;
 
   CurrentMicrocodeCount = (UINT8)GetMicrocodeInfo (MicrocodeFmpPrivate, 0, NULL, NULL);
 
   if (CurrentMicrocodeCount > MicrocodeFmpPrivate->DescriptorCount) {
     if (MicrocodeFmpPrivate->ImageDescriptor != NULL) {
-      FreePool(MicrocodeFmpPrivate->ImageDescriptor);
+      FreePool (MicrocodeFmpPrivate->ImageDescriptor);
       MicrocodeFmpPrivate->ImageDescriptor = NULL;
     }
+
     if (MicrocodeFmpPrivate->MicrocodeInfo != NULL) {
-      FreePool(MicrocodeFmpPrivate->MicrocodeInfo);
+      FreePool (MicrocodeFmpPrivate->MicrocodeInfo);
       MicrocodeFmpPrivate->MicrocodeInfo = NULL;
     }
   } else {
-    ZeroMem(MicrocodeFmpPrivate->ImageDescriptor, MicrocodeFmpPrivate->DescriptorCount * sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR));
-    ZeroMem(MicrocodeFmpPrivate->MicrocodeInfo, MicrocodeFmpPrivate->DescriptorCount * sizeof(MICROCODE_INFO));
+    ZeroMem (MicrocodeFmpPrivate->ImageDescriptor, MicrocodeFmpPrivate->DescriptorCount * sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR));
+    ZeroMem (MicrocodeFmpPrivate->MicrocodeInfo, MicrocodeFmpPrivate->DescriptorCount * sizeof (MICROCODE_INFO));
   }
 
   MicrocodeFmpPrivate->DescriptorCount = CurrentMicrocodeCount;
 
   if (MicrocodeFmpPrivate->ImageDescriptor == NULL) {
-    MicrocodeFmpPrivate->ImageDescriptor = AllocateZeroPool(MicrocodeFmpPrivate->DescriptorCount * sizeof(EFI_FIRMWARE_IMAGE_DESCRIPTOR));
+    MicrocodeFmpPrivate->ImageDescriptor = AllocateZeroPool (MicrocodeFmpPrivate->DescriptorCount * sizeof (EFI_FIRMWARE_IMAGE_DESCRIPTOR));
     if (MicrocodeFmpPrivate->ImageDescriptor == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
   }
+
   if (MicrocodeFmpPrivate->MicrocodeInfo == NULL) {
-    MicrocodeFmpPrivate->MicrocodeInfo = AllocateZeroPool(MicrocodeFmpPrivate->DescriptorCount * sizeof(MICROCODE_INFO));
+    MicrocodeFmpPrivate->MicrocodeInfo = AllocateZeroPool (MicrocodeFmpPrivate->DescriptorCount * sizeof (MICROCODE_INFO));
     if (MicrocodeFmpPrivate->MicrocodeInfo == NULL) {
       FreePool (MicrocodeFmpPrivate->ImageDescriptor);
       return EFI_OUT_OF_RESOURCES;
@@ -704,15 +718,15 @@ InitializeMicrocodeDescriptor (
   }
 
   CurrentMicrocodeCount = (UINT8)GetMicrocodeInfo (MicrocodeFmpPrivate, MicrocodeFmpPrivate->DescriptorCount, MicrocodeFmpPrivate->ImageDescriptor, MicrocodeFmpPrivate->MicrocodeInfo);
-  ASSERT(CurrentMicrocodeCount == MicrocodeFmpPrivate->DescriptorCount);
+  ASSERT (CurrentMicrocodeCount == MicrocodeFmpPrivate->DescriptorCount);
 
   InitializedProcessorMicrocodeIndex (MicrocodeFmpPrivate);
 
   Status = InitializeFitMicrocodeInfo (MicrocodeFmpPrivate);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     FreePool (MicrocodeFmpPrivate->ImageDescriptor);
     FreePool (MicrocodeFmpPrivate->MicrocodeInfo);
-    DEBUG((DEBUG_ERROR, "InitializeFitMicrocodeInfo - %r\n", Status));
+    DEBUG ((DEBUG_ERROR, "InitializeFitMicrocodeInfo - %r\n", Status));
     return Status;
   }
 
@@ -732,35 +746,35 @@ InitializeProcessorInfo (
   IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
-  EFI_STATUS                           Status;
-  EFI_MP_SERVICES_PROTOCOL             *MpService;
-  UINTN                                NumberOfProcessors;
-  UINTN                                NumberOfEnabledProcessors;
-  UINTN                                Index;
-  UINTN                                BspIndex;
+  EFI_STATUS                Status;
+  EFI_MP_SERVICES_PROTOCOL  *MpService;
+  UINTN                     NumberOfProcessors;
+  UINTN                     NumberOfEnabledProcessors;
+  UINTN                     Index;
+  UINTN                     BspIndex;
 
   Status = gBS->LocateProtocol (&gEfiMpServiceProtocolGuid, NULL, (VOID **)&MpService);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
-  MicrocodeFmpPrivate->MpService = MpService;
+  MicrocodeFmpPrivate->MpService      = MpService;
   MicrocodeFmpPrivate->ProcessorCount = 0;
-  MicrocodeFmpPrivate->ProcessorInfo = NULL;
+  MicrocodeFmpPrivate->ProcessorInfo  = NULL;
 
   Status = MpService->GetNumberOfProcessors (MpService, &NumberOfProcessors, &NumberOfEnabledProcessors);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
   MicrocodeFmpPrivate->ProcessorCount = NumberOfProcessors;
 
   Status = MpService->WhoAmI (MpService, &BspIndex);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
   MicrocodeFmpPrivate->BspIndex = BspIndex;
 
-  MicrocodeFmpPrivate->ProcessorInfo = AllocateZeroPool (sizeof(PROCESSOR_INFO) * MicrocodeFmpPrivate->ProcessorCount);
+  MicrocodeFmpPrivate->ProcessorInfo = AllocateZeroPool (sizeof (PROCESSOR_INFO) * MicrocodeFmpPrivate->ProcessorCount);
   if (MicrocodeFmpPrivate->ProcessorInfo == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   for (Index = 0; Index < NumberOfProcessors; Index++) {
-    MicrocodeFmpPrivate->ProcessorInfo[Index].CpuIndex = Index;
+    MicrocodeFmpPrivate->ProcessorInfo[Index].CpuIndex       = Index;
     MicrocodeFmpPrivate->ProcessorInfo[Index].MicrocodeIndex = (UINTN)-1;
     if (Index == BspIndex) {
       CollectProcessorInfo (&MicrocodeFmpPrivate->ProcessorInfo[Index]);
@@ -774,7 +788,7 @@ InitializeProcessorInfo (
                             &MicrocodeFmpPrivate->ProcessorInfo[Index],
                             NULL
                             );
-      ASSERT_EFI_ERROR(Status);
+      ASSERT_EFI_ERROR (Status);
     }
   }
 
@@ -791,11 +805,11 @@ DumpPrivateInfo (
   IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
-  UINTN                                Index;
-  PROCESSOR_INFO                       *ProcessorInfo;
-  MICROCODE_INFO                       *MicrocodeInfo;
-  EFI_FIRMWARE_IMAGE_DESCRIPTOR        *ImageDescriptor;
-  FIT_MICROCODE_INFO                   *FitMicrocodeInfo;
+  UINTN                          Index;
+  PROCESSOR_INFO                 *ProcessorInfo;
+  MICROCODE_INFO                 *MicrocodeInfo;
+  EFI_FIRMWARE_IMAGE_DESCRIPTOR  *ImageDescriptor;
+  FIT_MICROCODE_INFO             *FitMicrocodeInfo;
 
   DEBUG ((DEBUG_INFO, "ProcessorInfo:\n"));
   DEBUG ((DEBUG_INFO, "  ProcessorCount - 0x%x\n", MicrocodeFmpPrivate->ProcessorCount));
@@ -832,21 +846,21 @@ DumpPrivateInfo (
   ImageDescriptor = MicrocodeFmpPrivate->ImageDescriptor;
   DEBUG ((DEBUG_VERBOSE, "ImageDescriptor:\n"));
   for (Index = 0; Index < MicrocodeFmpPrivate->DescriptorCount; Index++) {
-    DEBUG((DEBUG_VERBOSE, "  ImageDescriptor (%d)\n", Index));
-    DEBUG((DEBUG_VERBOSE, "    ImageIndex                  - 0x%x\n", ImageDescriptor[Index].ImageIndex));
-    DEBUG((DEBUG_VERBOSE, "    ImageTypeId                 - %g\n", &ImageDescriptor[Index].ImageTypeId));
-    DEBUG((DEBUG_VERBOSE, "    ImageId                     - 0x%lx\n", ImageDescriptor[Index].ImageId));
-    DEBUG((DEBUG_VERBOSE, "    ImageIdName                 - %s\n", ImageDescriptor[Index].ImageIdName));
-    DEBUG((DEBUG_VERBOSE, "    Version                     - 0x%x\n", ImageDescriptor[Index].Version));
-    DEBUG((DEBUG_VERBOSE, "    VersionName                 - %s\n", ImageDescriptor[Index].VersionName));
-    DEBUG((DEBUG_VERBOSE, "    Size                        - 0x%x\n", ImageDescriptor[Index].Size));
-    DEBUG((DEBUG_VERBOSE, "    AttributesSupported         - 0x%lx\n", ImageDescriptor[Index].AttributesSupported));
-    DEBUG((DEBUG_VERBOSE, "    AttributesSetting           - 0x%lx\n", ImageDescriptor[Index].AttributesSetting));
-    DEBUG((DEBUG_VERBOSE, "    Compatibilities             - 0x%lx\n", ImageDescriptor[Index].Compatibilities));
-    DEBUG((DEBUG_VERBOSE, "    LowestSupportedImageVersion - 0x%x\n", ImageDescriptor[Index].LowestSupportedImageVersion));
-    DEBUG((DEBUG_VERBOSE, "    LastAttemptVersion          - 0x%x\n", ImageDescriptor[Index].LastAttemptVersion));
-    DEBUG((DEBUG_VERBOSE, "    LastAttemptStatus           - 0x%x\n", ImageDescriptor[Index].LastAttemptStatus));
-    DEBUG((DEBUG_VERBOSE, "    HardwareInstance            - 0x%lx\n", ImageDescriptor[Index].HardwareInstance));
+    DEBUG ((DEBUG_VERBOSE, "  ImageDescriptor (%d)\n", Index));
+    DEBUG ((DEBUG_VERBOSE, "    ImageIndex                  - 0x%x\n", ImageDescriptor[Index].ImageIndex));
+    DEBUG ((DEBUG_VERBOSE, "    ImageTypeId                 - %g\n", &ImageDescriptor[Index].ImageTypeId));
+    DEBUG ((DEBUG_VERBOSE, "    ImageId                     - 0x%lx\n", ImageDescriptor[Index].ImageId));
+    DEBUG ((DEBUG_VERBOSE, "    ImageIdName                 - %s\n", ImageDescriptor[Index].ImageIdName));
+    DEBUG ((DEBUG_VERBOSE, "    Version                     - 0x%x\n", ImageDescriptor[Index].Version));
+    DEBUG ((DEBUG_VERBOSE, "    VersionName                 - %s\n", ImageDescriptor[Index].VersionName));
+    DEBUG ((DEBUG_VERBOSE, "    Size                        - 0x%x\n", ImageDescriptor[Index].Size));
+    DEBUG ((DEBUG_VERBOSE, "    AttributesSupported         - 0x%lx\n", ImageDescriptor[Index].AttributesSupported));
+    DEBUG ((DEBUG_VERBOSE, "    AttributesSetting           - 0x%lx\n", ImageDescriptor[Index].AttributesSetting));
+    DEBUG ((DEBUG_VERBOSE, "    Compatibilities             - 0x%lx\n", ImageDescriptor[Index].Compatibilities));
+    DEBUG ((DEBUG_VERBOSE, "    LowestSupportedImageVersion - 0x%x\n", ImageDescriptor[Index].LowestSupportedImageVersion));
+    DEBUG ((DEBUG_VERBOSE, "    LastAttemptVersion          - 0x%x\n", ImageDescriptor[Index].LastAttemptVersion));
+    DEBUG ((DEBUG_VERBOSE, "    LastAttemptStatus           - 0x%x\n", ImageDescriptor[Index].LastAttemptStatus));
+    DEBUG ((DEBUG_VERBOSE, "    HardwareInstance            - 0x%lx\n", ImageDescriptor[Index].HardwareInstance));
   }
 
   if (MicrocodeFmpPrivate->FitMicrocodeInfo != NULL) {
@@ -879,47 +893,47 @@ InitializePrivateData (
   IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   )
 {
-  EFI_STATUS       Status;
-  EFI_STATUS       VarStatus;
-  UINTN            VarSize;
-  BOOLEAN          Result;
+  EFI_STATUS  Status;
+  EFI_STATUS  VarStatus;
+  UINTN       VarSize;
+  BOOLEAN     Result;
 
-  MicrocodeFmpPrivate->Signature       = MICROCODE_FMP_PRIVATE_DATA_SIGNATURE;
-  MicrocodeFmpPrivate->Handle          = NULL;
-  CopyMem(&MicrocodeFmpPrivate->Fmp, &mFirmwareManagementProtocol, sizeof(EFI_FIRMWARE_MANAGEMENT_PROTOCOL));
+  MicrocodeFmpPrivate->Signature = MICROCODE_FMP_PRIVATE_DATA_SIGNATURE;
+  MicrocodeFmpPrivate->Handle    = NULL;
+  CopyMem (&MicrocodeFmpPrivate->Fmp, &mFirmwareManagementProtocol, sizeof (EFI_FIRMWARE_MANAGEMENT_PROTOCOL));
 
-  MicrocodeFmpPrivate->PackageVersion = 0x1;
+  MicrocodeFmpPrivate->PackageVersion     = 0x1;
   MicrocodeFmpPrivate->PackageVersionName = L"Microcode";
 
   MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion = 0x0;
-  MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus = 0x0;
-  VarSize = sizeof(MicrocodeFmpPrivate->LastAttempt);
-  VarStatus = gRT->GetVariable(
-                     MICROCODE_FMP_LAST_ATTEMPT_VARIABLE_NAME,
-                     &gEfiCallerIdGuid,
-                     NULL,
-                     &VarSize,
-                     &MicrocodeFmpPrivate->LastAttempt
-                     );
-  DEBUG((DEBUG_INFO, "GetLastAttempt - %r\n", VarStatus));
-  DEBUG((DEBUG_INFO, "GetLastAttempt Version - 0x%x, State - 0x%x\n", MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion, MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus));
+  MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus  = 0x0;
+  VarSize                                             = sizeof (MicrocodeFmpPrivate->LastAttempt);
+  VarStatus                                           = gRT->GetVariable (
+                                                               MICROCODE_FMP_LAST_ATTEMPT_VARIABLE_NAME,
+                                                               &gEfiCallerIdGuid,
+                                                               NULL,
+                                                               &VarSize,
+                                                               &MicrocodeFmpPrivate->LastAttempt
+                                                               );
+  DEBUG ((DEBUG_INFO, "GetLastAttempt - %r\n", VarStatus));
+  DEBUG ((DEBUG_INFO, "GetLastAttempt Version - 0x%x, State - 0x%x\n", MicrocodeFmpPrivate->LastAttempt.LastAttemptVersion, MicrocodeFmpPrivate->LastAttempt.LastAttemptStatus));
 
-  Result = GetMicrocodeRegion(&MicrocodeFmpPrivate->MicrocodePatchAddress, &MicrocodeFmpPrivate->MicrocodePatchRegionSize);
+  Result = GetMicrocodeRegion (&MicrocodeFmpPrivate->MicrocodePatchAddress, &MicrocodeFmpPrivate->MicrocodePatchRegionSize);
   if (!Result) {
-    DEBUG((DEBUG_ERROR, "Fail to get Microcode Region\n"));
+    DEBUG ((DEBUG_ERROR, "Fail to get Microcode Region\n"));
     return EFI_NOT_FOUND;
   }
 
   Status = InitializeProcessorInfo (MicrocodeFmpPrivate);
-  if (EFI_ERROR(Status)) {
-    DEBUG((DEBUG_ERROR, "InitializeProcessorInfo - %r\n", Status));
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "InitializeProcessorInfo - %r\n", Status));
     return Status;
   }
 
-  Status = InitializeMicrocodeDescriptor(MicrocodeFmpPrivate);
-  if (EFI_ERROR(Status)) {
+  Status = InitializeMicrocodeDescriptor (MicrocodeFmpPrivate);
+  if (EFI_ERROR (Status)) {
     FreePool (MicrocodeFmpPrivate->ProcessorInfo);
-    DEBUG((DEBUG_ERROR, "InitializeMicrocodeDescriptor - %r\n", Status));
+    DEBUG ((DEBUG_ERROR, "InitializeMicrocodeDescriptor - %r\n", Status));
     return Status;
   }
 
@@ -939,23 +953,23 @@ InitializePrivateData (
 EFI_STATUS
 EFIAPI
 MicrocodeFmpMain (
-  IN EFI_HANDLE                         ImageHandle,
-  IN EFI_SYSTEM_TABLE                   *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS                            Status;
+  EFI_STATUS  Status;
 
   //
   // Initialize MicrocodeFmpPrivateData
   //
-  mMicrocodeFmpPrivate = AllocateZeroPool (sizeof(MICROCODE_FMP_PRIVATE_DATA));
+  mMicrocodeFmpPrivate = AllocateZeroPool (sizeof (MICROCODE_FMP_PRIVATE_DATA));
   if (mMicrocodeFmpPrivate == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Status = InitializePrivateData(mMicrocodeFmpPrivate);
-  if (EFI_ERROR(Status)) {
-    FreePool(mMicrocodeFmpPrivate);
+  Status = InitializePrivateData (mMicrocodeFmpPrivate);
+  if (EFI_ERROR (Status)) {
+    FreePool (mMicrocodeFmpPrivate);
     mMicrocodeFmpPrivate = NULL;
     return Status;
   }
@@ -970,7 +984,7 @@ MicrocodeFmpMain (
                   &mMicrocodeFmpPrivate->Fmp
                   );
   if (EFI_ERROR (Status)) {
-    FreePool(mMicrocodeFmpPrivate);
+    FreePool (mMicrocodeFmpPrivate);
     mMicrocodeFmpPrivate = NULL;
     return Status;
   }

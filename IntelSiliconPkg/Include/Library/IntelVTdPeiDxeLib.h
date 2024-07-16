@@ -5,6 +5,7 @@
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
+
 #ifndef _INTEL_VTD_PEI_DXE_LIB_H_
 #define _INTEL_VTD_PEI_DXE_LIB_H_
 
@@ -17,87 +18,87 @@
 #include <Protocol/PlatformVtdPolicy.h>
 
 #if defined (EXT_CALLBACK)
-  #define _VTDLIB_DEBUG(PrintLevel, ...)                                        \
+#define _VTDLIB_DEBUG(PrintLevel, ...)                                        \
     do {                                                                        \
       VtdLogEventCallback (Context, CallbackHandle, PrintLevel, ##__VA_ARGS__); \
     } while (FALSE)
-  #define VTDLIB_DEBUG(Expression) _VTDLIB_DEBUG Expression
+#define VTDLIB_DEBUG(Expression)  _VTDLIB_DEBUG Expression
 #else
-  #define VTDLIB_DEBUG(Expression) DEBUG(Expression)
+#define VTDLIB_DEBUG(Expression)  DEBUG(Expression)
 #endif
 
 #pragma pack(1)
 
 typedef struct {
-  UINT8                            DeviceType;
-  VTD_SOURCE_ID                    PciSourceId;
-  EDKII_PLATFORM_VTD_PCI_DEVICE_ID PciDeviceId;
+  UINT8                               DeviceType;
+  VTD_SOURCE_ID                       PciSourceId;
+  EDKII_PLATFORM_VTD_PCI_DEVICE_ID    PciDeviceId;
   // for statistic analysis
-  UINT64                           AccessCount;
+  UINT64                              AccessCount;
 } PCI_DEVICE_DATA;
 
 typedef struct {
-  BOOLEAN                          IncludeAllFlag;
-  UINT16                           Segment;
-  UINT32                           PciDeviceDataMaxNumber;
-  UINT32                           PciDeviceDataNumber;
-  PCI_DEVICE_DATA                  PciDeviceData[1];
+  BOOLEAN            IncludeAllFlag;
+  UINT16             Segment;
+  UINT32             PciDeviceDataMaxNumber;
+  UINT32             PciDeviceDataNumber;
+  PCI_DEVICE_DATA    PciDeviceData[1];
 } PCI_DEVICE_INFORMATION;
 
 typedef struct {
-  UINT64                           Uint64Lo;
-  UINT64                           Uint64Hi;
-}VTD_UINT128;
+  UINT64    Uint64Lo;
+  UINT64    Uint64Hi;
+} VTD_UINT128;
 
 typedef struct {
-  UINT64                           BaseAddress;
-  UINT32                           VerReg;
-  UINT64                           CapReg;
-  UINT64                           EcapReg;
-  UINT32                           GstsReg;
-  UINT64                           RtaddrReg;
-  UINT64                           CcmdReg;
-  UINT32                           FstsReg;
-  UINT32                           FectlReg;
-  UINT32                           FedataReg;
-  UINT32                           FeaddrReg;
-  UINT32                           FeuaddrReg;
-  UINT64                           IqercdReg;
-  UINT64                           IvaReg;
-  UINT64                           IotlbReg;
-  UINT16                           FrcdRegNum;  // Number of FRCD Registers
-  VTD_UINT128                      FrcdReg[1];
+  UINT64         BaseAddress;
+  UINT32         VerReg;
+  UINT64         CapReg;
+  UINT64         EcapReg;
+  UINT32         GstsReg;
+  UINT64         RtaddrReg;
+  UINT64         CcmdReg;
+  UINT32         FstsReg;
+  UINT32         FectlReg;
+  UINT32         FedataReg;
+  UINT32         FeaddrReg;
+  UINT32         FeuaddrReg;
+  UINT64         IqercdReg;
+  UINT64         IvaReg;
+  UINT64         IotlbReg;
+  UINT16         FrcdRegNum;                    // Number of FRCD Registers
+  VTD_UINT128    FrcdReg[1];
 } VTD_REGESTER_INFO;
 
 typedef struct {
-  UINT64                           BaseAddress;
-  UINT32                           FstsReg;
-  UINT64                           IqercdReg;
+  UINT64    BaseAddress;
+  UINT32    FstsReg;
+  UINT64    IqercdReg;
 } VTD_REGESTER_QI_INFO;
 
 typedef struct {
-  UINT64                           BaseAddress;
-  UINT32                           GstsReg;
-  UINT64                           RtaddrReg;
-  UINT32                           FstsReg;
-  UINT32                           FectlReg;
-  UINT64                           IqercdReg;
-  UINT16                           FrcdRegNum;  // Number of FRCD Registers
-  VTD_UINT128                      FrcdReg[1];
+  UINT64         BaseAddress;
+  UINT32         GstsReg;
+  UINT64         RtaddrReg;
+  UINT32         FstsReg;
+  UINT32         FectlReg;
+  UINT64         IqercdReg;
+  UINT16         FrcdRegNum;                    // Number of FRCD Registers
+  VTD_UINT128    FrcdReg[1];
 } VTD_REGESTER_THIN_INFO;
 
 typedef struct {
-  VTD_SOURCE_ID                    SourceId;
-  EFI_PHYSICAL_ADDRESS             DeviceAddress;
-  UINT64                           Length;
-  UINT64                           IoMmuAccess;
-  EFI_STATUS                       Status;
+  VTD_SOURCE_ID           SourceId;
+  EFI_PHYSICAL_ADDRESS    DeviceAddress;
+  UINT64                  Length;
+  UINT64                  IoMmuAccess;
+  EFI_STATUS              Status;
 } VTD_PROTOCOL_SET_ATTRIBUTE;
 
 typedef struct {
-  UINT64                           BaseAddress;
-  UINT64                           TableAddress;
-  BOOLEAN                          Is5LevelPaging;
+  UINT64     BaseAddress;
+  UINT64     TableAddress;
+  BOOLEAN    Is5LevelPaging;
 } VTD_ROOT_TABLE_INFO;
 
 #pragma pack()
@@ -114,7 +115,7 @@ typedef struct {
 **/
 typedef
 VOID
-(EFIAPI *EDKII_VTD_LIB_STRING_CB) (
+(EFIAPI *EDKII_VTD_LIB_STRING_CB)(
   IN  VOID                          *Context,
   IN  UINTN                         ErrorLevel,
   IN  CHAR8                         *Buffer
@@ -132,9 +133,9 @@ VOID
 **/
 VOID
 VtdLibDumpAcpiDmar (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     EFI_ACPI_DMAR_HEADER       *Dmar
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     EFI_ACPI_DMAR_HEADER     *Dmar
   );
 
 /**
@@ -149,9 +150,9 @@ VtdLibDumpAcpiDmar (
 **/
 VOID
 VtdLibDumpAcpiDmarDrhd (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     EFI_ACPI_DMAR_HEADER       *Dmar
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     EFI_ACPI_DMAR_HEADER     *Dmar
   );
 
 /**
@@ -166,9 +167,9 @@ VtdLibDumpAcpiDmarDrhd (
 **/
 VOID
 VtdLibDumpPciDeviceInfo (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     PCI_DEVICE_INFORMATION     *PciDeviceInfo
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     PCI_DEVICE_INFORMATION   *PciDeviceInfo
   );
 
 /**
@@ -184,10 +185,10 @@ VtdLibDumpPciDeviceInfo (
 **/
 VOID
 VtdLibDumpDmarContextEntryTable (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     VTD_ROOT_ENTRY             *RootEntry,
-  IN     BOOLEAN                    Is5LevelPaging
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     VTD_ROOT_ENTRY           *RootEntry,
+  IN     BOOLEAN                  Is5LevelPaging
   );
 
 /**
@@ -203,10 +204,10 @@ VtdLibDumpDmarContextEntryTable (
 **/
 VOID
 VtdLibDumpDmarExtContextEntryTable (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     VTD_EXT_ROOT_ENTRY         *ExtRootEntry,
-  IN     BOOLEAN                    Is5LevelPaging
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     VTD_EXT_ROOT_ENTRY       *ExtRootEntry,
+  IN     BOOLEAN                  Is5LevelPaging
   );
 
 /**
@@ -221,9 +222,9 @@ VtdLibDumpDmarExtContextEntryTable (
 **/
 VOID
 VtdLibDumpVtdRegsAll (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     VTD_REGESTER_INFO          *VtdRegInfo
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     VTD_REGESTER_INFO        *VtdRegInfo
   );
 
 /**
@@ -238,9 +239,9 @@ VtdLibDumpVtdRegsAll (
 **/
 VOID
 VtdLibDumpVtdRegsThin (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     VTD_REGESTER_THIN_INFO     *VtdRegInfo
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     VTD_REGESTER_THIN_INFO   *VtdRegInfo
   );
 
 /**
@@ -258,9 +259,9 @@ VtdLibDumpVtdRegsThin (
 **/
 BOOLEAN
 VtdLibDecodeEvent (
-  IN     VOID                       *Context,
-  IN OUT EDKII_VTD_LIB_STRING_CB    CallbackHandle,
-  IN     VTDLOG_EVENT               *Event
+  IN     VOID                     *Context,
+  IN OUT EDKII_VTD_LIB_STRING_CB  CallbackHandle,
+  IN     VTDLOG_EVENT             *Event
   );
 
 /**
@@ -312,7 +313,7 @@ VtdLibDecodeEvent (
 **/
 VOID
 VtdLibFlushWriteBuffer (
-  IN UINTN                      VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   );
 
 /**
@@ -326,8 +327,8 @@ VtdLibFlushWriteBuffer (
 **/
 VOID
 VtdLibClearGlobalCommandRegisterBits (
-  IN UINTN                      VtdUnitBaseAddress,
-  IN UINT32                     BitMask
+  IN UINTN   VtdUnitBaseAddress,
+  IN UINT32  BitMask
   );
 
 /**
@@ -341,8 +342,8 @@ VtdLibClearGlobalCommandRegisterBits (
 **/
 VOID
 VtdLibSetGlobalCommandRegisterBits (
-  IN UINTN                      VtdUnitBaseAddress,
-  IN UINT32                     BitMask
+  IN UINTN   VtdUnitBaseAddress,
+  IN UINT32  BitMask
   );
 
 /**
@@ -357,7 +358,7 @@ VtdLibSetGlobalCommandRegisterBits (
 **/
 EFI_STATUS
 VtdLibDisableDmar (
-  IN UINTN                      VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   );
 
 /**
@@ -374,7 +375,7 @@ VtdLibDisableDmar (
 **/
 EFI_STATUS
 VtdLibDisablePmr (
-  IN UINTN                      VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   );
 
 /**
@@ -390,7 +391,7 @@ VtdLibDisablePmr (
 **/
 VOID
 VtdLibDisableQueuedInvalidationInterface (
-  IN UINTN                      VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   );
 
 /**
@@ -415,9 +416,9 @@ VtdLibDisableQueuedInvalidationInterface (
 **/
 EFI_STATUS
 VtdLibSubmitQueuedInvalidationDescriptor (
-  IN UINTN                      VtdUnitBaseAddress,
-  IN VOID                       *Desc,
-  IN BOOLEAN                    ClearFaultBits
+  IN UINTN    VtdUnitBaseAddress,
+  IN VOID     *Desc,
+  IN BOOLEAN  ClearFaultBits
   );
 
 #endif

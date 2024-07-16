@@ -33,31 +33,32 @@
 **/
 UINTN
 ParseDmarAcpiTableDrhd (
-  IN EFI_ACPI_DMAR_HEADER               *AcpiDmarTable,
-  IN PROCESS_DRHD_CALLBACK_FUNC         Callback,
-  IN VOID                               *Context
+  IN EFI_ACPI_DMAR_HEADER        *AcpiDmarTable,
+  IN PROCESS_DRHD_CALLBACK_FUNC  Callback,
+  IN VOID                        *Context
   )
 {
-  EFI_ACPI_DMAR_STRUCTURE_HEADER        *DmarHeader;
-  UINTN                                 VtdIndex;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
+  UINTN                           VtdIndex;
 
-  VtdIndex = 0;
-  DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) (AcpiDmarTable + 1));
+  VtdIndex   = 0;
+  DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)(AcpiDmarTable + 1));
 
-  while ((UINTN) DmarHeader < (UINTN) AcpiDmarTable + AcpiDmarTable->Header.Length) {
+  while ((UINTN)DmarHeader < (UINTN)AcpiDmarTable + AcpiDmarTable->Header.Length) {
     switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_DRHD:
-      if (Callback != NULL) {
-        Callback (Context, VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *) DmarHeader);
-      }
-      VtdIndex++;
-      break;
-    default:
-      break;
+      case EFI_ACPI_DMAR_TYPE_DRHD:
+        if (Callback != NULL) {
+          Callback (Context, VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
+        }
+
+        VtdIndex++;
+        break;
+      default:
+        break;
     }
-    DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *) ((UINTN) DmarHeader + DmarHeader->Length);
+
+    DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)DmarHeader + DmarHeader->Length);
   }
 
   return VtdIndex;
 }
-

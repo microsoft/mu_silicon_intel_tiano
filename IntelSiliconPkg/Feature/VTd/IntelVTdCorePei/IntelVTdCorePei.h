@@ -11,47 +11,47 @@
 
 #include <Library/IntelVTdPeiDxeLib.h>
 
-#define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
+#define VTD_64BITS_ADDRESS(Lo, Hi)  (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
 
 //
 // Use 256-bit descriptor
 // Queue size is 128.
 //
-#define VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH 1
-#define VTD_INVALIDATION_QUEUE_SIZE 0
+#define VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH  1
+#define VTD_INVALIDATION_QUEUE_SIZE               0
 
 typedef struct {
-  BOOLEAN                          Done;
-  UINTN                            VtdUnitBaseAddress;
-  UINT16                           Segment;
-  UINT8                            Flags;
-  VTD_VER_REG                      VerReg;
-  VTD_CAP_REG                      CapReg;
-  VTD_ECAP_REG                     ECapReg;
-  BOOLEAN                          Is5LevelPaging;
-  UINT8                            EnableQueuedInvalidation;
-  VOID                             *QiDescBuffer;
-  UINTN                            QiDescBufferSize;
-  UINTN                            FixedSecondLevelPagingEntry;
-  UINTN                            RootEntryTable;
-  UINTN                            ExtRootEntryTable;
-  UINTN                            RootEntryTablePageSize;
-  UINTN                            ExtRootEntryTablePageSize;
+  BOOLEAN         Done;
+  UINTN           VtdUnitBaseAddress;
+  UINT16          Segment;
+  UINT8           Flags;
+  VTD_VER_REG     VerReg;
+  VTD_CAP_REG     CapReg;
+  VTD_ECAP_REG    ECapReg;
+  BOOLEAN         Is5LevelPaging;
+  UINT8           EnableQueuedInvalidation;
+  VOID            *QiDescBuffer;
+  UINTN           QiDescBufferSize;
+  UINTN           FixedSecondLevelPagingEntry;
+  UINTN           RootEntryTable;
+  UINTN           ExtRootEntryTable;
+  UINTN           RootEntryTablePageSize;
+  UINTN           ExtRootEntryTablePageSize;
 } VTD_UNIT_INFO;
 
 typedef struct {
-  EFI_ACPI_DMAR_HEADER             *AcpiDmarTable;
-  UINT8                            HostAddressWidth;
-  VTD_REGESTER_THIN_INFO           *RegsInfoBuffer;
-  UINTN                            VTdEngineCount;
-  VTD_UNIT_INFO                    *VtdUnitInfo;
+  EFI_ACPI_DMAR_HEADER      *AcpiDmarTable;
+  UINT8                     HostAddressWidth;
+  VTD_REGESTER_THIN_INFO    *RegsInfoBuffer;
+  UINTN                     VTdEngineCount;
+  VTD_UNIT_INFO             *VtdUnitInfo;
 } VTD_INFO;
 
 typedef struct {
-  UINTN                            DmaBufferBase;
-  UINTN                            DmaBufferSize;
-  UINTN                            DmaBufferCurrentTop;
-  UINTN                            DmaBufferCurrentBottom;
+  UINTN    DmaBufferBase;
+  UINTN    DmaBufferSize;
+  UINTN    DmaBufferCurrentTop;
+  UINTN    DmaBufferCurrentBottom;
 } DMA_BUFFER_INFO;
 
 typedef
@@ -72,7 +72,7 @@ VOID
 **/
 EFI_STATUS
 EnableVTdTranslationProtectionBlockDma (
-  IN UINTN                      VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   );
 
 /**
@@ -85,7 +85,7 @@ EnableVTdTranslationProtectionBlockDma (
 **/
 EFI_STATUS
 EnableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -95,7 +95,7 @@ EnableVTdTranslationProtection (
 **/
 VOID
 DisableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -110,9 +110,9 @@ DisableVTdTranslationProtection (
 **/
 UINTN
 ParseDmarAcpiTableDrhd (
-  IN EFI_ACPI_DMAR_HEADER               *AcpiDmarTable,
-  IN PROCESS_DRHD_CALLBACK_FUNC         Callback,
-  IN VOID                               *Context
+  IN EFI_ACPI_DMAR_HEADER        *AcpiDmarTable,
+  IN PROCESS_DRHD_CALLBACK_FUNC  Callback,
+  IN VOID                        *Context
   );
 
 /**
@@ -124,7 +124,7 @@ ParseDmarAcpiTableDrhd (
 **/
 EFI_STATUS
 PrepareVtdConfig (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -137,7 +137,7 @@ PrepareVtdConfig (
 **/
 EFI_STATUS
 SetupTranslationTable (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   );
 
 /**
@@ -151,9 +151,9 @@ SetupTranslationTable (
 **/
 VOID
 FlushPageTableMemory (
-  IN VTD_UNIT_INFO              *VtdUnitInfo,
-  IN UINTN                      Base,
-  IN UINTN                      Size
+  IN VTD_UNIT_INFO  *VtdUnitInfo,
+  IN UINTN          Base,
+  IN UINTN          Size
   );
 
 /**
@@ -167,7 +167,7 @@ FlushPageTableMemory (
 VOID *
 EFIAPI
 AllocateZeroPages (
-  IN UINTN                      Pages
+  IN UINTN  Pages
   );
 
 /**
@@ -182,9 +182,9 @@ AllocateZeroPages (
 **/
 UINTN
 GetPciDataIndex (
-  IN VTD_UNIT_INFO              *VtdUnitInfo,
-  IN UINT16                     Segment,
-  IN VTD_SOURCE_ID              SourceId
+  IN VTD_UNIT_INFO  *VtdUnitInfo,
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId
   );
 
 /**
@@ -217,9 +217,9 @@ DumpVtdIfError (
 VOID
 EFIAPI
 VTdLogAddEvent (
-  IN  CONST VTDLOG_EVENT_TYPE EventType,
-  IN  CONST UINT64            Data1,
-  IN  CONST UINT64            Data2
+  IN  CONST VTDLOG_EVENT_TYPE  EventType,
+  IN  CONST UINT64             Data1,
+  IN  CONST UINT64             Data2
   );
 
 /**
@@ -234,10 +234,10 @@ VTdLogAddEvent (
 VOID
 EFIAPI
 VTdLogAddDataEvent (
-  IN  CONST VTDLOG_EVENT_TYPE EventType,
-  IN  CONST UINT64            Param,
-  IN  CONST VOID              *Data,
-  IN  CONST UINT32            DataSize
+  IN  CONST VTDLOG_EVENT_TYPE  EventType,
+  IN  CONST UINT64             Param,
+  IN  CONST VOID               *Data,
+  IN  CONST UINT32             DataSize
   );
 
 /**
@@ -251,12 +251,12 @@ VTdLogAddDataEvent (
 VOID
 EFIAPI
 VTdLogAddPreMemoryEvent (
-  IN UINTN                      VtdUnitBaseAddress,
-  IN UINT8                      Mode,
-  IN UINT8                      Status
+  IN UINTN  VtdUnitBaseAddress,
+  IN UINT8  Mode,
+  IN UINT8  Status
   );
 
-extern EFI_GUID mVTdInfoGuid;
-extern EFI_GUID mDmaBufferInfoGuid;
+extern EFI_GUID  mVTdInfoGuid;
+extern EFI_GUID  mDmaBufferInfoGuid;
 
 #endif

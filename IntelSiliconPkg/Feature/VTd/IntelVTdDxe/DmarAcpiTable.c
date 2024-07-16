@@ -10,13 +10,13 @@
 #pragma pack(1)
 
 typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER  Header;
-  UINT32                       Entry;
+  EFI_ACPI_DESCRIPTION_HEADER    Header;
+  UINT32                         Entry;
 } RSDT_TABLE;
 
 typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER  Header;
-  UINT64                       Entry;
+  EFI_ACPI_DESCRIPTION_HEADER    Header;
+  UINT64                         Entry;
 } XSDT_TABLE;
 
 #pragma pack()
@@ -30,96 +30,114 @@ EFI_ACPI_DMAR_HEADER  *mAcpiDmarTable = NULL;
 **/
 VOID
 DumpDmarDeviceScopeEntry (
-  IN EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER     *DmarDeviceScopeEntry
+  IN EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDeviceScopeEntry
   )
 {
-  UINTN   PciPathNumber;
-  UINTN   PciPathIndex;
+  UINTN                   PciPathNumber;
+  UINTN                   PciPathIndex;
   EFI_ACPI_DMAR_PCI_PATH  *PciPath;
 
   if (DmarDeviceScopeEntry == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    *************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    *       DMA-Remapping Device Scope Entry Structure                      *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    *************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "    DMAR Device Scope Entry address ...................... 0x%016lx\n" :
     "    DMAR Device Scope Entry address ...................... 0x%08x\n",
     DmarDeviceScopeEntry
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      Device Scope Entry Type ............................ 0x%02x\n",
     DmarDeviceScopeEntry->Type
     ));
   switch (DmarDeviceScopeEntry->Type) {
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
-    DEBUG ((DEBUG_INFO,
-      "        PCI Endpoint Device\n"
-      ));
-    break;
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-    DEBUG ((DEBUG_INFO,
-      "        PCI Sub-hierachy\n"
-      ));
-    break;
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
-    DEBUG ((DEBUG_INFO,
-      "        IOAPIC\n"
-      ));
-    break;
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
-    DEBUG ((DEBUG_INFO,
-      "        MSI Capable HPET\n"
-      ));
-    break;
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
-    DEBUG ((DEBUG_INFO,
-      "        ACPI Namespace Device\n"
-      ));
-    break;
-  default:
-    break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
+      DEBUG ((
+        DEBUG_INFO,
+        "        PCI Endpoint Device\n"
+        ));
+      break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
+      DEBUG ((
+        DEBUG_INFO,
+        "        PCI Sub-hierachy\n"
+        ));
+      break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
+      DEBUG ((
+        DEBUG_INFO,
+        "        IOAPIC\n"
+        ));
+      break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
+      DEBUG ((
+        DEBUG_INFO,
+        "        MSI Capable HPET\n"
+        ));
+      break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
+      DEBUG ((
+        DEBUG_INFO,
+        "        ACPI Namespace Device\n"
+        ));
+      break;
+    default:
+      break;
   }
-  DEBUG ((DEBUG_INFO,
+
+  DEBUG ((
+    DEBUG_INFO,
     "      Length ............................................. 0x%02x\n",
     DmarDeviceScopeEntry->Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      Flags .............................................. 0x%02x\n",
     DmarDeviceScopeEntry->Flags
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      Enumeration ID ..................................... 0x%02x\n",
     DmarDeviceScopeEntry->EnumerationId
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      Starting Bus Number ................................ 0x%02x\n",
     DmarDeviceScopeEntry->StartBusNumber
     ));
 
-  PciPathNumber = (DmarDeviceScopeEntry->Length - sizeof(EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER)) / sizeof(EFI_ACPI_DMAR_PCI_PATH);
-  PciPath = (EFI_ACPI_DMAR_PCI_PATH *)(DmarDeviceScopeEntry + 1);
+  PciPathNumber = (DmarDeviceScopeEntry->Length - sizeof (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER)) / sizeof (EFI_ACPI_DMAR_PCI_PATH);
+  PciPath       = (EFI_ACPI_DMAR_PCI_PATH *)(DmarDeviceScopeEntry + 1);
   for (PciPathIndex = 0; PciPathIndex < PciPathNumber; PciPathIndex++) {
-    DEBUG ((DEBUG_INFO,
+    DEBUG ((
+      DEBUG_INFO,
       "      Device ............................................. 0x%02x\n",
       PciPath[PciPathIndex].Device
       ));
-    DEBUG ((DEBUG_INFO,
+    DEBUG ((
+      DEBUG_INFO,
       "      Function ........................................... 0x%02x\n",
       PciPath[PciPathIndex].Function
       ));
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    *************************************************************************\n\n"
     ));
 
@@ -133,53 +151,61 @@ DumpDmarDeviceScopeEntry (
 **/
 VOID
 DumpDmarSidp (
-  IN EFI_ACPI_DMAR_SIDP_HEADER *Sidp
+  IN EFI_ACPI_DMAR_SIDP_HEADER  *Sidp
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER   *DmarDeviceScopeEntry;
-  INTN                                          SidpLen;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDeviceScopeEntry;
+  INTN                                         SidpLen;
 
   if (Sidp == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       SoC Integrated Device Property Reporting Structure                *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  SIDP address ........................................... 0x%016lx\n" :
     "  SIDP address ........................................... 0x%08x\n",
     Sidp
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Sidp->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Sidp->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Segment Number ....................................... 0x%04x\n",
     Sidp->SegmentNumber
     ));
 
-  SidpLen  = Sidp->Header.Length - sizeof(EFI_ACPI_DMAR_SIDP_HEADER);
+  SidpLen              = Sidp->Header.Length - sizeof (EFI_ACPI_DMAR_SIDP_HEADER);
   DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Sidp + 1);
   while (SidpLen > 0) {
     DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
-    SidpLen -= DmarDeviceScopeEntry->Length;
+    SidpLen             -= DmarDeviceScopeEntry->Length;
     DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -193,57 +219,66 @@ DumpDmarSidp (
 **/
 VOID
 DumpDmarSatc (
-  IN EFI_ACPI_DMAR_SATC_HEADER *Satc
+  IN EFI_ACPI_DMAR_SATC_HEADER  *Satc
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDeviceScopeEntry;
-  INTN                                    SatcLen;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDeviceScopeEntry;
+  INTN                                         SatcLen;
 
   if (Satc == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       ACPI Soc Integrated Address Translation Cache reporting Structure *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  SATC address ........................................... 0x%016lx\n" :
     "  SATC address ........................................... 0x%08x\n",
     Satc
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Satc->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Satc->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Flags ................................................ 0x%02x\n",
     Satc->Flags
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Segment Number ....................................... 0x%04x\n",
     Satc->SegmentNumber
     ));
 
-  SatcLen  = Satc->Header.Length - sizeof(EFI_ACPI_DMAR_SATC_HEADER);
+  SatcLen              = Satc->Header.Length - sizeof (EFI_ACPI_DMAR_SATC_HEADER);
   DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Satc + 1);
   while (SatcLen > 0) {
     DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
-    SatcLen -= DmarDeviceScopeEntry->Length;
+    SatcLen             -= DmarDeviceScopeEntry->Length;
     DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -257,46 +292,55 @@ DumpDmarSatc (
 **/
 VOID
 DumpDmarAndd (
-  IN EFI_ACPI_DMAR_ANDD_HEADER *Andd
+  IN EFI_ACPI_DMAR_ANDD_HEADER  *Andd
   )
 {
   if (Andd == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       ACPI Name-space Device Declaration Structure                      *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  ANDD address ........................................... 0x%016lx\n" :
     "  ANDD address ........................................... 0x%08x\n",
     Andd
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Andd->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Andd->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    ACPI Device Number ................................... 0x%02x\n",
     Andd->AcpiDeviceNumber
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    ACPI Object Name ..................................... '%a'\n",
     (Andd + 1)
     ));
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -310,46 +354,55 @@ DumpDmarAndd (
 **/
 VOID
 DumpDmarRhsa (
-  IN EFI_ACPI_DMAR_RHSA_HEADER *Rhsa
+  IN EFI_ACPI_DMAR_RHSA_HEADER  *Rhsa
   )
 {
   if (Rhsa == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       Remapping Hardware Status Affinity Structure                      *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  RHSA address ........................................... 0x%016lx\n" :
     "  RHSA address ........................................... 0x%08x\n",
     Rhsa
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Rhsa->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Rhsa->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Register Base Address ................................ 0x%016lx\n",
     Rhsa->RegisterBaseAddress
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Proximity Domain ..................................... 0x%08x\n",
     Rhsa->ProximityDomain
     ));
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -363,61 +416,71 @@ DumpDmarRhsa (
 **/
 VOID
 DumpDmarAtsr (
-  IN EFI_ACPI_DMAR_ATSR_HEADER *Atsr
+  IN EFI_ACPI_DMAR_ATSR_HEADER  *Atsr
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDeviceScopeEntry;
-  INTN                                    AtsrLen;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDeviceScopeEntry;
+  INTN                                         AtsrLen;
 
   if (Atsr == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       Root Port ATS Capability Reporting Structure                      *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  ATSR address ........................................... 0x%016lx\n" :
     "  ATSR address ........................................... 0x%08x\n",
     Atsr
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Atsr->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Atsr->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Flags ................................................ 0x%02x\n",
     Atsr->Flags
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      ALL_PORTS .......................................... 0x%02x\n",
     Atsr->Flags & EFI_ACPI_DMAR_ATSR_FLAGS_ALL_PORTS
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Segment Number ....................................... 0x%04x\n",
     Atsr->SegmentNumber
     ));
 
-  AtsrLen  = Atsr->Header.Length - sizeof(EFI_ACPI_DMAR_ATSR_HEADER);
+  AtsrLen              = Atsr->Header.Length - sizeof (EFI_ACPI_DMAR_ATSR_HEADER);
   DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Atsr + 1);
   while (AtsrLen > 0) {
     DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
-    AtsrLen -= DmarDeviceScopeEntry->Length;
+    AtsrLen             -= DmarDeviceScopeEntry->Length;
     DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -431,61 +494,71 @@ DumpDmarAtsr (
 **/
 VOID
 DumpDmarRmrr (
-  IN EFI_ACPI_DMAR_RMRR_HEADER *Rmrr
+  IN EFI_ACPI_DMAR_RMRR_HEADER  *Rmrr
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDeviceScopeEntry;
-  INTN                                    RmrrLen;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDeviceScopeEntry;
+  INTN                                         RmrrLen;
 
   if (Rmrr == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       Reserved Memory Region Reporting Structure                        *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  RMRR address ........................................... 0x%016lx\n" :
     "  RMRR address ........................................... 0x%08x\n",
     Rmrr
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Rmrr->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Rmrr->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Segment Number ....................................... 0x%04x\n",
     Rmrr->SegmentNumber
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Reserved Memory Region Base Address .................. 0x%016lx\n",
     Rmrr->ReservedMemoryRegionBaseAddress
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Reserved Memory Region Limit Address ................. 0x%016lx\n",
     Rmrr->ReservedMemoryRegionLimitAddress
     ));
 
-  RmrrLen  = Rmrr->Header.Length - sizeof(EFI_ACPI_DMAR_RMRR_HEADER);
+  RmrrLen              = Rmrr->Header.Length - sizeof (EFI_ACPI_DMAR_RMRR_HEADER);
   DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Rmrr + 1);
   while (RmrrLen > 0) {
     DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
-    RmrrLen -= DmarDeviceScopeEntry->Length;
+    RmrrLen             -= DmarDeviceScopeEntry->Length;
     DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -499,69 +572,81 @@ DumpDmarRmrr (
 **/
 VOID
 DumpDmarDrhd (
-  IN EFI_ACPI_DMAR_DRHD_HEADER *Drhd
+  IN EFI_ACPI_DMAR_DRHD_HEADER  *Drhd
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDeviceScopeEntry;
-  INTN                                    DrhdLen;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDeviceScopeEntry;
+  INTN                                         DrhdLen;
 
   if (Drhd == NULL) {
     return;
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  *       DMA-Remapping Hardware Definition Structure                       *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "  DRHD address ........................................... 0x%016lx\n" :
     "  DRHD address ........................................... 0x%08x\n",
     Drhd
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Type ................................................. 0x%04x\n",
     Drhd->Header.Type
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Length ............................................... 0x%04x\n",
     Drhd->Header.Length
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Flags ................................................ 0x%02x\n",
     Drhd->Flags
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      INCLUDE_PCI_ALL .................................... 0x%02x\n",
     Drhd->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Size ................................................. 0x%02x\n",
     Drhd->Size
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Segment Number ....................................... 0x%04x\n",
     Drhd->SegmentNumber
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Register Base Address ................................ 0x%016lx\n",
     Drhd->RegisterBaseAddress
     ));
 
-  DrhdLen  = Drhd->Header.Length - sizeof(EFI_ACPI_DMAR_DRHD_HEADER);
+  DrhdLen              = Drhd->Header.Length - sizeof (EFI_ACPI_DMAR_DRHD_HEADER);
   DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)(Drhd + 1);
   while (DrhdLen > 0) {
     DumpDmarDeviceScopeEntry (DmarDeviceScopeEntry);
-    DrhdLen -= DmarDeviceScopeEntry->Length;
+    DrhdLen             -= DmarDeviceScopeEntry->Length;
     DmarDeviceScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDeviceScopeEntry + DmarDeviceScopeEntry->Length);
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  ***************************************************************************\n\n"
     ));
 
@@ -578,8 +663,8 @@ DumpAcpiDMAR (
   IN EFI_ACPI_DMAR_HEADER  *Dmar
   )
 {
-  EFI_ACPI_DMAR_STRUCTURE_HEADER *DmarHeader;
-  INTN                  DmarLen;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
+  INTN                            DmarLen;
 
   if (Dmar == NULL) {
     return;
@@ -588,81 +673,93 @@ DumpAcpiDMAR (
   //
   // Dump Dmar table
   //
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "*****************************************************************************\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "*         DMAR Table                                                        *\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "*****************************************************************************\n"
     ));
 
-  DEBUG ((DEBUG_INFO,
-    (sizeof(UINTN) == sizeof(UINT64)) ?
+  DEBUG ((
+    DEBUG_INFO,
+    (sizeof (UINTN) == sizeof (UINT64)) ?
     "DMAR address ............................................. 0x%016lx\n" :
     "DMAR address ............................................. 0x%08x\n",
     Dmar
     ));
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "  Table Contents:\n"
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Host Address Width ................................... 0x%02x\n",
     Dmar->HostAddressWidth
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "    Flags ................................................ 0x%02x\n",
     Dmar->Flags
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      INTR_REMAP ......................................... 0x%02x\n",
     Dmar->Flags & EFI_ACPI_DMAR_FLAGS_INTR_REMAP
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      X2APIC_OPT_OUT_SET ................................. 0x%02x\n",
     Dmar->Flags & EFI_ACPI_DMAR_FLAGS_X2APIC_OPT_OUT
     ));
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "      DMA_CTRL_PLATFORM_OPT_IN_FLAG ...................... 0x%02x\n",
     Dmar->Flags & EFI_ACPI_DMAR_FLAGS_DMA_CTRL_PLATFORM_OPT_IN_FLAG
     ));
 
-  DmarLen  = Dmar->Header.Length - sizeof(EFI_ACPI_DMAR_HEADER);
+  DmarLen    = Dmar->Header.Length - sizeof (EFI_ACPI_DMAR_HEADER);
   DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)(Dmar + 1);
   while (DmarLen > 0) {
     switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_DRHD:
-      DumpDmarDrhd ((EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
-      break;
-    case EFI_ACPI_DMAR_TYPE_RMRR:
-      DumpDmarRmrr ((EFI_ACPI_DMAR_RMRR_HEADER *)DmarHeader);
-      break;
-    case EFI_ACPI_DMAR_TYPE_ATSR:
-      DumpDmarAtsr ((EFI_ACPI_DMAR_ATSR_HEADER *)DmarHeader);
-      break;
-    case EFI_ACPI_DMAR_TYPE_RHSA:
-      DumpDmarRhsa ((EFI_ACPI_DMAR_RHSA_HEADER *)DmarHeader);
-      break;
-    case EFI_ACPI_DMAR_TYPE_ANDD:
-      DumpDmarAndd ((EFI_ACPI_DMAR_ANDD_HEADER *)DmarHeader);
-      break;
-    case EFI_ACPI_DMAR_TYPE_SATC:
-      DumpDmarSatc ((EFI_ACPI_DMAR_SATC_HEADER *)DmarHeader);
-      break;
-    case EFI_ACPI_DMAR_TYPE_SIDP:
-      DumpDmarSidp ((EFI_ACPI_DMAR_SIDP_HEADER *)DmarHeader);
-      break;
-    default:
-      DEBUG ((DEBUG_INFO, "Unknown DMAR Table Type : %d\n", DmarHeader->Type));
-      break;
+      case EFI_ACPI_DMAR_TYPE_DRHD:
+        DumpDmarDrhd ((EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
+        break;
+      case EFI_ACPI_DMAR_TYPE_RMRR:
+        DumpDmarRmrr ((EFI_ACPI_DMAR_RMRR_HEADER *)DmarHeader);
+        break;
+      case EFI_ACPI_DMAR_TYPE_ATSR:
+        DumpDmarAtsr ((EFI_ACPI_DMAR_ATSR_HEADER *)DmarHeader);
+        break;
+      case EFI_ACPI_DMAR_TYPE_RHSA:
+        DumpDmarRhsa ((EFI_ACPI_DMAR_RHSA_HEADER *)DmarHeader);
+        break;
+      case EFI_ACPI_DMAR_TYPE_ANDD:
+        DumpDmarAndd ((EFI_ACPI_DMAR_ANDD_HEADER *)DmarHeader);
+        break;
+      case EFI_ACPI_DMAR_TYPE_SATC:
+        DumpDmarSatc ((EFI_ACPI_DMAR_SATC_HEADER *)DmarHeader);
+        break;
+      case EFI_ACPI_DMAR_TYPE_SIDP:
+        DumpDmarSidp ((EFI_ACPI_DMAR_SIDP_HEADER *)DmarHeader);
+        break;
+      default:
+        DEBUG ((DEBUG_INFO, "Unknown DMAR Table Type : %d\n", DmarHeader->Type));
+        break;
     }
-    DmarLen -= DmarHeader->Length;
+
+    DmarLen   -= DmarHeader->Length;
     DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)DmarHeader + DmarHeader->Length);
   }
 
-  DEBUG ((DEBUG_INFO,
+  DEBUG ((
+    DEBUG_INFO,
     "*****************************************************************************\n\n"
     ));
 
@@ -693,41 +790,42 @@ VtdDumpDmarTable (
 **/
 EFI_STATUS
 GetPciBusDeviceFunction (
-  IN  UINT16                                      Segment,
-  IN  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *DmarDevScopeEntry,
-  OUT UINT8                                       *Bus,
-  OUT UINT8                                       *Device,
-  OUT UINT8                                       *Function
+  IN  UINT16                                       Segment,
+  IN  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDevScopeEntry,
+  OUT UINT8                                        *Bus,
+  OUT UINT8                                        *Device,
+  OUT UINT8                                        *Function
   )
 {
-  EFI_ACPI_DMAR_PCI_PATH                     *DmarPciPath;
-  UINT8                                      MyBus;
-  UINT8                                      MyDevice;
-  UINT8                                      MyFunction;
+  EFI_ACPI_DMAR_PCI_PATH  *DmarPciPath;
+  UINT8                   MyBus;
+  UINT8                   MyDevice;
+  UINT8                   MyFunction;
 
   DmarPciPath = (EFI_ACPI_DMAR_PCI_PATH *)((UINTN)(DmarDevScopeEntry + 1));
-  MyBus = DmarDevScopeEntry->StartBusNumber;
-  MyDevice = DmarPciPath->Device;
-  MyFunction = DmarPciPath->Function;
+  MyBus       = DmarDevScopeEntry->StartBusNumber;
+  MyDevice    = DmarPciPath->Device;
+  MyFunction  = DmarPciPath->Function;
 
   switch (DmarDevScopeEntry->Type) {
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-    while ((UINTN)DmarPciPath + sizeof(EFI_ACPI_DMAR_PCI_PATH) < (UINTN)DmarDevScopeEntry + DmarDevScopeEntry->Length) {
-      MyBus = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS(Segment, MyBus, MyDevice, MyFunction, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
-      DmarPciPath ++;
-      MyDevice = DmarPciPath->Device;
-      MyFunction = DmarPciPath->Function;
-    }
-    break;
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
-  case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
-    break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
+      while ((UINTN)DmarPciPath + sizeof (EFI_ACPI_DMAR_PCI_PATH) < (UINTN)DmarDevScopeEntry + DmarDevScopeEntry->Length) {
+        MyBus = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS (Segment, MyBus, MyDevice, MyFunction, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
+        DmarPciPath++;
+        MyDevice   = DmarPciPath->Device;
+        MyFunction = DmarPciPath->Function;
+      }
+
+      break;
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
+    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
+      break;
   }
 
-  *Bus = MyBus;
-  *Device = MyDevice;
+  *Bus      = MyBus;
+  *Device   = MyDevice;
   *Function = MyFunction;
 
   return EFI_SUCCESS;
@@ -747,62 +845,62 @@ ProcessDrhd (
   IN EFI_ACPI_DMAR_DRHD_HEADER  *DmarDrhd
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDevScopeEntry;
-  UINT8                                             Bus;
-  UINT8                                             Device;
-  UINT8                                             Function;
-  UINT8                                             SecondaryBusNumber;
-  EFI_STATUS                                        Status;
-  VTD_SOURCE_ID                                     SourceId;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDevScopeEntry;
+  UINT8                                        Bus;
+  UINT8                                        Device;
+  UINT8                                        Function;
+  UINT8                                        SecondaryBusNumber;
+  EFI_STATUS                                   Status;
+  VTD_SOURCE_ID                                SourceId;
 
   mVtdUnitInformation[VtdIndex].VtdUnitBaseAddress = (UINTN)DmarDrhd->RegisterBaseAddress;
-  DEBUG ((DEBUG_INFO,"  VTD (%d) BaseAddress -  0x%016lx\n", VtdIndex, DmarDrhd->RegisterBaseAddress));
+  DEBUG ((DEBUG_INFO, "  VTD (%d) BaseAddress -  0x%016lx\n", VtdIndex, DmarDrhd->RegisterBaseAddress));
 
   mVtdUnitInformation[VtdIndex].Segment = DmarDrhd->SegmentNumber;
 
   if ((DmarDrhd->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) != 0) {
     mVtdUnitInformation[VtdIndex].PciDeviceInfo.IncludeAllFlag = TRUE;
-    DEBUG ((DEBUG_INFO,"  ProcessDrhd: with INCLUDE ALL\n"));
+    DEBUG ((DEBUG_INFO, "  ProcessDrhd: with INCLUDE ALL\n"));
 
-    Status = ScanAllPciBus((VOID *)VtdIndex, DmarDrhd->SegmentNumber, ScanBusCallbackRegisterPciDevice);
+    Status = ScanAllPciBus ((VOID *)VtdIndex, DmarDrhd->SegmentNumber, ScanBusCallbackRegisterPciDevice);
     if (EFI_ERROR (Status)) {
       return Status;
     }
   } else {
     mVtdUnitInformation[VtdIndex].PciDeviceInfo.IncludeAllFlag = FALSE;
-    DEBUG ((DEBUG_INFO,"  ProcessDrhd: without INCLUDE ALL\n"));
+    DEBUG ((DEBUG_INFO, "  ProcessDrhd: without INCLUDE ALL\n"));
   }
 
   DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)(DmarDrhd + 1));
   while ((UINTN)DmarDevScopeEntry < (UINTN)DmarDrhd + DmarDrhd->Header.Length) {
-
     Status = GetPciBusDeviceFunction (DmarDrhd->SegmentNumber, DmarDevScopeEntry, &Bus, &Device, &Function);
     if (EFI_ERROR (Status)) {
       return Status;
     }
 
-    DEBUG ((DEBUG_INFO,"  ProcessDrhd: "));
+    DEBUG ((DEBUG_INFO, "  ProcessDrhd: "));
     switch (DmarDevScopeEntry->Type) {
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
-      DEBUG ((DEBUG_INFO,"PCI Endpoint"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-      DEBUG ((DEBUG_INFO,"PCI-PCI bridge"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
-      DEBUG ((DEBUG_INFO,"IOAPIC"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
-      DEBUG ((DEBUG_INFO,"MSI Capable HPET"));
-      break;
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
-      DEBUG ((DEBUG_INFO,"ACPI Namespace Device"));
-      break;
+      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
+        DEBUG ((DEBUG_INFO, "PCI Endpoint"));
+        break;
+      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
+        DEBUG ((DEBUG_INFO, "PCI-PCI bridge"));
+        break;
+      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC:
+        DEBUG ((DEBUG_INFO, "IOAPIC"));
+        break;
+      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET:
+        DEBUG ((DEBUG_INFO, "MSI Capable HPET"));
+        break;
+      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ACPI_NAMESPACE_DEVICE:
+        DEBUG ((DEBUG_INFO, "ACPI Namespace Device"));
+        break;
     }
-    DEBUG ((DEBUG_INFO," S%04x B%02x D%02x F%02x\n", DmarDrhd->SegmentNumber, Bus, Device, Function));
 
-    SourceId.Bits.Bus = Bus;
-    SourceId.Bits.Device = Device;
+    DEBUG ((DEBUG_INFO, " S%04x B%02x D%02x F%02x\n", DmarDrhd->SegmentNumber, Bus, Device, Function));
+
+    SourceId.Bits.Bus      = Bus;
+    SourceId.Bits.Device   = Device;
     SourceId.Bits.Function = Function;
 
     Status = RegisterPciDevice (VtdIndex, DmarDrhd->SegmentNumber, SourceId, DmarDevScopeEntry->Type, TRUE);
@@ -811,22 +909,23 @@ ProcessDrhd (
       // There might be duplication for special device other than standard PCI device.
       //
       switch (DmarDevScopeEntry->Type) {
-      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
-      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-        return Status;
+        case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT:
+        case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
+          return Status;
       }
     }
 
     switch (DmarDevScopeEntry->Type) {
-    case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
-      SecondaryBusNumber = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS(DmarDrhd->SegmentNumber, Bus, Device, Function, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
-      Status = ScanPciBus ((VOID *)VtdIndex, DmarDrhd->SegmentNumber, SecondaryBusNumber, ScanBusCallbackRegisterPciDevice);
-      if (EFI_ERROR (Status)) {
-        return Status;
-      }
-      break;
-    default:
-      break;
+      case EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_BRIDGE:
+        SecondaryBusNumber = PciSegmentRead8 (PCI_SEGMENT_LIB_ADDRESS (DmarDrhd->SegmentNumber, Bus, Device, Function, PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET));
+        Status             = ScanPciBus ((VOID *)VtdIndex, DmarDrhd->SegmentNumber, SecondaryBusNumber, ScanBusCallbackRegisterPciDevice);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+
+        break;
+      default:
+        break;
     }
 
     DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)DmarDevScopeEntry + DmarDevScopeEntry->Length);
@@ -847,19 +946,19 @@ ProcessRmrr (
   IN EFI_ACPI_DMAR_RMRR_HEADER  *DmarRmrr
   )
 {
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER       *DmarDevScopeEntry;
-  UINT8                                             Bus;
-  UINT8                                             Device;
-  UINT8                                             Function;
-  EFI_STATUS                                        Status;
-  VTD_SOURCE_ID                                     SourceId;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDevScopeEntry;
+  UINT8                                        Bus;
+  UINT8                                        Device;
+  UINT8                                        Function;
+  EFI_STATUS                                   Status;
+  VTD_SOURCE_ID                                SourceId;
 
-  DEBUG ((DEBUG_INFO,"  RMRR (Base 0x%016lx, Limit 0x%016lx)\n", DmarRmrr->ReservedMemoryRegionBaseAddress, DmarRmrr->ReservedMemoryRegionLimitAddress));
+  DEBUG ((DEBUG_INFO, "  RMRR (Base 0x%016lx, Limit 0x%016lx)\n", DmarRmrr->ReservedMemoryRegionBaseAddress, DmarRmrr->ReservedMemoryRegionLimitAddress));
 
   DmarDevScopeEntry = (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *)((UINTN)(DmarRmrr + 1));
   while ((UINTN)DmarDevScopeEntry < (UINTN)DmarRmrr + DmarRmrr->Header.Length) {
     if (DmarDevScopeEntry->Type != EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT) {
-      DEBUG ((DEBUG_INFO,"RMRR DevScopeEntryType is not endpoint, type[0x%x] \n", DmarDevScopeEntry->Type));
+      DEBUG ((DEBUG_INFO, "RMRR DevScopeEntryType is not endpoint, type[0x%x] \n", DmarDevScopeEntry->Type));
       return EFI_DEVICE_ERROR;
     }
 
@@ -868,18 +967,18 @@ ProcessRmrr (
       return Status;
     }
 
-    DEBUG ((DEBUG_INFO,"RMRR S%04x B%02x D%02x F%02x\n", DmarRmrr->SegmentNumber, Bus, Device, Function));
+    DEBUG ((DEBUG_INFO, "RMRR S%04x B%02x D%02x F%02x\n", DmarRmrr->SegmentNumber, Bus, Device, Function));
 
-    SourceId.Bits.Bus = Bus;
-    SourceId.Bits.Device = Device;
+    SourceId.Bits.Bus      = Bus;
+    SourceId.Bits.Device   = Device;
     SourceId.Bits.Function = Function;
-    Status = SetAccessAttribute (
-               DmarRmrr->SegmentNumber,
-               SourceId,
-               DmarRmrr->ReservedMemoryRegionBaseAddress,
-               DmarRmrr->ReservedMemoryRegionLimitAddress + 1 - DmarRmrr->ReservedMemoryRegionBaseAddress,
-               EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE
-               );
+    Status                 = SetAccessAttribute (
+                               DmarRmrr->SegmentNumber,
+                               SourceId,
+                               DmarRmrr->ReservedMemoryRegionBaseAddress,
+                               DmarRmrr->ReservedMemoryRegionLimitAddress + 1 - DmarRmrr->ReservedMemoryRegionBaseAddress,
+                               EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE
+                               );
     if (EFI_ERROR (Status)) {
       return Status;
     }
@@ -898,22 +997,24 @@ GetVtdEngineNumber (
   VOID
   )
 {
-  EFI_ACPI_DMAR_STRUCTURE_HEADER                    *DmarHeader;
-  UINTN                                             VtdIndex;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
+  UINTN                           VtdIndex;
 
-  VtdIndex = 0;
+  VtdIndex   = 0;
   DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)(mAcpiDmarTable + 1));
   while ((UINTN)DmarHeader < (UINTN)mAcpiDmarTable + mAcpiDmarTable->Header.Length) {
     switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_DRHD:
-      VtdIndex++;
-      break;
-    default:
-      break;
+      case EFI_ACPI_DMAR_TYPE_DRHD:
+        VtdIndex++;
+        break;
+      default:
+        break;
     }
+
     DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)DmarHeader + DmarHeader->Length);
   }
-  return VtdIndex ;
+
+  return VtdIndex;
 }
 
 /**
@@ -926,48 +1027,52 @@ ParseDmarAcpiTableDrhd (
   VOID
   )
 {
-  EFI_ACPI_DMAR_STRUCTURE_HEADER                    *DmarHeader;
-  EFI_STATUS                                        Status;
-  UINTN                                             VtdIndex;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
+  EFI_STATUS                      Status;
+  UINTN                           VtdIndex;
 
   mVtdUnitNumber = GetVtdEngineNumber ();
-  DEBUG ((DEBUG_INFO,"  VtdUnitNumber - %d\n", mVtdUnitNumber));
+  DEBUG ((DEBUG_INFO, "  VtdUnitNumber - %d\n", mVtdUnitNumber));
   ASSERT (mVtdUnitNumber > 0);
   if (mVtdUnitNumber == 0) {
     return EFI_DEVICE_ERROR;
   }
 
-  mVtdUnitInformation = AllocateZeroPool (sizeof(*mVtdUnitInformation) * mVtdUnitNumber);
+  mVtdUnitInformation = AllocateZeroPool (sizeof (*mVtdUnitInformation) * mVtdUnitNumber);
   ASSERT (mVtdUnitInformation != NULL);
   if (mVtdUnitInformation == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  VtdIndex = 0;
+  VtdIndex   = 0;
   DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)(mAcpiDmarTable + 1));
   while ((UINTN)DmarHeader < (UINTN)mAcpiDmarTable + mAcpiDmarTable->Header.Length) {
     switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_DRHD:
-      ASSERT (VtdIndex < mVtdUnitNumber);
-      Status = ProcessDrhd (VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
-      if (EFI_ERROR (Status)) {
-        return Status;
-      }
-      VtdIndex++;
+      case EFI_ACPI_DMAR_TYPE_DRHD:
+        ASSERT (VtdIndex < mVtdUnitNumber);
+        Status = ProcessDrhd (VtdIndex, (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
 
-      break;
+        VtdIndex++;
 
-    default:
-      break;
+        break;
+
+      default:
+        break;
     }
+
     DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)DmarHeader + DmarHeader->Length);
   }
+
   ASSERT (VtdIndex == mVtdUnitNumber);
 
   for (VtdIndex = 0; VtdIndex < mVtdUnitNumber; VtdIndex++) {
     DumpPciDeviceInfo (VtdIndex);
   }
-  return EFI_SUCCESS ;
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -980,24 +1085,27 @@ ParseDmarAcpiTableRmrr (
   VOID
   )
 {
-  EFI_ACPI_DMAR_STRUCTURE_HEADER                    *DmarHeader;
-  EFI_STATUS                                        Status;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
+  EFI_STATUS                      Status;
 
   DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)(mAcpiDmarTable + 1));
   while ((UINTN)DmarHeader < (UINTN)mAcpiDmarTable + mAcpiDmarTable->Header.Length) {
     switch (DmarHeader->Type) {
-    case EFI_ACPI_DMAR_TYPE_RMRR:
-      Status = ProcessRmrr ((EFI_ACPI_DMAR_RMRR_HEADER *)DmarHeader);
-      if (EFI_ERROR (Status)) {
-        return Status;
-      }
-      break;
-    default:
-      break;
+      case EFI_ACPI_DMAR_TYPE_RMRR:
+        Status = ProcessRmrr ((EFI_ACPI_DMAR_RMRR_HEADER *)DmarHeader);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+
+        break;
+      default:
+        break;
     }
+
     DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)DmarHeader + DmarHeader->Length);
   }
-  return EFI_SUCCESS ;
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -1016,14 +1124,15 @@ GetDmarAcpiTable (
     return EFI_ALREADY_STARTED;
   }
 
-  mAcpiDmarTable = (EFI_ACPI_DMAR_HEADER *) EfiLocateFirstAcpiTable (
-                                              EFI_ACPI_4_0_DMA_REMAPPING_TABLE_SIGNATURE
-                                              );
+  mAcpiDmarTable = (EFI_ACPI_DMAR_HEADER *)EfiLocateFirstAcpiTable (
+                                             EFI_ACPI_4_0_DMA_REMAPPING_TABLE_SIGNATURE
+                                             );
   if (mAcpiDmarTable == NULL) {
     return EFI_NOT_FOUND;
   }
-  DEBUG ((DEBUG_INFO,"DMAR Table - 0x%08x\n", mAcpiDmarTable));
-  VtdDumpDmarTable();
+
+  DEBUG ((DEBUG_INFO, "DMAR Table - 0x%08x\n", mAcpiDmarTable));
+  VtdDumpDmarTable ();
 
   return EFI_SUCCESS;
 }
