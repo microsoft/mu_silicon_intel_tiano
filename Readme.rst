@@ -111,7 +111,7 @@ Please open any issues in the Project Mu GitHub tracker and read https://microso
 Copyright & License
 ===================
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
