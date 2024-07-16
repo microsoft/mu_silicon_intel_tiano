@@ -43,6 +43,9 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
     def RetrieveCommandLineOptions(self, args):
         try:
             self.codeql = codeql_helpers.is_codeql_enabled_on_command_line(args)
+            # Temporary change: Disable CodeQL until CodeQL fixes are added
+            # to the 202405 branch.
+            self.codeql = False
         except NameError:
             pass
 
