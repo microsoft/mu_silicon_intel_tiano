@@ -11,7 +11,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HobLib.h>
 #include <Register/Intel/Cpuid.h>
 
-
 /**
   Build a HOB for the CPU.
 **/

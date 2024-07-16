@@ -69,27 +69,29 @@ typedef struct {
     Address is the base address of the firmware component
     must be aligned on 16 byte boundary
   **/
-  UINT64 Address;
-  UINT8  Size[3];   ///< Size is the span of the component in multiple of 16 bytes
-  UINT8  Reserved;  ///< Reserved must be set to 0
+  UINT64    Address;
+  UINT8     Size[3];  ///< Size is the span of the component in multiple of 16 bytes
+  UINT8     Reserved; ///< Reserved must be set to 0
+
   /**
     Component's version number in binary coded decimal (BCD) format.
     For the FIT header entry, the value in this field will indicate the revision
     number of the FIT data structure. The upper byte of the revision field
     indicates the major revision and the lower byte indicates the minor revision.
   **/
-  UINT16 Version;
-  UINT8  Type : 7;  ///< FIT types 0x00 to 0x7F
+  UINT16    Version;
+  UINT8     Type : 7; ///< FIT types 0x00 to 0x7F
   ///
   /// Checksum Valid indicates whether component has valid checksum.
   ///
-  UINT8  C_V  : 1;
+  UINT8     C_V  : 1;
+
   /**
     Component's checksum. The modulo sum of all the bytes in the component and
     the value in this field (Chksum) must add up to zero. This field is only
     valid if the C_V flag is non-zero.
   **/
-  UINT8  Chksum;
+  UINT8     Chksum;
 } FIRMWARE_INTERFACE_TABLE_ENTRY;
 
 typedef struct {

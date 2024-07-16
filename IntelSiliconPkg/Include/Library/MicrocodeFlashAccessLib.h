@@ -6,7 +6,6 @@
 
 **/
 
-
 #ifndef __MICROCODE_FLASH_ACCESS_LIB_H__
 #define __MICROCODE_FLASH_ACCESS_LIB_H__
 
@@ -25,9 +24,9 @@
 EFI_STATUS
 EFIAPI
 MicrocodeFlashWrite (
-  IN EFI_PHYSICAL_ADDRESS         FlashAddress,
-  IN VOID                         *Buffer,
-  IN UINTN                        Length
+  IN EFI_PHYSICAL_ADDRESS  FlashAddress,
+  IN VOID                  *Buffer,
+  IN UINTN                 Length
   );
 
 #endif

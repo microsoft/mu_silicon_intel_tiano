@@ -27,42 +27,42 @@
 #include <IndustryStandard/DmaRemappingReportingTable.h>
 
 typedef struct {
-  ACPI_EXTENDED_HID_DEVICE_PATH      I2cController;
-  UINT8                              HidStr[8];
-  UINT8                              UidStr[1];
-  UINT8                              CidStr[8];
+  ACPI_EXTENDED_HID_DEVICE_PATH    I2cController;
+  UINT8                            HidStr[8];
+  UINT8                            UidStr[1];
+  UINT8                            CidStr[8];
 } PLATFORM_I2C_CONTROLLER_DEVICE_PATH;
 
 typedef struct {
-  ACPI_EXTENDED_HID_DEVICE_PATH      I2cDevice;
-  UINT8                              HidStr[13];
-  UINT8                              UidStr[1];
-  UINT8                              CidStr[13];
+  ACPI_EXTENDED_HID_DEVICE_PATH    I2cDevice;
+  UINT8                            HidStr[13];
+  UINT8                            UidStr[1];
+  UINT8                            CidStr[13];
 } PLATFORM_I2C_DEVICE_DEVICE_PATH;
 
 typedef struct {
-  PLATFORM_I2C_CONTROLLER_DEVICE_PATH      I2cController;
-  PLATFORM_I2C_DEVICE_DEVICE_PATH          I2cDevice;
-  EFI_DEVICE_PATH_PROTOCOL                 End;
+  PLATFORM_I2C_CONTROLLER_DEVICE_PATH    I2cController;
+  PLATFORM_I2C_DEVICE_DEVICE_PATH        I2cDevice;
+  EFI_DEVICE_PATH_PROTOCOL               End;
 } PLATFORM_I2C_DEVICE_PATH;
 
 typedef struct {
-  ACPI_HID_DEVICE_PATH      PciRootBridge;
-  PCI_DEVICE_PATH           PciDevice;
-  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath;
+  ACPI_HID_DEVICE_PATH        PciRootBridge;
+  PCI_DEVICE_PATH             PciDevice;
+  EFI_DEVICE_PATH_PROTOCOL    EndDevicePath;
 } PLATFORM_PCI_DEVICE_PATH;
 
 typedef struct {
-  ACPI_HID_DEVICE_PATH      PciRootBridge;
-  PCI_DEVICE_PATH           PciBridge;
-  PCI_DEVICE_PATH           PciDevice;
-  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath;
+  ACPI_HID_DEVICE_PATH        PciRootBridge;
+  PCI_DEVICE_PATH             PciBridge;
+  PCI_DEVICE_PATH             PciDevice;
+  EFI_DEVICE_PATH_PROTOCOL    EndDevicePath;
 } PLATFORM_PCI_BRIDGE_DEVICE_PATH;
 
 typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
-  UINT16                    Segment;
-  VTD_SOURCE_ID             SourceId;
+  EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
+  UINT16                      Segment;
+  VTD_SOURCE_ID               SourceId;
 } PLATFORM_ACPI_DEVICE_MAPPING;
 
 #define PLATFORM_PCI_ROOT_BRIDGE \
@@ -115,9 +115,9 @@ typedef struct {
     CidStr \
   }
 
-PLATFORM_I2C_DEVICE_PATH mPlatformI2CDevicePath = {
-  PLATFORM_I2C(0, 2, 0, "INT33C3", "", "INT33C3"),
-  PLATFORM_I2C(0, 1, 0, "I2C01\\TPANEL", "", "I2C01\\TPANEL"),
+PLATFORM_I2C_DEVICE_PATH  mPlatformI2CDevicePath = {
+  PLATFORM_I2C (0, 2, 0, "INT33C3",       "", "INT33C3"),
+  PLATFORM_I2C (0, 1, 0, "I2C01\\TPANEL", "", "I2C01\\TPANEL"),
   PLATFORM_END_ENTIRE
 };
 
@@ -125,29 +125,31 @@ PLATFORM_ACPI_DEVICE_MAPPING  mAcpiDeviceMapping[] = {
   {
     (EFI_DEVICE_PATH_PROTOCOL *)&mPlatformI2CDevicePath,
     0x0,                 // Segment
-    {{0x01, 0x15, 0x00}} // Function, Device, Bus
+    {
+      { 0x01, 0x15, 0x00 }
+    }                    // Function, Device, Bus
   }
 };
 
-PLATFORM_PCI_BRIDGE_DEVICE_PATH mPlatformPciBridgeDevicePath = {
+PLATFORM_PCI_BRIDGE_DEVICE_PATH  mPlatformPciBridgeDevicePath = {
   PLATFORM_PCI_ROOT_BRIDGE,
-  PLATFORM_PCI(0x1C, 1),
-  PLATFORM_PCI(0, 0),
+  PLATFORM_PCI (0x1C,      1),
+  PLATFORM_PCI (0,         0),
   PLATFORM_END_ENTIRE
 };
 
 #pragma pack(1)
 
 typedef struct {
-  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO     ExceptionDeviceInfo;
-  EDKII_PLATFORM_VTD_DEVICE_SCOPE              DeviceScope;
-  EFI_ACPI_DMAR_PCI_PATH                       PciBridge;
-  EFI_ACPI_DMAR_PCI_PATH                       PciDevice;
+  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO    ExceptionDeviceInfo;
+  EDKII_PLATFORM_VTD_DEVICE_SCOPE             DeviceScope;
+  EFI_ACPI_DMAR_PCI_PATH                      PciBridge;
+  EFI_ACPI_DMAR_PCI_PATH                      PciDevice;
 } PLATFORM_EXCEPTION_DEVICE_SCOPE_STRUCT;
 
 typedef struct {
-  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO     ExceptionDeviceInfo;
-  EDKII_PLATFORM_VTD_PCI_DEVICE_ID             PciDeviceId;
+  EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO    ExceptionDeviceInfo;
+  EDKII_PLATFORM_VTD_PCI_DEVICE_ID            PciDeviceId;
 } PLATFORM_EXCEPTION_PCI_DEVICE_ID_STRUCT;
 
 #pragma pack()
@@ -156,21 +158,21 @@ PLATFORM_EXCEPTION_DEVICE_SCOPE_STRUCT  mExceptionDeviceScopeList[] = {
   {
     {
       EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_DEVICE_SCOPE,
-      sizeof(PLATFORM_EXCEPTION_DEVICE_SCOPE_STRUCT)
+      sizeof (PLATFORM_EXCEPTION_DEVICE_SCOPE_STRUCT)
     },  // ExceptionDeviceInfo
     {
       0,                                                    // SegmentNumber
       {
         EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_PCI_ENDPOINT,      // Type
-        sizeof(EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
-          2 * sizeof(EFI_ACPI_DMAR_PCI_PATH),               // Length
+        sizeof (EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER) +
+        2 * sizeof (EFI_ACPI_DMAR_PCI_PATH),                // Length
         0,                                                  // Reserved2
         0,                                                  // EnumerationId
         0,                                                  // StartBusNumber
       },
     },                                                      // DeviceScope
     { 0x1C, 1 },                                            // PciBridge
-    { 0x0,  0 },                                            // PciDevice
+    { 0x0, 0 },                                             // PciDevice
   },
 };
 
@@ -178,7 +180,7 @@ PLATFORM_EXCEPTION_PCI_DEVICE_ID_STRUCT  mExceptionPciDeviceIdList[] = {
   {
     {
       EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_PCI_DEVICE_ID,
-      sizeof(PLATFORM_EXCEPTION_PCI_DEVICE_ID_STRUCT)
+      sizeof (PLATFORM_EXCEPTION_PCI_DEVICE_ID_STRUCT)
     },  // ExceptionDeviceInfo
     {
       0x8086,                                               // VendorId
@@ -213,9 +215,11 @@ CompareDevicePath (
   if (Size1 != Size2) {
     return FALSE;
   }
+
   if (CompareMem (DevicePath1, DevicePath2, Size1) != 0) {
     return FALSE;
   }
+
   return TRUE;
 }
 
@@ -249,9 +253,9 @@ CompareDevicePath (
 EFI_STATUS
 EFIAPI
 PlatformVTdGetDeviceId (
-  IN  EDKII_PLATFORM_VTD_POLICY_PROTOCOL       *This,
-  IN  EFI_HANDLE                               DeviceHandle,
-  OUT EDKII_PLATFORM_VTD_DEVICE_INFO           *DeviceInfo
+  IN  EDKII_PLATFORM_VTD_POLICY_PROTOCOL  *This,
+  IN  EFI_HANDLE                          DeviceHandle,
+  OUT EDKII_PLATFORM_VTD_DEVICE_INFO      *DeviceInfo
   )
 {
   EFI_PCI_IO_PROTOCOL       *PciIo;
@@ -277,14 +281,15 @@ PlatformVTdGetDeviceId (
   // Handle PCI device
   //
   Status = gBS->HandleProtocol (DeviceHandle, &gEfiPciIoProtocolGuid, (VOID **)&PciIo);
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     Status = PciIo->GetLocation (PciIo, &Seg, &Bus, &Dev, &Func);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return EFI_UNSUPPORTED;
     }
-    DeviceInfo->Segment = (UINT16)Seg;
-    DeviceInfo->SourceId.Bits.Bus = (UINT8)Bus;
-    DeviceInfo->SourceId.Bits.Device = (UINT8)Dev;
+
+    DeviceInfo->Segment                = (UINT16)Seg;
+    DeviceInfo->SourceId.Bits.Bus      = (UINT8)Bus;
+    DeviceInfo->SourceId.Bits.Device   = (UINT8)Dev;
     DeviceInfo->SourceId.Bits.Function = (UINT8)Func;
 
     return EFI_SUCCESS;
@@ -294,10 +299,10 @@ PlatformVTdGetDeviceId (
   // Handle ACPI device
   //
   Status = gBS->HandleProtocol (DeviceHandle, &gEfiDevicePathProtocolGuid, (VOID **)&DevicePath);
-  if (!EFI_ERROR(Status)) {
-    for (Index = 0; Index < ARRAY_SIZE(mAcpiDeviceMapping); Index++) {
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < ARRAY_SIZE (mAcpiDeviceMapping); Index++) {
       if (CompareDevicePath (mAcpiDeviceMapping[Index].DevicePath, DevicePath)) {
-        DeviceInfo->Segment = mAcpiDeviceMapping[Index].Segment;
+        DeviceInfo->Segment  = mAcpiDeviceMapping[Index].Segment;
         DeviceInfo->SourceId = mAcpiDeviceMapping[Index].SourceId;
         return EFI_SUCCESS;
       }
@@ -325,14 +330,14 @@ PlatformVTdGetDeviceId (
 EFI_STATUS
 EFIAPI
 PlatformVTdGetExceptionDeviceList (
-  IN  EDKII_PLATFORM_VTD_POLICY_PROTOCOL       *This,
-  OUT UINTN                                    *DeviceInfoCount,
-  OUT VOID                                     **DeviceInfo
+  IN  EDKII_PLATFORM_VTD_POLICY_PROTOCOL  *This,
+  OUT UINTN                               *DeviceInfoCount,
+  OUT VOID                                **DeviceInfo
   )
 {
   DEBUG ((DEBUG_VERBOSE, "PlatformVTdGetExceptionDeviceList\n"));
 
-  if (DeviceInfoCount == NULL || DeviceInfo == NULL) {
+  if ((DeviceInfoCount == NULL) || (DeviceInfo == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -341,6 +346,7 @@ PlatformVTdGetExceptionDeviceList (
   // Uncomment to take affect and comment the sample codes for PCI vendor id
   // based exception list.
   //
+
   /*
   *DeviceInfo = AllocateZeroPool (sizeof(mExceptionDeviceScopeList));
   if (*DeviceInfo == NULL) {
@@ -356,6 +362,7 @@ PlatformVTdGetExceptionDeviceList (
   // Uncomment to take affect and comment the sample codes for device scope
   // based exception list.
   //
+
   /*
   *DeviceInfo = AllocateZeroPool (sizeof(mExceptionPciDeviceIdList));
   if (*DeviceInfo == NULL) {
@@ -398,7 +405,8 @@ PlatformVTdSampleInitialize (
   Handle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &Handle,
-                  &gEdkiiPlatformVTdPolicyProtocolGuid, &mPlatformVTdSample,
+                  &gEdkiiPlatformVTdPolicyProtocolGuid,
+                  &mPlatformVTdSample,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);

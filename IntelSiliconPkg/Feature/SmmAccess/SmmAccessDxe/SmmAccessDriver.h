@@ -5,6 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
+
 #ifndef _SMM_ACCESS_DRIVER_H_
 #define _SMM_ACCESS_DRIVER_H_
 
@@ -20,21 +21,21 @@
 #include <Protocol/SmmAccess2.h>
 #include <IndustryStandard/Pci22.h>
 
-#define SMM_ACCESS_PRIVATE_DATA_SIGNATURE SIGNATURE_32 ('4', '5', 's', 'a')
+#define SMM_ACCESS_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('4', '5', 's', 'a')
 
 ///
 /// Private data
 ///
 typedef struct {
-  UINTN                           Signature;
-  EFI_HANDLE                      Handle;
-  EFI_SMM_ACCESS2_PROTOCOL        SmmAccess;
+  UINTN                       Signature;
+  EFI_HANDLE                  Handle;
+  EFI_SMM_ACCESS2_PROTOCOL    SmmAccess;
 
   ///
   /// Local Data for SMM Access interface goes here
   ///
-  UINTN                           NumberRegions;
-  EFI_SMRAM_DESCRIPTOR            *SmramDesc;
+  UINTN                       NumberRegions;
+  EFI_SMRAM_DESCRIPTOR        *SmramDesc;
 } SMM_ACCESS_PRIVATE_DATA;
 
 #define SMM_ACCESS_PRIVATE_DATA_FROM_THIS(a) \
@@ -48,6 +49,7 @@ typedef struct {
 // Prototypes
 // Driver model protocol interface
 //
+
 /**
   <b>SMM Access Driver Entry Point</b>
   This driver installs an SMM Access Protocol
@@ -73,8 +75,8 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 SmmAccessDriverEntryPoint (
-  IN EFI_HANDLE         ImageHandle,
-  IN EFI_SYSTEM_TABLE   *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   );
 
 /**
@@ -92,7 +94,7 @@ SmmAccessDriverEntryPoint (
 EFI_STATUS
 EFIAPI
 Open (
-  IN EFI_SMM_ACCESS2_PROTOCOL *This
+  IN EFI_SMM_ACCESS2_PROTOCOL  *This
   );
 
 /**
@@ -129,7 +131,7 @@ Close (
 EFI_STATUS
 EFIAPI
 Lock (
-  IN EFI_SMM_ACCESS2_PROTOCOL *This
+  IN EFI_SMM_ACCESS2_PROTOCOL  *This
   );
 
 /**
@@ -151,7 +153,8 @@ EFI_STATUS
 EFIAPI
 GetCapabilities (
   IN CONST EFI_SMM_ACCESS2_PROTOCOL  *This,
-  IN OUT UINTN                   *SmramMapSize,
-  IN OUT EFI_SMRAM_DESCRIPTOR    *SmramMap
+  IN OUT UINTN                       *SmramMapSize,
+  IN OUT EFI_SMRAM_DESCRIPTOR        *SmramMap
   );
+
 #endif

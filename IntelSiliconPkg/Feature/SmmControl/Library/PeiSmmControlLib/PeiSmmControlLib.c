@@ -18,9 +18,9 @@
 #define SMM_CONTROL_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('i', '4', 's', 'c')
 
 typedef struct {
-  UINTN                           Signature;
-  EFI_HANDLE                      Handle;
-  EFI_PEI_MM_CONTROL_PPI          SmmControl;
+  UINTN                     Signature;
+  EFI_HANDLE                Handle;
+  EFI_PEI_MM_CONTROL_PPI    SmmControl;
 } SMM_CONTROL_PRIVATE_DATA;
 
 #define SMM_CONTROL_PRIVATE_DATA_FROM_THIS(a) \
@@ -36,20 +36,20 @@ typedef struct {
 //
 // APM Registers
 //
-#define R_PCH_APM_CNT                             0xB2
+#define R_PCH_APM_CNT  0xB2
 //
 // ACPI and legacy I/O register offsets from ACPIBASE
 //
-#define R_PCH_ACPI_PM1_STS                        0x00
-#define B_PCH_ACPI_PM1_STS_PRBTNOR                BIT11
+#define R_PCH_ACPI_PM1_STS          0x00
+#define B_PCH_ACPI_PM1_STS_PRBTNOR  BIT11
 
-#define R_PCH_SMI_EN                              0x30
+#define R_PCH_SMI_EN  0x30
 
-#define R_PCH_SMI_STS                             0x34
-#define B_PCH_SMI_STS_APM                         BIT5
-#define B_PCH_SMI_EN_APMC                         BIT5
-#define B_PCH_SMI_EN_EOS                          BIT1
-#define B_PCH_SMI_EN_GBL_SMI                      BIT0
+#define R_PCH_SMI_STS         0x34
+#define B_PCH_SMI_STS_APM     BIT5
+#define B_PCH_SMI_EN_APMC     BIT5
+#define B_PCH_SMI_EN_EOS      BIT1
+#define B_PCH_SMI_EN_GBL_SMI  BIT0
 
 /**
   Trigger the software SMI
@@ -61,7 +61,7 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 SmmTrigger (
-  UINT8   Data
+  UINT8  Data
   )
 {
   UINT16  ABase;
@@ -74,7 +74,7 @@ SmmTrigger (
   /// Enable the APMC SMI
   ///
   OutputPort  = ABase + R_PCH_SMI_EN;
-  OutputData  = IoRead32 ((UINTN) OutputPort);
+  OutputData  = IoRead32 ((UINTN)OutputPort);
   OutputData |= (B_PCH_SMI_EN_APMC | B_PCH_SMI_EN_GBL_SMI);
   DEBUG (
     (DEBUG_EVENT,
@@ -83,19 +83,19 @@ SmmTrigger (
      OutputData)
     );
   IoWrite32 (
-    (UINTN) OutputPort,
-    (UINT32) (OutputData)
+    (UINTN)OutputPort,
+    (UINT32)(OutputData)
     );
 
-  OutputPort  = R_PCH_APM_CNT;
-  OutputData  = Data;
+  OutputPort = R_PCH_APM_CNT;
+  OutputData = Data;
 
   ///
   /// Generate the APMC SMI
   ///
   IoWrite8 (
-    (UINTN) OutputPort,
-    (UINT8) (OutputData)
+    (UINTN)OutputPort,
+    (UINT8)(OutputData)
     );
 
   return EFI_SUCCESS;
@@ -123,8 +123,8 @@ SmmClear (
   ///
   /// Clear the Power Button Override Status Bit, it gates EOS from being set.
   ///
-  OutputPort  = ABase + R_PCH_ACPI_PM1_STS;
-  OutputData  = B_PCH_ACPI_PM1_STS_PRBTNOR;
+  OutputPort = ABase + R_PCH_ACPI_PM1_STS;
+  OutputData = B_PCH_ACPI_PM1_STS_PRBTNOR;
   DEBUG (
     (DEBUG_EVENT,
      "The PM1 Status Port at address %x will be written to %x.\n",
@@ -132,15 +132,15 @@ SmmClear (
      OutputData)
     );
   IoWrite16 (
-    (UINTN) OutputPort,
-    (UINT16) (OutputData)
+    (UINTN)OutputPort,
+    (UINT16)(OutputData)
     );
 
   ///
   /// Clear the APM SMI Status Bit
   ///
-  OutputPort  = ABase + R_PCH_SMI_STS;
-  OutputData  = B_PCH_SMI_STS_APM;
+  OutputPort = ABase + R_PCH_SMI_STS;
+  OutputData = B_PCH_SMI_STS_APM;
   DEBUG (
     (DEBUG_EVENT,
      "The SMI Status Port at address %x will be written to %x.\n",
@@ -148,15 +148,15 @@ SmmClear (
      OutputData)
     );
   IoWrite32 (
-    (UINTN) OutputPort,
-    (UINT32) (OutputData)
+    (UINTN)OutputPort,
+    (UINT32)(OutputData)
     );
 
   ///
   /// Set the EOS Bit
   ///
   OutputPort  = ABase + R_PCH_SMI_EN;
-  OutputData  = IoRead32 ((UINTN) OutputPort);
+  OutputData  = IoRead32 ((UINTN)OutputPort);
   OutputData |= B_PCH_SMI_EN_EOS;
   DEBUG (
     (DEBUG_EVENT,
@@ -165,8 +165,8 @@ SmmClear (
      OutputData)
     );
   IoWrite32 (
-    (UINTN) OutputPort,
-    (UINT32) (OutputData)
+    (UINTN)OutputPort,
+    (UINT32)(OutputData)
     );
 
   ///
@@ -194,7 +194,7 @@ EFI_STATUS
 EFIAPI
 Activate (
   IN EFI_PEI_SERVICES        **PeiServices,
-  IN EFI_PEI_MM_CONTROL_PPI  * This,
+  IN EFI_PEI_MM_CONTROL_PPI  *This,
   IN OUT INT8                *ArgumentBuffer OPTIONAL,
   IN OUT UINTN               *ArgumentBufferSize OPTIONAL,
   IN BOOLEAN                 Periodic OPTIONAL,
@@ -213,12 +213,13 @@ Activate (
   if (ArgumentBuffer == NULL) {
     Data = 0xFF;
   } else {
-    if (ArgumentBufferSize == NULL || *ArgumentBufferSize != 1) {
+    if ((ArgumentBufferSize == NULL) || (*ArgumentBufferSize != 1)) {
       return EFI_INVALID_PARAMETER;
     }
 
     Data = *ArgumentBuffer;
   }
+
   ///
   /// Clear any pending the APM SMI
   ///
@@ -243,7 +244,7 @@ EFI_STATUS
 EFIAPI
 Deactivate (
   IN EFI_PEI_SERVICES        **PeiServices,
-  IN EFI_PEI_MM_CONTROL_PPI  * This,
+  IN EFI_PEI_MM_CONTROL_PPI  *This,
   IN BOOLEAN                 Periodic OPTIONAL
   )
 {
@@ -270,19 +271,20 @@ PeiInstallSmmControlPpi (
   VOID
   )
 {
-  EFI_STATUS                      Status;
-  EFI_PEI_PPI_DESCRIPTOR          *PpiList;
-  SMM_CONTROL_PRIVATE_DATA        *SmmControlPrivate;
+  EFI_STATUS                Status;
+  EFI_PEI_PPI_DESCRIPTOR    *PpiList;
+  SMM_CONTROL_PRIVATE_DATA  *SmmControlPrivate;
 
   //
   // Initialize private data
   //
-  SmmControlPrivate  = AllocateZeroPool (sizeof (*SmmControlPrivate));
+  SmmControlPrivate = AllocateZeroPool (sizeof (*SmmControlPrivate));
   ASSERT (SmmControlPrivate != NULL);
   if (SmmControlPrivate == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  PpiList           = AllocateZeroPool (sizeof (*PpiList));
+
+  PpiList = AllocateZeroPool (sizeof (*PpiList));
   ASSERT (PpiList != NULL);
   if (PpiList == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -291,17 +293,17 @@ PeiInstallSmmControlPpi (
   SmmControlPrivate->Signature = SMM_CONTROL_PRIVATE_DATA_SIGNATURE;
   SmmControlPrivate->Handle    = NULL;
 
-  SmmControlPrivate->SmmControl.Trigger  = Activate;
-  SmmControlPrivate->SmmControl.Clear    = Deactivate;
+  SmmControlPrivate->SmmControl.Trigger = Activate;
+  SmmControlPrivate->SmmControl.Clear   = Deactivate;
 
   //
   // Install PPI
   //
-  PpiList->Flags  = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
-  PpiList->Guid   = &gEfiPeiMmControlPpiGuid;
-  PpiList->Ppi    = &SmmControlPrivate->SmmControl;
+  PpiList->Flags = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
+  PpiList->Guid  = &gEfiPeiMmControlPpiGuid;
+  PpiList->Ppi   = &SmmControlPrivate->SmmControl;
 
-  Status          = PeiServicesInstallPpi (PpiList);
+  Status = PeiServicesInstallPpi (PpiList);
   ASSERT_EFI_ERROR (Status);
 
   // Unlike driver, do not disable SMIs as S3 resume continues

@@ -17,20 +17,20 @@
 #include <Ppi/MmAccess.h>
 #include <IndustryStandard/Pci22.h>
 
-#define SMM_ACCESS_PRIVATE_DATA_SIGNATURE SIGNATURE_32 ('4', '5', 's', 'a')
+#define SMM_ACCESS_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('4', '5', 's', 'a')
 
 ///
 /// Private data
 ///
 typedef struct {
-  UINTN                 Signature;
-  EFI_HANDLE            Handle;
-  EFI_PEI_MM_ACCESS_PPI SmmAccess;
+  UINTN                    Signature;
+  EFI_HANDLE               Handle;
+  EFI_PEI_MM_ACCESS_PPI    SmmAccess;
   //
   // Local Data for SMM Access interface goes here
   //
-  UINTN                 NumberRegions;
-  EFI_SMRAM_DESCRIPTOR  *SmramDesc;
+  UINTN                    NumberRegions;
+  EFI_SMRAM_DESCRIPTOR     *SmramDesc;
 } SMM_ACCESS_PRIVATE_DATA;
 
 #define SMM_ACCESS_PRIVATE_DATA_FROM_THIS(a) \
@@ -45,17 +45,17 @@ typedef struct {
 //
 // DEVICE 0 (Memory Controller Hub)
 //
-#define SA_MC_BUS          0x00
-#define SA_MC_DEV          0x00
-#define SA_MC_FUN          0x00
+#define SA_MC_BUS  0x00
+#define SA_MC_DEV  0x00
+#define SA_MC_FUN  0x00
 ///
 /// Description:
 ///  The SMRAMC register controls how accesses to Compatible SMRAM spaces are treated.  The Open, Close and Lock bits function only when G_SMRAME bit is set to 1.  Also, the Open bit must be reset before the Lock bit is set.
 ///
-#define R_SA_SMRAMC  (0x88)
-#define B_SA_SMRAMC_D_LCK_MASK     (0x10)
-#define B_SA_SMRAMC_D_CLS_MASK     (0x20)
-#define B_SA_SMRAMC_D_OPEN_MASK    (0x40)
+#define R_SA_SMRAMC              (0x88)
+#define B_SA_SMRAMC_D_LCK_MASK   (0x10)
+#define B_SA_SMRAMC_D_CLS_MASK   (0x20)
+#define B_SA_SMRAMC_D_OPEN_MASK  (0x40)
 
 /**
   This routine accepts a request to "open" a region of SMRAM.  The
@@ -75,15 +75,15 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 Open (
-  IN EFI_PEI_SERVICES           **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI      *This,
-  IN UINTN                      DescriptorIndex
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI  *This,
+  IN UINTN                  DescriptorIndex
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINT8                   Index;
-  UINT64                  Address;
-  UINT8                   SmramControl;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINT8                    Index;
+  UINT64                   Address;
+  UINT8                    SmramControl;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   if (DescriptorIndex >= SmmAccess->NumberRegions) {
@@ -105,7 +105,7 @@ Open (
   ///
   /// SMRAM register is PCI 0:0:0:88, SMRAMC (8 bit)
   ///
-  Address = PCI_SEGMENT_LIB_ADDRESS (0, SA_MC_BUS, SA_MC_DEV, SA_MC_FUN, R_SA_SMRAMC);
+  Address      = PCI_SEGMENT_LIB_ADDRESS (0, SA_MC_BUS, SA_MC_DEV, SA_MC_FUN, R_SA_SMRAMC);
   SmramControl = PciSegmentRead8 (Address);
   ///
   ///  Is SMRAM locked?
@@ -117,9 +117,11 @@ Open (
     for (Index = 0; Index < SmmAccess->NumberRegions; Index++) {
       SmmAccess->SmramDesc[Index].RegionState |= EFI_SMRAM_LOCKED;
     }
+
     DEBUG ((DEBUG_WARN, "Cannot open a locked SMRAM region\n"));
     return EFI_DEVICE_ERROR;
   }
+
   ///
   /// Open SMRAM region
   ///
@@ -132,8 +134,8 @@ Open (
   ///
 
   SmmAccess->SmramDesc[DescriptorIndex].RegionState &= (UINT64) ~(EFI_SMRAM_CLOSED | EFI_ALLOCATED);
-  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) EFI_SMRAM_OPEN;
-  SmmAccess->SmmAccess.OpenState = TRUE;
+  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)EFI_SMRAM_OPEN;
+  SmmAccess->SmmAccess.OpenState                     = TRUE;
   return EFI_SUCCESS;
 }
 
@@ -153,16 +155,16 @@ Open (
 EFI_STATUS
 EFIAPI
 Close (
-  IN EFI_PEI_SERVICES        **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI   *This,
-  IN UINTN                   DescriptorIndex
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI  *This,
+  IN UINTN                  DescriptorIndex
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  BOOLEAN                 OpenState;
-  UINT8                   Index;
-  UINT64                  Address;
-  UINT8                   SmramControl;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  BOOLEAN                  OpenState;
+  UINT8                    Index;
+  UINT64                   Address;
+  UINT8                    SmramControl;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   if (DescriptorIndex >= SmmAccess->NumberRegions) {
@@ -188,7 +190,7 @@ Close (
   ///
   /// SMRAM register is PCI 0:0:0:88, SMRAMC (8 bit)
   ///
-  Address = PCI_SEGMENT_LIB_ADDRESS (0, SA_MC_BUS, SA_MC_DEV, SA_MC_FUN, R_SA_SMRAMC);
+  Address      = PCI_SEGMENT_LIB_ADDRESS (0, SA_MC_BUS, SA_MC_DEV, SA_MC_FUN, R_SA_SMRAMC);
   SmramControl = PciSegmentRead8 (Address);
   ///
   ///  Is SMRAM locked?
@@ -200,9 +202,11 @@ Close (
     for (Index = 0; Index < SmmAccess->NumberRegions; Index++) {
       SmmAccess->SmramDesc[Index].RegionState |= EFI_SMRAM_LOCKED;
     }
+
     DEBUG ((DEBUG_WARN, "Cannot close a locked SMRAM region\n"));
     return EFI_DEVICE_ERROR;
   }
+
   ///
   /// Close SMRAM region
   ///
@@ -214,7 +218,7 @@ Close (
   ///
 
   SmmAccess->SmramDesc[DescriptorIndex].RegionState &= (UINT64) ~EFI_SMRAM_OPEN;
-  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) (EFI_SMRAM_CLOSED | EFI_ALLOCATED);
+  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)(EFI_SMRAM_CLOSED | EFI_ALLOCATED);
 
   //
   // Find out if any regions are still open
@@ -248,14 +252,14 @@ Close (
 EFI_STATUS
 EFIAPI
 Lock (
-  IN EFI_PEI_SERVICES          **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI     *This,
-  IN UINTN                     DescriptorIndex
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI  *This,
+  IN UINTN                  DescriptorIndex
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINT64                  Address;
-  UINT8                   SmramControl;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINT64                   Address;
+  UINT8                    SmramControl;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   if (DescriptorIndex >= SmmAccess->NumberRegions) {
@@ -268,8 +272,8 @@ Lock (
     return EFI_DEVICE_ERROR;
   }
 
-  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) EFI_SMRAM_LOCKED;
-  SmmAccess->SmmAccess.LockState = TRUE;
+  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)EFI_SMRAM_LOCKED;
+  SmmAccess->SmmAccess.LockState                     = TRUE;
 
   ///
   /// BEGIN CHIPSET CODE
@@ -277,7 +281,7 @@ Lock (
   ///
   /// SMRAM register is PCI 0:0:0:88, SMRAMC (8 bit)
   ///
-  Address = PCI_SEGMENT_LIB_ADDRESS (0, SA_MC_BUS, SA_MC_DEV, SA_MC_FUN, R_SA_SMRAMC);
+  Address      = PCI_SEGMENT_LIB_ADDRESS (0, SA_MC_BUS, SA_MC_DEV, SA_MC_FUN, R_SA_SMRAMC);
   SmramControl = PciSegmentRead8 (Address);
 
   ///
@@ -312,15 +316,15 @@ Lock (
 EFI_STATUS
 EFIAPI
 GetCapabilities (
-  IN EFI_PEI_SERVICES                **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI           *This,
-  IN OUT UINTN                       *SmramMapSize,
-  IN OUT EFI_SMRAM_DESCRIPTOR        *SmramMap
+  IN EFI_PEI_SERVICES          **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI     *This,
+  IN OUT UINTN                 *SmramMapSize,
+  IN OUT EFI_SMRAM_DESCRIPTOR  *SmramMap
   )
 {
-  EFI_STATUS              Status;
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINTN                   NecessaryBufferSize;
+  EFI_STATUS               Status;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINTN                    NecessaryBufferSize;
 
   SmmAccess           = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   NecessaryBufferSize = SmmAccess->NumberRegions * sizeof (EFI_SMRAM_DESCRIPTOR);
@@ -362,12 +366,13 @@ PeiInstallSmmAccessPpi (
   //
   // Initialize private data
   //
-  SmmAccessPrivate  = AllocateZeroPool (sizeof (*SmmAccessPrivate));
+  SmmAccessPrivate = AllocateZeroPool (sizeof (*SmmAccessPrivate));
   ASSERT (SmmAccessPrivate != NULL);
   if (SmmAccessPrivate == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  PpiList           = AllocateZeroPool (sizeof (*PpiList));
+
+  PpiList = AllocateZeroPool (sizeof (*PpiList));
   ASSERT (PpiList != NULL);
   if (PpiList == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -385,7 +390,7 @@ PeiInstallSmmAccessPpi (
     return EFI_NOT_FOUND;
   }
 
-  DescriptorBlock = (EFI_SMRAM_HOB_DESCRIPTOR_BLOCK *) ((UINT8 *) HobList + sizeof (EFI_HOB_GUID_TYPE));
+  DescriptorBlock = (EFI_SMRAM_HOB_DESCRIPTOR_BLOCK *)((UINT8 *)HobList + sizeof (EFI_HOB_GUID_TYPE));
 
   //
   // Alloc space for SmmAccessPrivate->SmramDesc
@@ -402,10 +407,10 @@ PeiInstallSmmAccessPpi (
   // use the hob to publish SMRAM capabilities
   //
   for (Index = 0; Index < DescriptorBlock->NumberOfSmmReservedRegions; Index++) {
-    SmmAccessPrivate->SmramDesc[Index].PhysicalStart  = DescriptorBlock->Descriptor[Index].PhysicalStart;
-    SmmAccessPrivate->SmramDesc[Index].CpuStart       = DescriptorBlock->Descriptor[Index].CpuStart;
-    SmmAccessPrivate->SmramDesc[Index].PhysicalSize   = DescriptorBlock->Descriptor[Index].PhysicalSize;
-    SmmAccessPrivate->SmramDesc[Index].RegionState    = DescriptorBlock->Descriptor[Index].RegionState;
+    SmmAccessPrivate->SmramDesc[Index].PhysicalStart = DescriptorBlock->Descriptor[Index].PhysicalStart;
+    SmmAccessPrivate->SmramDesc[Index].CpuStart      = DescriptorBlock->Descriptor[Index].CpuStart;
+    SmmAccessPrivate->SmramDesc[Index].PhysicalSize  = DescriptorBlock->Descriptor[Index].PhysicalSize;
+    SmmAccessPrivate->SmramDesc[Index].RegionState   = DescriptorBlock->Descriptor[Index].RegionState;
   }
 
   SmmAccessPrivate->NumberRegions             = Index;
@@ -419,11 +424,11 @@ PeiInstallSmmAccessPpi (
   //
   // Install PPI
   //
-  PpiList->Flags  = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
-  PpiList->Guid   = &gEfiPeiMmAccessPpiGuid;
-  PpiList->Ppi    = &SmmAccessPrivate->SmmAccess;
+  PpiList->Flags = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
+  PpiList->Guid  = &gEfiPeiMmAccessPpiGuid;
+  PpiList->Ppi   = &SmmAccessPrivate->SmmAccess;
 
-  Status          = PeiServicesInstallPpi (PpiList);
+  Status = PeiServicesInstallPpi (PpiList);
   ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;

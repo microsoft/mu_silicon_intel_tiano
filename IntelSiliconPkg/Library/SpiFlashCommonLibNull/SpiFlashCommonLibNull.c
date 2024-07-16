@@ -42,12 +42,12 @@ SpiFlashLock (
 EFI_STATUS
 EFIAPI
 SpiFlashRead (
-  IN     UINTN                        Address,
-  IN OUT UINT32                       *NumBytes,
-     OUT UINT8                        *Buffer
+  IN     UINTN   Address,
+  IN OUT UINT32  *NumBytes,
+  OUT UINT8      *Buffer
   )
 {
-  ASSERT(FALSE);
+  ASSERT (FALSE);
   return EFI_SUCCESS;
 }
 
@@ -67,12 +67,12 @@ SpiFlashRead (
 EFI_STATUS
 EFIAPI
 SpiFlashWrite (
-  IN     UINTN                      Address,
-  IN OUT UINT32                     *NumBytes,
-  IN     UINT8                      *Buffer
+  IN     UINTN   Address,
+  IN OUT UINT32  *NumBytes,
+  IN     UINT8   *Buffer
   )
 {
-  ASSERT(FALSE);
+  ASSERT (FALSE);
   return EFI_SUCCESS;
 }
 
@@ -92,10 +92,10 @@ SpiFlashWrite (
 EFI_STATUS
 EFIAPI
 SpiFlashBlockErase (
-  IN    UINTN                     Address,
-  IN    UINTN                     *NumBytes
+  IN    UINTN  Address,
+  IN    UINTN  *NumBytes
   )
 {
-  ASSERT(FALSE);
+  ASSERT (FALSE);
   return EFI_SUCCESS;
 }

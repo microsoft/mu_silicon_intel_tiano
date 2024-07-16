@@ -47,8 +47,8 @@ FlushWriteBuffer (
   IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32      Reg32;
-  VTD_CAP_REG CapReg;
+  UINT32       Reg32;
+  VTD_CAP_REG  CapReg;
 
   CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
 
@@ -76,7 +76,7 @@ InvalidateContextCache (
 
   Reg64 = MmioRead64 (VtdUnitBaseAddress + R_CCMD_REG);
   if ((Reg64 & B_CCMD_REG_ICC) != 0) {
-    DEBUG ((DEBUG_ERROR,"ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%x)\n",VtdUnitBaseAddress));
+    DEBUG ((DEBUG_ERROR, "ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%x)\n", VtdUnitBaseAddress));
     return EFI_DEVICE_ERROR;
   }
 
@@ -101,14 +101,14 @@ InvalidateIOTLB (
   IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT64       Reg64;
-  VTD_ECAP_REG ECapReg;
+  UINT64        Reg64;
+  VTD_ECAP_REG  ECapReg;
 
   ECapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_ECAP_REG);
 
   Reg64 = MmioRead64 (VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
   if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
-    DEBUG ((DEBUG_ERROR,"ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%x)\n", VtdUnitBaseAddress));
+    DEBUG ((DEBUG_ERROR, "ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%x)\n", VtdUnitBaseAddress));
     return EFI_DEVICE_ERROR;
   }
 
@@ -138,19 +138,19 @@ EnableDmar (
   IN UINTN  RootEntryTable
   )
 {
-  UINT32    Reg32;
+  UINT32  Reg32;
 
-  DEBUG((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%x] \n", VtdUnitBaseAddress));
+  DEBUG ((DEBUG_INFO, ">>>>>>EnableDmar() for engine [%x] \n", VtdUnitBaseAddress));
 
-  DEBUG((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
+  DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
   MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)(UINTN)RootEntryTable);
 
   MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, B_GMCD_REG_SRTP);
 
-  DEBUG((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
+  DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
   do {
     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+  } while ((Reg32 & B_GSTS_REG_RTPS) == 0);
 
   //
   // Init DMAr Fault Event and Data registers
@@ -176,12 +176,12 @@ EnableDmar (
   // Enable VTd
   //
   MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, B_GMCD_REG_TE);
-  DEBUG((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
+  DEBUG ((DEBUG_INFO, "EnableDmar: Waiting B_GSTS_REG_TE ...\n"));
   do {
     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   } while ((Reg32 & B_GSTS_REG_TE) == 0);
 
-  DEBUG ((DEBUG_INFO,"VTD () enabled!<<<<<<\n"));
+  DEBUG ((DEBUG_INFO, "VTD () enabled!<<<<<<\n"));
 
   return EFI_SUCCESS;
 }
@@ -199,11 +199,11 @@ DisableDmar (
   IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32    Reg32;
-  UINT32    Status;
-  UINT32    Command;
+  UINT32  Reg32;
+  UINT32  Status;
+  UINT32  Command;
 
-  DEBUG((DEBUG_INFO, ">>>>>>DisableDmar() for engine [%x] \n", VtdUnitBaseAddress));
+  DEBUG ((DEBUG_INFO, ">>>>>>DisableDmar() for engine [%x] \n", VtdUnitBaseAddress));
 
   //
   // Write Buffer Flush before invalidation
@@ -216,35 +216,35 @@ DisableDmar (
   //
   // Set TE (Translation Enable: BIT31) of Global command register to zero
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
+  Reg32   = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  Status  = (Reg32 & 0x96FFFFFF);      // Reset the one-shot bits
   Command = (Status & ~B_GMCD_REG_TE);
   MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
 
-   //
-   // Poll on TE Status bit of Global status register to become zero
-   //
-   do {
-     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-   } while ((Reg32 & B_GSTS_REG_TE) == B_GSTS_REG_TE);
+  //
+  // Poll on TE Status bit of Global status register to become zero
+  //
+  do {
+    Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  } while ((Reg32 & B_GSTS_REG_TE) == B_GSTS_REG_TE);
 
   //
   // Set SRTP (Set Root Table Pointer: BIT30) of Global command register in order to update the root table pointerDisable VTd
   //
-  Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  Status = (Reg32 & 0x96FFFFFF);       // Reset the one-shot bits
+  Reg32   = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
+  Status  = (Reg32 & 0x96FFFFFF);      // Reset the one-shot bits
   Command = (Status | B_GMCD_REG_SRTP);
   MmioWrite32 (VtdUnitBaseAddress + R_GCMD_REG, Command);
   do {
     Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  } while((Reg32 & B_GSTS_REG_RTPS) == 0);
+  } while ((Reg32 & B_GSTS_REG_RTPS) == 0);
 
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-  DEBUG((DEBUG_INFO, "DisableDmar: GSTS_REG - 0x%08x\n", Reg32));
+  DEBUG ((DEBUG_INFO, "DisableDmar: GSTS_REG - 0x%08x\n", Reg32));
 
   MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, 0);
 
-  DEBUG ((DEBUG_INFO,"VTD () Disabled!<<<<<<\n"));
+  DEBUG ((DEBUG_INFO, "VTD () Disabled!<<<<<<\n"));
 
   return EFI_SUCCESS;
 }
@@ -260,34 +260,35 @@ DisableDmar (
 **/
 EFI_STATUS
 PreMemoryEnableVTdTranslationProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
-  EFI_STATUS                            Status;
-  UINTN                                 Index;
-  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI   *RootEntryTable;
+  EFI_STATUS                           Status;
+  UINTN                                Index;
+  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI  *RootEntryTable;
 
   DEBUG ((DEBUG_INFO, "PreMemoryEnableVTdTranslationProtection - 0x%lx\n", EngineMask));
 
   Status = PeiServicesLocatePpi (
-                 &gEdkiiVTdNullRootEntryTableGuid,
-                 0,
-                 NULL,
-                 (VOID **)&RootEntryTable
-                 );
+             &gEdkiiVTdNullRootEntryTableGuid,
+             0,
+             NULL,
+             (VOID **)&RootEntryTable
+             );
 
-  if (EFI_ERROR(Status)) {
-    DEBUG((DEBUG_ERROR, "Locate NullRootEntryTable Ppi : %r\n", Status));
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Locate NullRootEntryTable Ppi : %r\n", Status));
     return EFI_UNSUPPORTED;
   }
 
   DEBUG ((DEBUG_INFO, "NullRootEntryTable - 0x%lx\n", *RootEntryTable));
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     EnableDmar ((UINTN)VTdInfo->VTdEngineAddress[Index], (UINTN)*RootEntryTable);
   }
 
@@ -302,12 +303,12 @@ PreMemoryEnableVTdTranslationProtection (
 **/
 VOID
 EnableVTdTranslationProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
-  UINTN       Index;
-  VOID        *RootEntryTable;
+  UINTN  Index;
+  VOID   *RootEntryTable;
 
   DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtection - 0x%lx\n", EngineMask));
 
@@ -315,20 +316,21 @@ EnableVTdTranslationProtection (
   ASSERT (RootEntryTable != NULL);
   if (RootEntryTable == NULL) {
     DEBUG ((DEBUG_INFO, " EnableVTdTranslationProtection : OutOfResource\n"));
-    return ;
+    return;
   }
 
-  ZeroMem (RootEntryTable, EFI_PAGES_TO_SIZE(1));
-  FlushPageTableMemory ((UINTN)RootEntryTable, EFI_PAGES_TO_SIZE(1));
+  ZeroMem (RootEntryTable, EFI_PAGES_TO_SIZE (1));
+  FlushPageTableMemory ((UINTN)RootEntryTable, EFI_PAGES_TO_SIZE (1));
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     EnableDmar ((UINTN)VTdInfo->VTdEngineAddress[Index], (UINTN)RootEntryTable);
   }
 
-  return ;
+  return;
 }
 
 /**
@@ -339,20 +341,21 @@ EnableVTdTranslationProtection (
 **/
 VOID
 DisableVTdTranslationProtection (
-  IN VTD_INFO      *VTdInfo,
-  IN UINT64        EngineMask
+  IN VTD_INFO  *VTdInfo,
+  IN UINT64    EngineMask
   )
 {
-  UINTN       Index;
+  UINTN  Index;
 
   DEBUG ((DEBUG_INFO, "DisableVTdTranslationProtection - 0x%lx\n", EngineMask));
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
-    if ((EngineMask & LShiftU64(1, Index)) == 0) {
+    if ((EngineMask & LShiftU64 (1, Index)) == 0) {
       continue;
     }
+
     DisableDmar ((UINTN)VTdInfo->VTdEngineAddress[Index]);
   }
 
-  return ;
+  return;
 }

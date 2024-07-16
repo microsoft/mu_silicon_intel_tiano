@@ -31,7 +31,6 @@
 //
 typedef EFI_ACPI_DMAR_HEADER EDKII_VTD_INFO_PPI;
 
-extern EFI_GUID gEdkiiVTdInfoPpiGuid;
+extern EFI_GUID  gEdkiiVTdInfoPpiGuid;
 
 #endif
-

@@ -11,6 +11,7 @@
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
+
 #ifndef _PCH_SPI2_PPI_H_
 #define _PCH_SPI2_PPI_H_
 
@@ -19,7 +20,7 @@
 //
 // Extern the GUID for PPI users.
 //
-extern EFI_GUID           gPchSpi2PpiGuid;
+extern EFI_GUID  gPchSpi2PpiGuid;
 
 /**
   Reuse the PCH_SPI2_PROTOCOL definitions
