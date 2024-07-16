@@ -12,6 +12,7 @@
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
+
 #ifndef _ASL_UPDATE_LIB_H_
 #define _ASL_UPDATE_LIB_H_
 
@@ -22,7 +23,6 @@
 #include <IndustryStandard/Acpi.h>
 #include <Protocol/AcpiTable.h>
 #include <Protocol/AcpiSystemDescriptionTable.h>
-
 
 /**
   This procedure will update immediate value assigned to a Name.
@@ -38,10 +38,10 @@
 **/
 EFI_STATUS
 EFIAPI
-UpdateNameAslCode(
-  IN     UINT32                        AslSignature,
-  IN     VOID                          *Buffer,
-  IN     UINTN                         Length
+UpdateNameAslCode (
+  IN     UINT32  AslSignature,
+  IN     VOID    *Buffer,
+  IN     UINTN   Length
   );
 
 /**
@@ -61,11 +61,11 @@ UpdateNameAslCode(
 EFI_STATUS
 EFIAPI
 UpdateSsdtNameAslCode (
-  IN     UINT8                         *TableId,
-  IN     UINT8                         TableIdSize,
-  IN     UINT32                        AslSignature,
-  IN     VOID                          *Buffer,
-  IN     UINTN                         Length
+  IN     UINT8   *TableId,
+  IN     UINT8   TableIdSize,
+  IN     UINT32  AslSignature,
+  IN     VOID    *Buffer,
+  IN     UINTN   Length
   );
 
 /**
@@ -83,9 +83,9 @@ UpdateSsdtNameAslCode (
 EFI_STATUS
 EFIAPI
 UpdateMethodAslCode (
-  IN     UINT32                        AslSignature,
-  IN     VOID                          *Buffer,
-  IN     UINTN                         Length
+  IN     UINT32  AslSignature,
+  IN     VOID    *Buffer,
+  IN     UINTN   Length
   );
 
 /**
@@ -108,9 +108,9 @@ UpdateMethodAslCode (
 EFI_STATUS
 EFIAPI
 LocateAcpiTableBySignature (
-  IN      UINT32                        Signature,
-  IN OUT  EFI_ACPI_DESCRIPTION_HEADER   **Table,
-  IN OUT  UINTN                         *Handle
+  IN      UINT32                       Signature,
+  IN OUT  EFI_ACPI_DESCRIPTION_HEADER  **Table,
+  IN OUT  UINTN                        *Handle
   );
 
 #endif

@@ -26,20 +26,20 @@
 #define FLASH_REGION_ALL_GUID               { 0xbabe60dc, 0xf88d, 0x4584, {0x9e, 0x54, 0x57, 0x44, 0x4b, 0xe2, 0x6e, 0xf3 } }
 #define FLASH_REGION_MAX_GUID               { 0x74c2e3c1, 0x8faa, 0x4659, {0xa7, 0xbb, 0x87, 0x1f, 0xbb, 0x61, 0xd3, 0xb4 } }
 
-extern EFI_GUID gFlashRegionDescriptorGuid;
-extern EFI_GUID gFlashRegionBiosGuid;
-extern EFI_GUID gFlashRegionMeGuid;
-extern EFI_GUID gFlashRegionGbeGuid;
-extern EFI_GUID gFlashRegionPlatformDataGuid;
-extern EFI_GUID gFlashRegionDerGuid;
-extern EFI_GUID gFlashRegionSecondaryBiosGuid;
-extern EFI_GUID gFlashRegionMicrocodePatchGuid;
-extern EFI_GUID gFlashRegionEcGuid;
-extern EFI_GUID gFlashRegionDeviceExpansion2Guid;
-extern EFI_GUID gFlashRegionIeGuid;
-extern EFI_GUID gFlashRegion10GbeAGuid;
-extern EFI_GUID gFlashRegion10GbeBGuid;
-extern EFI_GUID gFlashRegionAllGuid;
-extern EFI_GUID gFlashRegionMaxGuid;
+extern EFI_GUID  gFlashRegionDescriptorGuid;
+extern EFI_GUID  gFlashRegionBiosGuid;
+extern EFI_GUID  gFlashRegionMeGuid;
+extern EFI_GUID  gFlashRegionGbeGuid;
+extern EFI_GUID  gFlashRegionPlatformDataGuid;
+extern EFI_GUID  gFlashRegionDerGuid;
+extern EFI_GUID  gFlashRegionSecondaryBiosGuid;
+extern EFI_GUID  gFlashRegionMicrocodePatchGuid;
+extern EFI_GUID  gFlashRegionEcGuid;
+extern EFI_GUID  gFlashRegionDeviceExpansion2Guid;
+extern EFI_GUID  gFlashRegionIeGuid;
+extern EFI_GUID  gFlashRegion10GbeAGuid;
+extern EFI_GUID  gFlashRegion10GbeBGuid;
+extern EFI_GUID  gFlashRegionAllGuid;
+extern EFI_GUID  gFlashRegionMaxGuid;
 
 #endif

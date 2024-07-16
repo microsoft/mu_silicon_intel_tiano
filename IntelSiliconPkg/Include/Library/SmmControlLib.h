@@ -5,6 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
+
 #ifndef _SMM_CONTROL_LIB_H_
 #define _SMM_CONTROL_LIB_H_
 
@@ -23,4 +24,5 @@ EFIAPI
 PeiInstallSmmControlPpi (
   VOID
   );
+
 #endif
