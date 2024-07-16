@@ -43,25 +43,25 @@
 
 #include <Library/IntelVTdPeiDxeLib.h>
 
-#define VTD_64BITS_ADDRESS(Lo, Hi) (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
+#define VTD_64BITS_ADDRESS(Lo, Hi)  (LShiftU64 (Lo, 12) | LShiftU64 (Hi, 32))
 
-#define ALIGN_VALUE_UP(Value, Alignment)  (((Value) + (Alignment) - 1) & (~((Alignment) - 1)))
-#define ALIGN_VALUE_LOW(Value, Alignment) ((Value) & (~((Alignment) - 1)))
+#define ALIGN_VALUE_UP(Value, Alignment)   (((Value) + (Alignment) - 1) & (~((Alignment) - 1)))
+#define ALIGN_VALUE_LOW(Value, Alignment)  ((Value) & (~((Alignment) - 1)))
 
-#define VTD_TPL_LEVEL TPL_NOTIFY
+#define VTD_TPL_LEVEL  TPL_NOTIFY
 
 //
 // Use 256-bit descriptor
 // Queue size is 128.
 //
-#define VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH 1
-#define VTD_INVALIDATION_QUEUE_SIZE 0
+#define VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH  1
+#define VTD_INVALIDATION_QUEUE_SIZE               0
 
 //
 // This is the initial max PCI DATA number.
 // The number may be enlarged later.
 //
-#define MAX_VTD_PCI_DATA_NUMBER             0x100
+#define MAX_VTD_PCI_DATA_NUMBER  0x100
 
 typedef struct {
   UINTN                            VtdUnitBaseAddress;
@@ -85,16 +85,15 @@ typedef struct {
 // This is the initial max ACCESS request.
 // The number may be enlarged later.
 //
-#define MAX_VTD_ACCESS_REQUEST      0x100
+#define MAX_VTD_ACCESS_REQUEST  0x100
 
 typedef struct {
-  UINT16                Segment;
-  VTD_SOURCE_ID         SourceId;
-  UINT64                BaseAddress;
-  UINT64                Length;
-  UINT64                IoMmuAccess;
+  UINT16           Segment;
+  VTD_SOURCE_ID    SourceId;
+  UINT64           BaseAddress;
+  UINT64           Length;
+  UINT64           IoMmuAccess;
 } VTD_ACCESS_REQUEST;
-
 
 /**
   The scan bus callback function.
@@ -111,7 +110,7 @@ typedef struct {
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCAN_BUS_FUNC_CALLBACK_FUNC) (
+(EFIAPI *SCAN_BUS_FUNC_CALLBACK_FUNC)(
   IN VOID           *Context,
   IN UINT16         Segment,
   IN UINT8          Bus,
@@ -121,13 +120,13 @@ EFI_STATUS
 
 extern EFI_ACPI_DMAR_HEADER  *mAcpiDmarTable;
 
-extern UINTN                            mVtdUnitNumber;
-extern VTD_UNIT_INFORMATION             *mVtdUnitInformation;
+extern UINTN                 mVtdUnitNumber;
+extern VTD_UNIT_INFORMATION  *mVtdUnitInformation;
 
-extern UINT64                           mBelow4GMemoryLimit;
-extern UINT64                           mAbove4GMemoryLimit;
+extern UINT64  mBelow4GMemoryLimit;
+extern UINT64  mAbove4GMemoryLimit;
 
-extern EDKII_PLATFORM_VTD_POLICY_PROTOCOL   *mPlatformVTdPolicy;
+extern EDKII_PLATFORM_VTD_POLICY_PROTOCOL  *mPlatformVTdPolicy;
 
 /**
   Prepare VTD configuration.
@@ -242,7 +241,7 @@ DumpVtdRegsAll (
 **/
 VOID
 DumpVtdVerRegs (
-  IN VTD_VER_REG                *VerReg
+  IN VTD_VER_REG  *VerReg
   );
 
 /**
@@ -252,7 +251,7 @@ DumpVtdVerRegs (
 **/
 VOID
 DumpVtdCapRegs (
-  IN VTD_CAP_REG *CapReg
+  IN VTD_CAP_REG  *CapReg
   );
 
 /**
@@ -262,7 +261,7 @@ DumpVtdCapRegs (
 **/
 VOID
 DumpVtdECapRegs (
-  IN VTD_ECAP_REG *ECapReg
+  IN VTD_ECAP_REG  *ECapReg
   );
 
 /**
@@ -302,11 +301,11 @@ RegisterPciDevice (
 EFI_STATUS
 EFIAPI
 ScanBusCallbackRegisterPciDevice (
-  IN VOID           *Context,
-  IN UINT16         Segment,
-  IN UINT8          Bus,
-  IN UINT8          Device,
-  IN UINT8          Function
+  IN VOID    *Context,
+  IN UINT16  Segment,
+  IN UINT8   Bus,
+  IN UINT8   Device,
+  IN UINT8   Function
   );
 
 /**
@@ -356,10 +355,10 @@ ScanAllPciBus (
 **/
 UINTN
 FindVtdIndexByPciDevice (
-  IN  UINT16                  Segment,
-  IN  VTD_SOURCE_ID           SourceId,
-  OUT VTD_EXT_CONTEXT_ENTRY   **ExtContextEntry,
-  OUT VTD_CONTEXT_ENTRY       **ContextEntry
+  IN  UINT16                 Segment,
+  IN  VTD_SOURCE_ID          SourceId,
+  OUT VTD_EXT_CONTEXT_ENTRY  **ExtContextEntry,
+  OUT VTD_CONTEXT_ENTRY      **ContextEntry
   );
 
 /**
@@ -416,12 +415,12 @@ ParseDmarAcpiTableRmrr (
 **/
 EFI_STATUS
 SetPageAttribute (
-  IN UINTN                         VtdIndex,
-  IN UINT16                        DomainIdentifier,
-  IN VTD_SECOND_LEVEL_PAGING_ENTRY *SecondLevelPagingEntry,
-  IN UINT64                        BaseAddress,
-  IN UINT64                        Length,
-  IN UINT64                        IoMmuAccess
+  IN UINTN                          VtdIndex,
+  IN UINT16                         DomainIdentifier,
+  IN VTD_SECOND_LEVEL_PAGING_ENTRY  *SecondLevelPagingEntry,
+  IN UINT64                         BaseAddress,
+  IN UINT64                         Length,
+  IN UINT64                         IoMmuAccess
   );
 
 /**
@@ -445,11 +444,11 @@ SetPageAttribute (
 **/
 EFI_STATUS
 SetAccessAttribute (
-  IN UINT16                Segment,
-  IN VTD_SOURCE_ID         SourceId,
-  IN UINT64                BaseAddress,
-  IN UINT64                Length,
-  IN UINT64                IoMmuAccess
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId,
+  IN UINT64         BaseAddress,
+  IN UINT64         Length,
+  IN UINT64         IoMmuAccess
   );
 
 /**
@@ -495,8 +494,8 @@ InitializePlatformVTdPolicy (
 **/
 EFI_STATUS
 AlwaysEnablePageAttribute (
-  IN UINT16                  Segment,
-  IN VTD_SOURCE_ID           SourceId
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId
   );
 
 /**
@@ -512,9 +511,9 @@ AlwaysEnablePageAttribute (
 **/
 EFI_STATUS
 DeviceHandleToSourceId (
-  IN EFI_HANDLE            DeviceHandle,
-  OUT UINT16               *Segment,
-  OUT VTD_SOURCE_ID        *SourceId
+  IN EFI_HANDLE      DeviceHandle,
+  OUT UINT16         *Segment,
+  OUT VTD_SOURCE_ID  *SourceId
   );
 
 /**
@@ -529,9 +528,9 @@ DeviceHandleToSourceId (
 **/
 EFI_STATUS
 GetDeviceInfoFromMapping (
-  IN  VOID                                     *Mapping,
-  OUT EFI_PHYSICAL_ADDRESS                     *DeviceAddress,
-  OUT UINTN                                    *NumberOfPages
+  IN  VOID                  *Mapping,
+  OUT EFI_PHYSICAL_ADDRESS  *DeviceAddress,
+  OUT UINTN                 *NumberOfPages
   );
 
 /**
@@ -585,11 +584,11 @@ FlushPageTableMemory (
 **/
 EFI_STATUS
 GetPciBusDeviceFunction (
-  IN  UINT16                                      Segment,
-  IN  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER *DmarDevScopeEntry,
-  OUT UINT8                                       *Bus,
-  OUT UINT8                                       *Device,
-  OUT UINT8                                       *Function
+  IN  UINT16                                       Segment,
+  IN  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER  *DmarDevScopeEntry,
+  OUT UINT8                                        *Bus,
+  OUT UINT8                                        *Device,
+  OUT UINT8                                        *Function
   );
 
 /**
@@ -614,11 +613,11 @@ GetPciBusDeviceFunction (
 **/
 EFI_STATUS
 RequestAccessAttribute (
-  IN UINT16                 Segment,
-  IN VTD_SOURCE_ID          SourceId,
-  IN UINT64                 BaseAddress,
-  IN UINT64                 Length,
-  IN UINT64                 IoMmuAccess
+  IN UINT16         Segment,
+  IN VTD_SOURCE_ID  SourceId,
+  IN UINT64         BaseAddress,
+  IN UINT64         Length,
+  IN UINT64         IoMmuAccess
   );
 
 /**
@@ -632,9 +631,9 @@ RequestAccessAttribute (
 VOID
 EFIAPI
 VTdLogAddEvent (
-  IN  CONST VTDLOG_EVENT_TYPE EventType,
-  IN  CONST UINT64            Data1,
-  IN  CONST UINT64            Data2
+  IN  CONST VTDLOG_EVENT_TYPE  EventType,
+  IN  CONST UINT64             Data1,
+  IN  CONST UINT64             Data2
   );
 
 /**
@@ -649,10 +648,10 @@ VTdLogAddEvent (
 VOID
 EFIAPI
 VTdLogAddDataEvent (
-  IN  CONST VTDLOG_EVENT_TYPE EventType,
-  IN  CONST UINT64            Param,
-  IN  CONST VOID              *Data,
-  IN  CONST UINT32            DataSize
+  IN  CONST VTDLOG_EVENT_TYPE  EventType,
+  IN  CONST UINT64             Param,
+  IN  CONST VOID               *Data,
+  IN  CONST UINT32             DataSize
   );
 
 /**
@@ -661,7 +660,7 @@ VTdLogAddDataEvent (
 **/
 VOID
 EFIAPI
-VTdLogInitialize(
+VTdLogInitialize (
   VOID
   );
 

@@ -9,7 +9,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef __SHADOW_MICROCODE_PEI_H__
 #define __SHADOW_MICROCODE_PEI_H__
 
-
 #include <PiPei.h>
 #include <Ppi/ShadowMicrocode.h>
 #include <Library/PeiServicesLib.h>
@@ -52,11 +51,11 @@ typedef struct {
 **/
 EFI_STATUS
 ShadowMicrocode (
-  IN  EDKII_PEI_SHADOW_MICROCODE_PPI        *This,
-  IN  UINTN                                 CpuCount,
-  IN  EDKII_PEI_CPU_ID_INFO                 *CpuInfo,
-  OUT UINTN                                 *BufferSize,
-  OUT VOID                                  **Buffer
+  IN  EDKII_PEI_SHADOW_MICROCODE_PPI  *This,
+  IN  UINTN                           CpuCount,
+  IN  EDKII_PEI_CPU_ID_INFO           *CpuInfo,
+  OUT UINTN                           *BufferSize,
+  OUT VOID                            **Buffer
   );
 
 #endif

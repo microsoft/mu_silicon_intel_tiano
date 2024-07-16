@@ -22,8 +22,8 @@
 EFI_STATUS
 EFIAPI
 SpiFvbStandaloneMmInitialize (
-  IN EFI_HANDLE            ImageHandle,
-  IN EFI_MM_SYSTEM_TABLE   *MmSystemTable
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_MM_SYSTEM_TABLE  *MmSystemTable
   )
 {
   FvbInitialize ();

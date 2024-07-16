@@ -43,57 +43,57 @@
 //
 
 typedef struct {
-  UINT32 LastAttemptVersion;
-  UINT32 LastAttemptStatus;
+  UINT32    LastAttemptVersion;
+  UINT32    LastAttemptStatus;
 } MICROCODE_FMP_LAST_ATTEMPT_VARIABLE;
 
 typedef struct {
-  CPU_MICROCODE_HEADER   *MicrocodeEntryPoint;
-  UINTN                  TotalSize;
-  BOOLEAN                InUse;
+  CPU_MICROCODE_HEADER    *MicrocodeEntryPoint;
+  UINTN                   TotalSize;
+  BOOLEAN                 InUse;
 } MICROCODE_INFO;
 
 typedef struct {
-  CPU_MICROCODE_HEADER   *MicrocodeEntryPoint;
-  UINTN                  TotalSize;
-  BOOLEAN                InUse;
-  BOOLEAN                Empty;
+  CPU_MICROCODE_HEADER    *MicrocodeEntryPoint;
+  UINTN                   TotalSize;
+  BOOLEAN                 InUse;
+  BOOLEAN                 Empty;
 } FIT_MICROCODE_INFO;
 
 typedef struct {
-  UINTN                  CpuIndex;
-  UINT32                 ProcessorSignature;
-  UINT8                  PlatformId;
-  UINT32                 MicrocodeRevision;
-  UINTN                  MicrocodeIndex;
+  UINTN     CpuIndex;
+  UINT32    ProcessorSignature;
+  UINT8     PlatformId;
+  UINT32    MicrocodeRevision;
+  UINTN     MicrocodeIndex;
 } PROCESSOR_INFO;
 
 typedef struct {
-  UINT64                 Address;
-  UINT32                 Revision;
+  UINT64    Address;
+  UINT32    Revision;
 } MICROCODE_LOAD_BUFFER;
 
 struct _MICROCODE_FMP_PRIVATE_DATA {
-  UINT32                               Signature;
-  EFI_FIRMWARE_MANAGEMENT_PROTOCOL     Fmp;
-  EFI_HANDLE                           Handle;
-  VOID                                 *MicrocodePatchAddress;
-  UINTN                                MicrocodePatchRegionSize;
-  UINT8                                DescriptorCount;
-  EFI_FIRMWARE_IMAGE_DESCRIPTOR        *ImageDescriptor;
-  MICROCODE_INFO                       *MicrocodeInfo;
-  UINT32                               PackageVersion;
-  CHAR16                               *PackageVersionName;
-  MICROCODE_FMP_LAST_ATTEMPT_VARIABLE  LastAttempt;
-  EFI_MP_SERVICES_PROTOCOL             *MpService;
-  UINTN                                BspIndex;
-  UINTN                                ProcessorCount;
-  PROCESSOR_INFO                       *ProcessorInfo;
-  UINT32                               FitMicrocodeEntryCount;
-  FIT_MICROCODE_INFO                   *FitMicrocodeInfo;
+  UINT32                                 Signature;
+  EFI_FIRMWARE_MANAGEMENT_PROTOCOL       Fmp;
+  EFI_HANDLE                             Handle;
+  VOID                                   *MicrocodePatchAddress;
+  UINTN                                  MicrocodePatchRegionSize;
+  UINT8                                  DescriptorCount;
+  EFI_FIRMWARE_IMAGE_DESCRIPTOR          *ImageDescriptor;
+  MICROCODE_INFO                         *MicrocodeInfo;
+  UINT32                                 PackageVersion;
+  CHAR16                                 *PackageVersionName;
+  MICROCODE_FMP_LAST_ATTEMPT_VARIABLE    LastAttempt;
+  EFI_MP_SERVICES_PROTOCOL               *MpService;
+  UINTN                                  BspIndex;
+  UINTN                                  ProcessorCount;
+  PROCESSOR_INFO                         *ProcessorInfo;
+  UINT32                                 FitMicrocodeEntryCount;
+  FIT_MICROCODE_INFO                     *FitMicrocodeInfo;
 };
 
-typedef struct _MICROCODE_FMP_PRIVATE_DATA  MICROCODE_FMP_PRIVATE_DATA;
+typedef struct _MICROCODE_FMP_PRIVATE_DATA MICROCODE_FMP_PRIVATE_DATA;
 
 #define MICROCODE_FMP_LAST_ATTEMPT_VARIABLE_NAME  L"MicrocodeLastAttemptVar"
 
@@ -126,8 +126,8 @@ typedef struct _MICROCODE_FMP_PRIVATE_DATA  MICROCODE_FMP_PRIVATE_DATA;
 **/
 BOOLEAN
 GetMicrocodeRegion (
-  OUT VOID     **MicrocodePatchAddress,
-  OUT UINTN    *MicrocodePatchRegionSize
+  OUT VOID   **MicrocodePatchAddress,
+  OUT UINTN  *MicrocodePatchRegionSize
   );
 
 /**
@@ -160,8 +160,8 @@ CollectProcessorInfo (
 **/
 UINTN
 GetMicrocodeInfo (
-  IN  MICROCODE_FMP_PRIVATE_DATA     *MicrocodeFmpPrivate,
-  IN  UINTN                          DescriptorCount,  OPTIONAL
+  IN  MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate,
+  IN  UINTN DescriptorCount, OPTIONAL
   OUT EFI_FIRMWARE_IMAGE_DESCRIPTOR  *ImageDescriptor, OPTIONAL
   OUT MICROCODE_INFO                 *MicrocodeInfo    OPTIONAL
   );
@@ -191,12 +191,12 @@ GetMicrocodeInfo (
 **/
 EFI_STATUS
 VerifyMicrocode (
-  IN  MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate,
-  IN  VOID                        *Image,
-  IN  UINTN                       ImageSize,
-  IN  BOOLEAN                     TryLoad,
-  OUT UINT32                      *LastAttemptStatus,
-  OUT CHAR16                      **AbortReason,   OPTIONAL
+  IN  MICROCODE_FMP_PRIVATE_DATA *MicrocodeFmpPrivate,
+  IN  VOID *Image,
+  IN  UINTN ImageSize,
+  IN  BOOLEAN TryLoad,
+  OUT UINT32 *LastAttemptStatus,
+  OUT CHAR16 **AbortReason, OPTIONAL
   IN OUT UINTN                    *TargetCpuIndex  OPTIONAL
   );
 
@@ -221,12 +221,12 @@ VerifyMicrocode (
 **/
 EFI_STATUS
 MicrocodeWrite (
-  IN MICROCODE_FMP_PRIVATE_DATA    *MicrocodeFmpPrivate,
-  IN VOID                          *Image,
-  IN UINTN                         ImageSize,
-  OUT UINT32                       *LastAttemptVersion,
-  OUT UINT32                       *LastAttemptStatus,
-  OUT CHAR16                       **AbortReason
+  IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate,
+  IN VOID                        *Image,
+  IN UINTN                       ImageSize,
+  OUT UINT32                     *LastAttemptVersion,
+  OUT UINT32                     *LastAttemptStatus,
+  OUT CHAR16                     **AbortReason
   );
 
 /**
@@ -280,14 +280,14 @@ DumpPrivateInfo (
 EFI_STATUS
 EFIAPI
 FmpGetImageInfo (
-  IN EFI_FIRMWARE_MANAGEMENT_PROTOCOL       *This,
-  IN OUT    UINTN                           *ImageInfoSize,
-  IN OUT    EFI_FIRMWARE_IMAGE_DESCRIPTOR   *ImageInfo,
-  OUT       UINT32                          *DescriptorVersion,
-  OUT       UINT8                           *DescriptorCount,
-  OUT       UINTN                           *DescriptorSize,
-  OUT       UINT32                          *PackageVersion,
-  OUT       CHAR16                          **PackageVersionName
+  IN EFI_FIRMWARE_MANAGEMENT_PROTOCOL      *This,
+  IN OUT    UINTN                          *ImageInfoSize,
+  IN OUT    EFI_FIRMWARE_IMAGE_DESCRIPTOR  *ImageInfo,
+  OUT       UINT32                         *DescriptorVersion,
+  OUT       UINT8                          *DescriptorCount,
+  OUT       UINTN                          *DescriptorSize,
+  OUT       UINT32                         *PackageVersion,
+  OUT       CHAR16                         **PackageVersionName
   );
 
 /**
@@ -371,13 +371,13 @@ FmpGetImage (
 EFI_STATUS
 EFIAPI
 FmpSetImage (
-  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL                 *This,
-  IN  UINT8                                            ImageIndex,
-  IN  CONST VOID                                       *Image,
-  IN  UINTN                                            ImageSize,
-  IN  CONST VOID                                       *VendorCode,
-  IN  EFI_FIRMWARE_MANAGEMENT_UPDATE_IMAGE_PROGRESS    Progress,
-  OUT CHAR16                                           **AbortReason
+  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL               *This,
+  IN  UINT8                                          ImageIndex,
+  IN  CONST VOID                                     *Image,
+  IN  UINTN                                          ImageSize,
+  IN  CONST VOID                                     *VendorCode,
+  IN  EFI_FIRMWARE_MANAGEMENT_UPDATE_IMAGE_PROGRESS  Progress,
+  OUT CHAR16                                         **AbortReason
   );
 
 /**
@@ -445,12 +445,12 @@ FmpCheckImage (
 EFI_STATUS
 EFIAPI
 FmpGetPackageInfo (
-  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL *This,
-  OUT UINT32                           *PackageVersion,
-  OUT CHAR16                           **PackageVersionName,
-  OUT UINT32                           *PackageVersionNameMaxLen,
-  OUT UINT64                           *AttributesSupported,
-  OUT UINT64                           *AttributesSetting
+  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL  *This,
+  OUT UINT32                            *PackageVersion,
+  OUT CHAR16                            **PackageVersionName,
+  OUT UINT32                            *PackageVersionNameMaxLen,
+  OUT UINT64                            *AttributesSupported,
+  OUT UINT64                            *AttributesSetting
   );
 
 /**
@@ -487,13 +487,12 @@ FmpGetPackageInfo (
 EFI_STATUS
 EFIAPI
 FmpSetPackageInfo (
-  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL   *This,
-  IN  CONST VOID                         *Image,
-  IN  UINTN                              ImageSize,
-  IN  CONST VOID                         *VendorCode,
-  IN  UINT32                             PackageVersion,
-  IN  CONST CHAR16                       *PackageVersionName
+  IN  EFI_FIRMWARE_MANAGEMENT_PROTOCOL  *This,
+  IN  CONST VOID                        *Image,
+  IN  UINTN                             ImageSize,
+  IN  CONST VOID                        *VendorCode,
+  IN  UINT32                            PackageVersion,
+  IN  CONST CHAR16                      *PackageVersionName
   );
 
 #endif
-

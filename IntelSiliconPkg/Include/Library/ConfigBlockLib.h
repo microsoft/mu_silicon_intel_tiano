@@ -22,8 +22,8 @@
 EFI_STATUS
 EFIAPI
 CreateConfigBlockTable (
-  IN     UINT16    TotalSize,
-  OUT    VOID      **ConfigBlockTableAddress
+  IN     UINT16  TotalSize,
+  OUT    VOID    **ConfigBlockTableAddress
   );
 
 /**
@@ -39,8 +39,8 @@ CreateConfigBlockTable (
 EFI_STATUS
 EFIAPI
 AddConfigBlock (
-  IN     VOID      *ConfigBlockTableAddress,
-  OUT    VOID      **ConfigBlockAddress
+  IN     VOID  *ConfigBlockTableAddress,
+  OUT    VOID  **ConfigBlockAddress
   );
 
 /**

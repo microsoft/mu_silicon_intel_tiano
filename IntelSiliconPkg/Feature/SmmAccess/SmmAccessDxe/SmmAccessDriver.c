@@ -35,8 +35,8 @@ static SMM_ACCESS_PRIVATE_DATA  mSmmAccess;
 EFI_STATUS
 EFIAPI
 SmmAccessDriverEntryPoint (
-  IN EFI_HANDLE         ImageHandle,
-  IN EFI_SYSTEM_TABLE   *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
   EFI_STATUS                      Status;
@@ -49,8 +49,8 @@ SmmAccessDriverEntryPoint (
   //
   ZeroMem (&mSmmAccess, sizeof (mSmmAccess));
 
-  mSmmAccess.Signature        = SMM_ACCESS_PRIVATE_DATA_SIGNATURE;
-  mSmmAccess.Handle           = NULL;
+  mSmmAccess.Signature = SMM_ACCESS_PRIVATE_DATA_SIGNATURE;
+  mSmmAccess.Handle    = NULL;
 
   //
   // Get Hob list
@@ -61,7 +61,7 @@ SmmAccessDriverEntryPoint (
     return EFI_NOT_FOUND;
   }
 
-  DescriptorBlock = (VOID *) ((UINT8 *) Hob + sizeof (EFI_HOB_GUID_TYPE));
+  DescriptorBlock = (VOID *)((UINT8 *)Hob + sizeof (EFI_HOB_GUID_TYPE));
 
   //
   // Alloc space for mSmmAccess.SmramDesc
@@ -84,13 +84,13 @@ SmmAccessDriverEntryPoint (
     mSmmAccess.SmramDesc[Index].RegionState   = DescriptorBlock->Descriptor[Index].RegionState;
   }
 
-  mSmmAccess.NumberRegions              = Index;
-  mSmmAccess.SmmAccess.Open             = Open;
-  mSmmAccess.SmmAccess.Close            = Close;
-  mSmmAccess.SmmAccess.Lock             = Lock;
-  mSmmAccess.SmmAccess.GetCapabilities  = GetCapabilities;
-  mSmmAccess.SmmAccess.LockState        = FALSE;
-  mSmmAccess.SmmAccess.OpenState        = FALSE;
+  mSmmAccess.NumberRegions             = Index;
+  mSmmAccess.SmmAccess.Open            = Open;
+  mSmmAccess.SmmAccess.Close           = Close;
+  mSmmAccess.SmmAccess.Lock            = Lock;
+  mSmmAccess.SmmAccess.GetCapabilities = GetCapabilities;
+  mSmmAccess.SmmAccess.LockState       = FALSE;
+  mSmmAccess.SmmAccess.OpenState       = FALSE;
 
   //
   // Install our protocol interfaces on the device's handle
@@ -124,11 +124,11 @@ SmmAccessDriverEntryPoint (
 EFI_STATUS
 EFIAPI
 Open (
-  IN EFI_SMM_ACCESS2_PROTOCOL *This
+  IN EFI_SMM_ACCESS2_PROTOCOL  *This
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINTN                   DescriptorIndex;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINTN                    DescriptorIndex;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   for (DescriptorIndex = 0; DescriptorIndex < SmmAccess->NumberRegions; DescriptorIndex++) {
@@ -140,8 +140,9 @@ Open (
 
   for (DescriptorIndex = 0; DescriptorIndex < SmmAccess->NumberRegions; DescriptorIndex++) {
     SmmAccess->SmramDesc[DescriptorIndex].RegionState &= (UINT64) ~(EFI_SMRAM_CLOSED | EFI_ALLOCATED);
-    SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) EFI_SMRAM_OPEN;
+    SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)EFI_SMRAM_OPEN;
   }
+
   SmmAccess->SmmAccess.OpenState = TRUE;
   return EFI_SUCCESS;
 }
@@ -164,10 +165,10 @@ Close (
   IN EFI_SMM_ACCESS2_PROTOCOL  *This
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  BOOLEAN                 OpenState;
-  UINTN                   Index;
-  UINTN                   DescriptorIndex;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  BOOLEAN                  OpenState;
+  UINTN                    Index;
+  UINTN                    DescriptorIndex;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
 
@@ -178,7 +179,7 @@ Close (
     }
 
     SmmAccess->SmramDesc[DescriptorIndex].RegionState &= (UINT64) ~EFI_SMRAM_OPEN;
-    SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) (EFI_SMRAM_CLOSED | EFI_ALLOCATED);
+    SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)(EFI_SMRAM_CLOSED | EFI_ALLOCATED);
   }
 
   //
@@ -211,11 +212,11 @@ Close (
 EFI_STATUS
 EFIAPI
 Lock (
-  IN EFI_SMM_ACCESS2_PROTOCOL *This
+  IN EFI_SMM_ACCESS2_PROTOCOL  *This
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINTN                   DescriptorIndex;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINTN                    DescriptorIndex;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
 
@@ -223,9 +224,11 @@ Lock (
     DEBUG ((DEBUG_WARN, "Cannot lock SMRAM when SMRAM regions are still open\n"));
     return EFI_DEVICE_ERROR;
   }
+
   for (DescriptorIndex = 0; DescriptorIndex < SmmAccess->NumberRegions; DescriptorIndex++) {
     SmmAccess->SmramDesc[DescriptorIndex].RegionState |= EFI_SMRAM_LOCKED;
   }
+
   SmmAccess->SmmAccess.LockState = TRUE;
 
   return EFI_SUCCESS;
@@ -254,11 +257,11 @@ GetCapabilities (
   IN OUT EFI_SMRAM_DESCRIPTOR        *SmramMap
   )
 {
-  EFI_STATUS              Status;
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINTN                   NecessaryBufferSize;
+  EFI_STATUS               Status;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINTN                    NecessaryBufferSize;
 
-  SmmAccess           = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
+  SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
 
   NecessaryBufferSize = SmmAccess->NumberRegions * sizeof (EFI_SMRAM_DESCRIPTOR);
 

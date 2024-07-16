@@ -24,7 +24,7 @@ typedef enum {
 } FW_BOOT_MEDIA_TYPE;
 
 typedef struct {
-  FW_BOOT_MEDIA_TYPE BootMedia;
+  FW_BOOT_MEDIA_TYPE    BootMedia;
 } FW_BOOT_MEDIA_HOB_DATA;
 
 /**
@@ -38,7 +38,7 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 GetFirmwareBootMediaType (
-  OUT FW_BOOT_MEDIA_TYPE   *FwBootMediaType
+  OUT FW_BOOT_MEDIA_TYPE  *FwBootMediaType
   );
 
 /**
