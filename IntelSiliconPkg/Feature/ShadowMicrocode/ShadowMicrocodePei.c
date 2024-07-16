@@ -50,20 +50,18 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 ShadowMicrocode (
-  IN  EDKII_PEI_SHADOW_MICROCODE_PPI        *This,
-  IN  UINTN                                 CpuIdCount,
-  IN  EDKII_PEI_MICROCODE_CPU_ID            *MicrocodeCpuId,
-  OUT UINTN                                 *BufferSize,
-  OUT VOID                                  **Buffer
+  IN  EDKII_PEI_SHADOW_MICROCODE_PPI  *This,
+  IN  UINTN                           CpuIdCount,
+  IN  EDKII_PEI_MICROCODE_CPU_ID      *MicrocodeCpuId,
+  OUT UINTN                           *BufferSize,
+  OUT VOID                            **Buffer
   );
 
-
-EDKII_PEI_SHADOW_MICROCODE_PPI   mPeiShadowMicrocodePpi = {
+EDKII_PEI_SHADOW_MICROCODE_PPI  mPeiShadowMicrocodePpi = {
   ShadowMicrocode
 };
 
-
-EFI_PEI_PPI_DESCRIPTOR           mPeiShadowMicrocodePpiList[] = {
+EFI_PEI_PPI_DESCRIPTOR  mPeiShadowMicrocodePpiList[] = {
   {
     EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST,
     &gEdkiiPeiShadowMicrocodePpiGuid,
@@ -87,11 +85,11 @@ EFI_PEI_PPI_DESCRIPTOR           mPeiShadowMicrocodePpiList[] = {
 **/
 VOID
 ShadowMicrocodePatchWorker (
-  IN  MICROCODE_PATCH_INFO       *Patches,
-  IN  UINTN                      PatchCount,
-  IN  UINTN                      TotalLoadSize,
-  OUT UINTN                      *BufferSize,
-  OUT VOID                       **Buffer
+  IN  MICROCODE_PATCH_INFO  *Patches,
+  IN  UINTN                 PatchCount,
+  IN  UINTN                 TotalLoadSize,
+  OUT UINTN                 *BufferSize,
+  OUT VOID                  **Buffer
   )
 {
   UINTN                                     Index;
@@ -109,18 +107,19 @@ ShadowMicrocodePatchWorker (
   //
   HobDataLength = sizeof (EDKII_MICROCODE_SHADOW_INFO_HOB) +
                   sizeof (UINT64) * PatchCount * 2;
-  MicrocodeShadowHob  = AllocatePool (HobDataLength);
+  MicrocodeShadowHob = AllocatePool (HobDataLength);
   if (MicrocodeShadowHob == NULL) {
     ASSERT (FALSE);
     return;
   }
+
   MicrocodeShadowHob->MicrocodeCount = PatchCount;
   CopyGuid (
     &MicrocodeShadowHob->StorageType,
     &gEdkiiMicrocodeStorageTypeFlashGuid
     );
-  MicrocodeAddressInMemory = (UINT64 *) (MicrocodeShadowHob + 1);
-  Flashcontext = (EFI_MICROCODE_STORAGE_TYPE_FLASH_CONTEXT *) (MicrocodeAddressInMemory + PatchCount);
+  MicrocodeAddressInMemory = (UINT64 *)(MicrocodeShadowHob + 1);
+  Flashcontext             = (EFI_MICROCODE_STORAGE_TYPE_FLASH_CONTEXT *)(MicrocodeAddressInMemory + PatchCount);
 
   //
   // Allocate memory for microcode shadow operation.
@@ -137,18 +136,18 @@ ShadowMicrocodePatchWorker (
   for (Walker = MicrocodePatchInRam, Index = 0; Index < PatchCount; Index++) {
     CopyMem (
       Walker,
-      (VOID *) Patches[Index].Address,
+      (VOID *)Patches[Index].Address,
       Patches[Index].Size
       );
-    MicrocodeAddressInMemory[Index] = (UINT64) (UINTN) Walker;
-    Flashcontext->MicrocodeAddressInFlash[Index]  = (UINT64) Patches[Index].Address;
-    Walker += Patches[Index].Size;
+    MicrocodeAddressInMemory[Index]              = (UINT64)(UINTN)Walker;
+    Flashcontext->MicrocodeAddressInFlash[Index] = (UINT64)Patches[Index].Address;
+    Walker                                      += Patches[Index].Size;
   }
 
   //
   // Update the microcode patch related fields in CpuMpData
   //
-  *Buffer     = (VOID *) (UINTN) MicrocodePatchInRam;
+  *Buffer     = (VOID *)(UINTN)MicrocodePatchInRam;
   *BufferSize = TotalLoadSize;
 
   BuildGuidDataHob (
@@ -160,7 +159,9 @@ ShadowMicrocodePatchWorker (
   DEBUG ((
     DEBUG_INFO,
     "%a: Required microcode patches have been loaded at 0x%lx, with size 0x%lx.\n",
-    __func__, *Buffer, *BufferSize
+    __FUNCTION__,
+    *Buffer,
+    *BufferSize
     ));
 
   return;
@@ -172,14 +173,14 @@ ShadowMicrocodePatchWorker (
 **/
 BOOLEAN
 IsValidFitTable (
-  IN  UINT64               FitPointer
+  IN  UINT64  FitPointer
   )
 {
-  UINT64                            FitEnding;
-  FIRMWARE_INTERFACE_TABLE_ENTRY    *FitEntry;
-  UINT32                            EntryNum;
-  UINT32                            Type0Count;
-  UINT32                            Index;
+  UINT64                          FitEnding;
+  FIRMWARE_INTERFACE_TABLE_ENTRY  *FitEntry;
+  UINT32                          EntryNum;
+  UINT32                          Type0Count;
+  UINT32                          Index;
 
   //
   // The entire FIT table must reside with in the firmware address range
@@ -196,9 +197,10 @@ IsValidFitTable (
   //
   // Check FIT header.
   //
-  FitEntry = (FIRMWARE_INTERFACE_TABLE_ENTRY *) (UINTN) FitPointer;
+  FitEntry = (FIRMWARE_INTERFACE_TABLE_ENTRY *)(UINTN)FitPointer;
   if ((FitEntry[0].Type != FIT_TYPE_00_HEADER) ||
-      (FitEntry[0].Address != FIT_TYPE_00_SIGNATURE)) {
+      (FitEntry[0].Address != FIT_TYPE_00_SIGNATURE))
+  {
     DEBUG ((DEBUG_ERROR, "Error: Invalid FIT header.\n"));
     return FALSE;
   }
@@ -214,7 +216,7 @@ IsValidFitTable (
   //
   // Check FIT ending address in valid range.
   //
-  EntryNum = *(UINT32 *)(&FitEntry[0].Size[0]) & 0xFFFFFF;
+  EntryNum  = *(UINT32 *)(&FitEntry[0].Size[0]) & 0xFFFFFF;
   FitEnding = FitPointer + sizeof (FIRMWARE_INTERFACE_TABLE_ENTRY) * EntryNum;
   if (FitEnding  > (SIZE_4GB - 0x40)) {
     DEBUG ((DEBUG_ERROR, "Error: FIT table exceeds valid range.\n"));
@@ -225,7 +227,8 @@ IsValidFitTable (
   // Calculate FIT checksum if Checksum Valid bit is set.
   //
   if (FitEntry[0].C_V &&
-      CalculateSum8 ((UINT8*) FitEntry, sizeof (FIRMWARE_INTERFACE_TABLE_ENTRY) * EntryNum) != 0) {
+      (CalculateSum8 ((UINT8 *)FitEntry, sizeof (FIRMWARE_INTERFACE_TABLE_ENTRY) * EntryNum) != 0))
+  {
     DEBUG ((DEBUG_ERROR, "Error: Invalid FIT checksum.\n"));
     return FALSE;
   }
@@ -239,6 +242,7 @@ IsValidFitTable (
       Type0Count++;
     }
   }
+
   if (Type0Count != 1) {
     DEBUG ((DEBUG_ERROR, "Error: There can be only one Type 0 entry in FIT.\n"));
     return FALSE;
@@ -246,7 +250,6 @@ IsValidFitTable (
 
   return TRUE;
 }
-
 
 /**
   Shadow microcode update patches to memory.
@@ -275,34 +278,34 @@ IsValidFitTable (
 EFI_STATUS
 EFIAPI
 ShadowMicrocode (
-  IN  EDKII_PEI_SHADOW_MICROCODE_PPI        *This,
-  IN  UINTN                                 CpuIdCount,
-  IN  EDKII_PEI_MICROCODE_CPU_ID            *MicrocodeCpuId,
-  OUT UINTN                                 *BufferSize,
-  OUT VOID                                  **Buffer
+  IN  EDKII_PEI_SHADOW_MICROCODE_PPI  *This,
+  IN  UINTN                           CpuIdCount,
+  IN  EDKII_PEI_MICROCODE_CPU_ID      *MicrocodeCpuId,
+  OUT UINTN                           *BufferSize,
+  OUT VOID                            **Buffer
   )
 {
-  EFI_STATUS                        Status;
-  UINT64                            FitPointer;
-  FIRMWARE_INTERFACE_TABLE_ENTRY    *FitEntry;
-  UINT32                            EntryNum;
-  UINT32                            Index;
-  MICROCODE_PATCH_INFO              *PatchInfoBuffer;
-  UINTN                             MaxPatchNumber;
-  CPU_MICROCODE_HEADER              *MicrocodeEntryPoint;
-  UINTN                             PatchCount;
-  UINTN                             TotalSize;
-  UINTN                             TotalLoadSize;
+  EFI_STATUS                      Status;
+  UINT64                          FitPointer;
+  FIRMWARE_INTERFACE_TABLE_ENTRY  *FitEntry;
+  UINT32                          EntryNum;
+  UINT32                          Index;
+  MICROCODE_PATCH_INFO            *PatchInfoBuffer;
+  UINTN                           MaxPatchNumber;
+  CPU_MICROCODE_HEADER            *MicrocodeEntryPoint;
+  UINTN                           PatchCount;
+  UINTN                           TotalSize;
+  UINTN                           TotalLoadSize;
 
-  if (BufferSize == NULL || Buffer == NULL) {
+  if ((BufferSize == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (CpuIdCount != 0 && MicrocodeCpuId == NULL) {
+  if ((CpuIdCount != 0) && (MicrocodeCpuId == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  FitPointer = *(UINT64 *) (UINTN) FIT_POINTER_ADDRESS;
+  FitPointer = *(UINT64 *)(UINTN)FIT_POINTER_ADDRESS;
   if (!IsValidFitTable (FitPointer)) {
     return EFI_NOT_FOUND;
   }
@@ -310,14 +313,15 @@ ShadowMicrocode (
   //
   // Calculate microcode entry number
   //
-  FitEntry = (FIRMWARE_INTERFACE_TABLE_ENTRY *) (UINTN) FitPointer;
-  EntryNum = *(UINT32 *)(&FitEntry[0].Size[0]) & 0xFFFFFF;
+  FitEntry       = (FIRMWARE_INTERFACE_TABLE_ENTRY *)(UINTN)FitPointer;
+  EntryNum       = *(UINT32 *)(&FitEntry[0].Size[0]) & 0xFFFFFF;
   MaxPatchNumber = 0;
   for (Index = 0; Index < EntryNum; Index++) {
     if (FitEntry[Index].Type == FIT_TYPE_01_MICROCODE) {
       MaxPatchNumber++;
     }
   }
+
   if (MaxPatchNumber == 0) {
     return EFI_NOT_FOUND;
   }
@@ -335,16 +339,16 @@ ShadowMicrocode (
   //
   // Fill up microcode patch info buffer according to FIT table.
   //
-  PatchCount = 0;
+  PatchCount    = 0;
   TotalLoadSize = 0;
   for (Index = 0; Index < EntryNum; Index++) {
     if (FitEntry[Index].Type == FIT_TYPE_01_MICROCODE) {
-      MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *) (UINTN) FitEntry[Index].Address;
-      TotalSize = GetMicrocodeLength (MicrocodeEntryPoint);
+      MicrocodeEntryPoint = (CPU_MICROCODE_HEADER *)(UINTN)FitEntry[Index].Address;
+      TotalSize           = GetMicrocodeLength (MicrocodeEntryPoint);
       if (IsValidMicrocode (MicrocodeEntryPoint, TotalSize, 0, MicrocodeCpuId, CpuIdCount, FALSE)) {
-        PatchInfoBuffer[PatchCount].Address = (UINTN) MicrocodeEntryPoint;
+        PatchInfoBuffer[PatchCount].Address = (UINTN)MicrocodeEntryPoint;
         PatchInfoBuffer[PatchCount].Size    = TotalSize;
-        TotalLoadSize += TotalSize;
+        TotalLoadSize                      += TotalSize;
         PatchCount++;
       }
     }
@@ -354,7 +358,9 @@ ShadowMicrocode (
     DEBUG ((
       DEBUG_INFO,
       "%a: 0x%x microcode patches will be loaded into memory, with size 0x%x.\n",
-      __func__, PatchCount, TotalLoadSize
+      __FUNCTION__,
+      PatchCount,
+      TotalLoadSize
       ));
 
     ShadowMicrocodePatchWorker (PatchInfoBuffer, PatchCount, TotalLoadSize, BufferSize, Buffer);
@@ -366,7 +372,6 @@ ShadowMicrocode (
   FreePool (PatchInfoBuffer);
   return Status;
 }
-
 
 /**
   Platform Init PEI module entry point
@@ -384,12 +389,12 @@ ShadowMicrocodePeimInit (
   IN CONST EFI_PEI_SERVICES     **PeiServices
   )
 {
-  EFI_STATUS                       Status;
+  EFI_STATUS  Status;
 
   //
   // Install EDKII Shadow Microcode PPI
   //
-  Status = PeiServicesInstallPpi(mPeiShadowMicrocodePpiList);
+  Status = PeiServicesInstallPpi (mPeiShadowMicrocodePpiList);
   ASSERT_EFI_ERROR (Status);
 
   return Status;

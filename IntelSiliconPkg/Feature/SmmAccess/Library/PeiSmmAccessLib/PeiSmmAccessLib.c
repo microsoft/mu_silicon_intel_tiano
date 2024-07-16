@@ -17,20 +17,20 @@
 #include <Ppi/MmAccess.h>
 #include <IndustryStandard/Pci22.h>
 
-#define SMM_ACCESS_PRIVATE_DATA_SIGNATURE SIGNATURE_32 ('4', '5', 's', 'a')
+#define SMM_ACCESS_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('4', '5', 's', 'a')
 
 ///
 /// Private data
 ///
 typedef struct {
-  UINTN                 Signature;
-  EFI_HANDLE            Handle;
-  EFI_PEI_MM_ACCESS_PPI SmmAccess;
+  UINTN                    Signature;
+  EFI_HANDLE               Handle;
+  EFI_PEI_MM_ACCESS_PPI    SmmAccess;
   //
   // Local Data for SMM Access interface goes here
   //
-  UINTN                 NumberRegions;
-  EFI_SMRAM_DESCRIPTOR  *SmramDesc;
+  UINTN                    NumberRegions;
+  EFI_SMRAM_DESCRIPTOR     *SmramDesc;
 } SMM_ACCESS_PRIVATE_DATA;
 
 #define SMM_ACCESS_PRIVATE_DATA_FROM_THIS(a) \
@@ -58,12 +58,12 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 Open (
-  IN EFI_PEI_SERVICES           **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI      *This,
-  IN UINTN                      DescriptorIndex
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI  *This,
+  IN UINTN                  DescriptorIndex
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   if (DescriptorIndex >= SmmAccess->NumberRegions) {
@@ -80,8 +80,8 @@ Open (
   }
 
   SmmAccess->SmramDesc[DescriptorIndex].RegionState &= (UINT64) ~(EFI_SMRAM_CLOSED | EFI_ALLOCATED);
-  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) EFI_SMRAM_OPEN;
-  SmmAccess->SmmAccess.OpenState = TRUE;
+  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)EFI_SMRAM_OPEN;
+  SmmAccess->SmmAccess.OpenState                     = TRUE;
   return EFI_SUCCESS;
 }
 
@@ -101,14 +101,14 @@ Open (
 EFI_STATUS
 EFIAPI
 Close (
-  IN EFI_PEI_SERVICES        **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI   *This,
-  IN UINTN                   DescriptorIndex
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI  *This,
+  IN UINTN                  DescriptorIndex
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  BOOLEAN                 OpenState;
-  UINTN                   Index;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  BOOLEAN                  OpenState;
+  UINTN                    Index;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   if (DescriptorIndex >= SmmAccess->NumberRegions) {
@@ -129,7 +129,7 @@ Close (
   }
 
   SmmAccess->SmramDesc[DescriptorIndex].RegionState &= (UINT64) ~EFI_SMRAM_OPEN;
-  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) (EFI_SMRAM_CLOSED | EFI_ALLOCATED);
+  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)(EFI_SMRAM_CLOSED | EFI_ALLOCATED);
 
   //
   // Find out if any regions are still open
@@ -163,12 +163,12 @@ Close (
 EFI_STATUS
 EFIAPI
 Lock (
-  IN EFI_PEI_SERVICES          **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI     *This,
-  IN UINTN                     DescriptorIndex
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI  *This,
+  IN UINTN                  DescriptorIndex
   )
 {
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
 
   SmmAccess = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   if (DescriptorIndex >= SmmAccess->NumberRegions) {
@@ -181,8 +181,8 @@ Lock (
     return EFI_DEVICE_ERROR;
   }
 
-  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64) EFI_SMRAM_LOCKED;
-  SmmAccess->SmmAccess.LockState = TRUE;
+  SmmAccess->SmramDesc[DescriptorIndex].RegionState |= (UINT64)EFI_SMRAM_LOCKED;
+  SmmAccess->SmmAccess.LockState                     = TRUE;
 
   return EFI_SUCCESS;
 }
@@ -206,15 +206,15 @@ Lock (
 EFI_STATUS
 EFIAPI
 GetCapabilities (
-  IN EFI_PEI_SERVICES                **PeiServices,
-  IN EFI_PEI_MM_ACCESS_PPI           *This,
-  IN OUT UINTN                       *SmramMapSize,
-  IN OUT EFI_SMRAM_DESCRIPTOR        *SmramMap
+  IN EFI_PEI_SERVICES          **PeiServices,
+  IN EFI_PEI_MM_ACCESS_PPI     *This,
+  IN OUT UINTN                 *SmramMapSize,
+  IN OUT EFI_SMRAM_DESCRIPTOR  *SmramMap
   )
 {
-  EFI_STATUS              Status;
-  SMM_ACCESS_PRIVATE_DATA *SmmAccess;
-  UINTN                   NecessaryBufferSize;
+  EFI_STATUS               Status;
+  SMM_ACCESS_PRIVATE_DATA  *SmmAccess;
+  UINTN                    NecessaryBufferSize;
 
   SmmAccess           = SMM_ACCESS_PRIVATE_DATA_FROM_THIS (This);
   NecessaryBufferSize = SmmAccess->NumberRegions * sizeof (EFI_SMRAM_DESCRIPTOR);
@@ -256,12 +256,13 @@ PeiInstallSmmAccessPpi (
   //
   // Initialize private data
   //
-  SmmAccessPrivate  = AllocateZeroPool (sizeof (*SmmAccessPrivate));
+  SmmAccessPrivate = AllocateZeroPool (sizeof (*SmmAccessPrivate));
   ASSERT (SmmAccessPrivate != NULL);
   if (SmmAccessPrivate == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  PpiList           = AllocateZeroPool (sizeof (*PpiList));
+
+  PpiList = AllocateZeroPool (sizeof (*PpiList));
   ASSERT (PpiList != NULL);
   if (PpiList == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -279,7 +280,7 @@ PeiInstallSmmAccessPpi (
     return EFI_NOT_FOUND;
   }
 
-  DescriptorBlock = (EFI_SMRAM_HOB_DESCRIPTOR_BLOCK *) ((UINT8 *) HobList + sizeof (EFI_HOB_GUID_TYPE));
+  DescriptorBlock = (EFI_SMRAM_HOB_DESCRIPTOR_BLOCK *)((UINT8 *)HobList + sizeof (EFI_HOB_GUID_TYPE));
 
   //
   // Alloc space for SmmAccessPrivate->SmramDesc
@@ -296,10 +297,10 @@ PeiInstallSmmAccessPpi (
   // use the hob to publish SMRAM capabilities
   //
   for (Index = 0; Index < DescriptorBlock->NumberOfSmmReservedRegions; Index++) {
-    SmmAccessPrivate->SmramDesc[Index].PhysicalStart  = DescriptorBlock->Descriptor[Index].PhysicalStart;
-    SmmAccessPrivate->SmramDesc[Index].CpuStart       = DescriptorBlock->Descriptor[Index].CpuStart;
-    SmmAccessPrivate->SmramDesc[Index].PhysicalSize   = DescriptorBlock->Descriptor[Index].PhysicalSize;
-    SmmAccessPrivate->SmramDesc[Index].RegionState    = DescriptorBlock->Descriptor[Index].RegionState;
+    SmmAccessPrivate->SmramDesc[Index].PhysicalStart = DescriptorBlock->Descriptor[Index].PhysicalStart;
+    SmmAccessPrivate->SmramDesc[Index].CpuStart      = DescriptorBlock->Descriptor[Index].CpuStart;
+    SmmAccessPrivate->SmramDesc[Index].PhysicalSize  = DescriptorBlock->Descriptor[Index].PhysicalSize;
+    SmmAccessPrivate->SmramDesc[Index].RegionState   = DescriptorBlock->Descriptor[Index].RegionState;
   }
 
   SmmAccessPrivate->NumberRegions             = Index;
@@ -313,11 +314,11 @@ PeiInstallSmmAccessPpi (
   //
   // Install PPI
   //
-  PpiList->Flags  = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
-  PpiList->Guid   = &gEfiPeiMmAccessPpiGuid;
-  PpiList->Ppi    = &SmmAccessPrivate->SmmAccess;
+  PpiList->Flags = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
+  PpiList->Guid  = &gEfiPeiMmAccessPpiGuid;
+  PpiList->Ppi   = &SmmAccessPrivate->SmmAccess;
 
-  Status          = PeiServicesInstallPpi (PpiList);
+  Status = PeiServicesInstallPpi (PpiList);
   ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;

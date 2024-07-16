@@ -21,7 +21,7 @@
 #include <Guid/VtdLogDataHob.h>
 #include "IntelVTdCorePei.h"
 
-#define VTD_CAP_REG_NFR_MAX (256)
+#define VTD_CAP_REG_NFR_MAX  (256)
 
 /**
   Flush VTD page table and context table memory.
@@ -34,13 +34,13 @@
 **/
 VOID
 FlushPageTableMemory (
-  IN VTD_UNIT_INFO              *VtdUnitInfo,
-  IN UINTN                      Base,
-  IN UINTN                      Size
+  IN VTD_UNIT_INFO  *VtdUnitInfo,
+  IN UINTN          Base,
+  IN UINTN          Size
   )
 {
   if (VtdUnitInfo->ECapReg.Bits.C == 0) {
-    WriteBackDataCacheRange ((VOID *) Base, Size);
+    WriteBackDataCacheRange ((VOID *)Base, Size);
   }
 }
 
@@ -55,13 +55,13 @@ FlushPageTableMemory (
 **/
 EFI_STATUS
 PerpareCacheInvalidationInterface (
-  IN VTD_UNIT_INFO *VtdUnitInfo
+  IN VTD_UNIT_INFO  *VtdUnitInfo
   )
 {
-  UINT32         Reg32;
-  VTD_ECAP_REG   ECapReg;
-  VTD_IQA_REG    IqaReg;
-  UINTN          VtdUnitBaseAddress;
+  UINT32        Reg32;
+  VTD_ECAP_REG  ECapReg;
+  VTD_IQA_REG   IqaReg;
+  UINTN         VtdUnitBaseAddress;
 
   VtdUnitBaseAddress = VtdUnitInfo->VtdUnitBaseAddress;
 
@@ -82,7 +82,7 @@ PerpareCacheInvalidationInterface (
 
   Reg32 = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
   if ((Reg32 & B_GSTS_REG_QIES) != 0) {
-    DEBUG ((DEBUG_INFO,"Queued Invalidation Interface was enabled.\n"));
+    DEBUG ((DEBUG_INFO, "Queued Invalidation Interface was enabled.\n"));
 
     VtdLibDisableQueuedInvalidationInterface (VtdUnitBaseAddress);
   }
@@ -96,10 +96,10 @@ PerpareCacheInvalidationInterface (
   // Setup the IQ address, size and descriptor width through the Invalidation Queue Address Register
   //
   if (VtdUnitInfo->QiDescBuffer == NULL) {
-    VtdUnitInfo->QiDescBufferSize = (sizeof (QI_256_DESC) * ((UINTN) 1 << (VTD_INVALIDATION_QUEUE_SIZE + 7)));
-    VtdUnitInfo->QiDescBuffer = AllocatePages (EFI_SIZE_TO_PAGES (VtdUnitInfo->QiDescBufferSize));
+    VtdUnitInfo->QiDescBufferSize = (sizeof (QI_256_DESC) * ((UINTN)1 << (VTD_INVALIDATION_QUEUE_SIZE + 7)));
+    VtdUnitInfo->QiDescBuffer     = AllocatePages (EFI_SIZE_TO_PAGES (VtdUnitInfo->QiDescBufferSize));
     if (VtdUnitInfo->QiDescBuffer == NULL) {
-      DEBUG ((DEBUG_ERROR,"Could not Alloc Invalidation Queue Buffer.\n"));
+      DEBUG ((DEBUG_ERROR, "Could not Alloc Invalidation Queue Buffer.\n"));
       VTdLogAddEvent (VTDLOG_PEI_QUEUED_INVALIDATION, VTD_LOG_QI_ERROR_OUT_OF_RESOURCES, VtdUnitBaseAddress);
       return EFI_OUT_OF_RESOURCES;
     }
@@ -109,7 +109,7 @@ PerpareCacheInvalidationInterface (
   //
   // 4KB Aligned address
   //
-  IqaReg.Uint64 = (UINT64) (UINTN) VtdUnitInfo->QiDescBuffer;
+  IqaReg.Uint64  = (UINT64)(UINTN)VtdUnitInfo->QiDescBuffer;
   IqaReg.Bits.DW = VTD_QUEUED_INVALIDATION_DESCRIPTOR_WIDTH;
   IqaReg.Bits.QS = VTD_INVALIDATION_QUEUE_SIZE;
   MmioWrite64 (VtdUnitBaseAddress + R_IQA_REG, IqaReg.Uint64);
@@ -141,17 +141,17 @@ PerpareCacheInvalidationInterface (
 **/
 EFI_STATUS
 SubmitQueuedInvalidationDescriptor (
-  IN UINTN             VtdUnitBaseAddress,
-  IN QI_256_DESC       *Desc
+  IN UINTN        VtdUnitBaseAddress,
+  IN QI_256_DESC  *Desc
   )
 {
-  EFI_STATUS                   Status;
+  EFI_STATUS            Status;
   VTD_REGESTER_QI_INFO  RegisterQi;
 
   Status = VtdLibSubmitQueuedInvalidationDescriptor (VtdUnitBaseAddress, Desc, FALSE);
   if (Status == EFI_DEVICE_ERROR) {
     RegisterQi.BaseAddress = VtdUnitBaseAddress;
-    RegisterQi.FstsReg     = MmioRead32 (VtdUnitBaseAddress + R_FSTS_REG);;
+    RegisterQi.FstsReg     = MmioRead32 (VtdUnitBaseAddress + R_FSTS_REG);
     RegisterQi.IqercdReg   = MmioRead64 (VtdUnitBaseAddress + R_IQERCD_REG);
     VTdLogAddDataEvent (VTDLOG_PEI_REGISTER, VTDLOG_REGISTER_QI, &RegisterQi, sizeof (VTD_REGESTER_QI_INFO));
 
@@ -168,11 +168,11 @@ SubmitQueuedInvalidationDescriptor (
 **/
 EFI_STATUS
 InvalidateContextCache (
-  IN VTD_UNIT_INFO              *VtdUnitInfo
+  IN VTD_UNIT_INFO  *VtdUnitInfo
   )
 {
-  UINT64                        Reg64;
-  QI_256_DESC                   QiDesc;
+  UINT64       Reg64;
+  QI_256_DESC  QiDesc;
 
   if (VtdUnitInfo->EnableQueuedInvalidation == 0) {
     //
@@ -180,7 +180,7 @@ InvalidateContextCache (
     //
     Reg64 = MmioRead64 (VtdUnitInfo->VtdUnitBaseAddress + R_CCMD_REG);
     if ((Reg64 & B_CCMD_REG_ICC) != 0) {
-      DEBUG ((DEBUG_ERROR,"ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%x)\n", VtdUnitInfo->VtdUnitBaseAddress));
+      DEBUG ((DEBUG_ERROR, "ERROR: InvalidateContextCache: B_CCMD_REG_ICC is set for VTD(%x)\n", VtdUnitInfo->VtdUnitBaseAddress));
       return EFI_DEVICE_ERROR;
     }
 
@@ -195,12 +195,12 @@ InvalidateContextCache (
     //
     // Queued Invalidation
     //
-    QiDesc.Uint64[0] = QI_CC_FM(0) | QI_CC_SID(0) | QI_CC_DID(0) | QI_CC_GRAN(1) | QI_CC_TYPE;
+    QiDesc.Uint64[0] = QI_CC_FM (0) | QI_CC_SID (0) | QI_CC_DID (0) | QI_CC_GRAN (1) | QI_CC_TYPE;
     QiDesc.Uint64[1] = 0;
     QiDesc.Uint64[2] = 0;
     QiDesc.Uint64[3] = 0;
 
-    return SubmitQueuedInvalidationDescriptor(VtdUnitInfo->VtdUnitBaseAddress, &QiDesc);
+    return SubmitQueuedInvalidationDescriptor (VtdUnitInfo->VtdUnitBaseAddress, &QiDesc);
   }
 
   return EFI_SUCCESS;
@@ -213,13 +213,13 @@ InvalidateContextCache (
 **/
 EFI_STATUS
 InvalidateIOTLB (
-  IN VTD_UNIT_INFO              *VtdUnitInfo
+  IN VTD_UNIT_INFO  *VtdUnitInfo
   )
 {
-  UINT64                        Reg64;
-  VTD_ECAP_REG                  ECapReg;
-  VTD_CAP_REG                   CapReg;
-  QI_256_DESC                   QiDesc;
+  UINT64        Reg64;
+  VTD_ECAP_REG  ECapReg;
+  VTD_CAP_REG   CapReg;
+  QI_256_DESC   QiDesc;
 
   if (VtdUnitInfo->EnableQueuedInvalidation == 0) {
     //
@@ -228,9 +228,9 @@ InvalidateIOTLB (
     ECapReg.Uint64 = MmioRead64 (VtdUnitInfo->VtdUnitBaseAddress + R_ECAP_REG);
 
     Reg64 = MmioRead64 (VtdUnitInfo->VtdUnitBaseAddress + (ECapReg.Bits.IRO * 16) + R_IOTLB_REG);
-     if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
-       DEBUG ((DEBUG_ERROR, "ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%x)\n", VtdUnitInfo->VtdUnitBaseAddress));
-       return EFI_DEVICE_ERROR;
+    if ((Reg64 & B_IOTLB_REG_IVT) != 0) {
+      DEBUG ((DEBUG_ERROR, "ERROR: InvalidateIOTLB: B_IOTLB_REG_IVT is set for VTD(%x)\n", VtdUnitInfo->VtdUnitBaseAddress));
+      return EFI_DEVICE_ERROR;
     }
 
     Reg64 &= ((~B_IOTLB_REG_IVT) & (~B_IOTLB_REG_IIRG_MASK));
@@ -244,13 +244,13 @@ InvalidateIOTLB (
     //
     // Queued Invalidation
     //
-    CapReg.Uint64 = MmioRead64 (VtdUnitInfo->VtdUnitBaseAddress + R_CAP_REG);
-    QiDesc.Uint64[0] = QI_IOTLB_DID(0) | (CapReg.Bits.DRD ? QI_IOTLB_DR(1) : QI_IOTLB_DR(0)) | (CapReg.Bits.DWD ? QI_IOTLB_DW(1) : QI_IOTLB_DW(0)) | QI_IOTLB_GRAN(1) | QI_IOTLB_TYPE;
-    QiDesc.Uint64[1] = QI_IOTLB_ADDR(0) | QI_IOTLB_IH(0) | QI_IOTLB_AM(0);
+    CapReg.Uint64    = MmioRead64 (VtdUnitInfo->VtdUnitBaseAddress + R_CAP_REG);
+    QiDesc.Uint64[0] = QI_IOTLB_DID (0) | (CapReg.Bits.DRD ? QI_IOTLB_DR (1) : QI_IOTLB_DR (0)) | (CapReg.Bits.DWD ? QI_IOTLB_DW (1) : QI_IOTLB_DW (0)) | QI_IOTLB_GRAN (1) | QI_IOTLB_TYPE;
+    QiDesc.Uint64[1] = QI_IOTLB_ADDR (0) | QI_IOTLB_IH (0) | QI_IOTLB_AM (0);
     QiDesc.Uint64[2] = 0;
     QiDesc.Uint64[3] = 0;
 
-    return SubmitQueuedInvalidationDescriptor(VtdUnitInfo->VtdUnitBaseAddress, &QiDesc);
+    return SubmitQueuedInvalidationDescriptor (VtdUnitInfo->VtdUnitBaseAddress, &QiDesc);
   }
 
   return EFI_SUCCESS;
@@ -267,11 +267,11 @@ InvalidateIOTLB (
 **/
 EFI_STATUS
 EnableDmarPreMem (
-  IN UINTN                        VtdUnitBaseAddress,
-  IN UINT64                       RtaddrRegValue
+  IN UINTN   VtdUnitBaseAddress,
+  IN UINT64  RtaddrRegValue
   )
 {
-  UINT32                          Reg32;
+  UINT32  Reg32;
 
   DEBUG ((DEBUG_INFO, ">>>>>>EnableDmarPreMem() for engine [%x] \n", VtdUnitBaseAddress));
 
@@ -310,12 +310,12 @@ EnableDmarPreMem (
 **/
 EFI_STATUS
 EnableDmar (
-  IN VTD_UNIT_INFO              *VtdUnitInfo,
-  IN UINTN                      RootEntryTable
+  IN VTD_UNIT_INFO  *VtdUnitInfo,
+  IN UINTN          RootEntryTable
   )
 {
-  UINTN                         VtdUnitBaseAddress;
-  BOOLEAN                       TEWasEnabled;
+  UINTN    VtdUnitBaseAddress;
+  BOOLEAN  TEWasEnabled;
 
   VtdUnitBaseAddress = VtdUnitInfo->VtdUnitBaseAddress;
 
@@ -339,17 +339,16 @@ EnableDmar (
     //
     // Enable ADM
     //
-    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) (RootEntryTable | V_RTADDR_REG_TTM_ADM));
+    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)(RootEntryTable | V_RTADDR_REG_TTM_ADM));
 
     DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
     VtdLibSetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
 
     DEBUG ((DEBUG_INFO, "Enable Abort DMA Mode...\n"));
     VtdLibSetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_TE);
-
   } else {
     DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
-    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) RootEntryTable);
+    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)RootEntryTable);
 
     DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
     VtdLibSetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
@@ -376,7 +375,7 @@ EnableDmar (
     }
 
     DEBUG ((DEBUG_INFO, "RootEntryTable 0x%x \n", RootEntryTable));
-    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64) RootEntryTable);
+    MmioWrite64 (VtdUnitBaseAddress + R_RTADDR_REG, (UINT64)RootEntryTable);
 
     DEBUG ((DEBUG_INFO, "EnableDmar: waiting for RTPS bit to be set... \n"));
     VtdLibSetGlobalCommandRegisterBits (VtdUnitBaseAddress, B_GMCD_REG_SRTP);
@@ -402,13 +401,13 @@ EnableDmar (
 **/
 EFI_STATUS
 EnableVTdTranslationProtectionBlockDma (
-  IN UINTN                      VtdUnitBaseAddress
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  EFI_STATUS                            Status;
-  VTD_ECAP_REG                          ECapReg;
-  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI   *RootEntryTable;
-  UINT8                                 Mode;
+  EFI_STATUS                           Status;
+  VTD_ECAP_REG                         ECapReg;
+  EDKII_VTD_NULL_ROOT_ENTRY_TABLE_PPI  *RootEntryTable;
+  UINT8                                Mode;
 
   DEBUG ((DEBUG_INFO, "EnableVTdTranslationProtectionBlockDma - 0x%08x\n", VtdUnitBaseAddress));
 
@@ -441,7 +440,7 @@ EnableVTdTranslationProtectionBlockDma (
     } else {
       Mode = VTD_LOG_PEI_PRE_MEM_TE;
       DEBUG ((DEBUG_INFO, "Block All DMA by TE.\n"));
-      Status = EnableDmarPreMem (VtdUnitBaseAddress, (UINT64) (*RootEntryTable));
+      Status = EnableDmarPreMem (VtdUnitBaseAddress, (UINT64)(*RootEntryTable));
     }
   }
 
@@ -460,12 +459,12 @@ EnableVTdTranslationProtectionBlockDma (
 **/
 EFI_STATUS
 EnableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   )
 {
-  EFI_STATUS                    Status;
-  UINTN                         Index;
-  VTD_UNIT_INFO                 *VtdUnitInfo;
+  EFI_STATUS     Status;
+  UINTN          Index;
+  VTD_UNIT_INFO  *VtdUnitInfo;
 
   for (Index = 0; Index < VTdInfo->VTdEngineCount; Index++) {
     VtdUnitInfo = &VTdInfo->VtdUnitInfo[Index];
@@ -488,8 +487,10 @@ EnableVTdTranslationProtection (
       DEBUG ((DEBUG_ERROR, "EnableVtdDmar (%d) Failed !\n", Index));
       return Status;
     }
+
     VtdUnitInfo->Done = TRUE;
   }
+
   return EFI_SUCCESS;
 }
 
@@ -500,11 +501,11 @@ EnableVTdTranslationProtection (
 **/
 VOID
 DisableVTdTranslationProtection (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   )
 {
-  UINTN                         Index;
-  VTD_UNIT_INFO                 *VtdUnitInfo;
+  UINTN          Index;
+  VTD_UNIT_INFO  *VtdUnitInfo;
 
   if (VTdInfo == NULL) {
     return;
@@ -525,8 +526,8 @@ DisableVTdTranslationProtection (
       VtdLibDisableQueuedInvalidationInterface (VtdUnitInfo->VtdUnitBaseAddress);
 
       if (VtdUnitInfo->QiDescBuffer != NULL) {
-        FreePages(VtdUnitInfo->QiDescBuffer, EFI_SIZE_TO_PAGES (VtdUnitInfo->QiDescBufferSize));
-        VtdUnitInfo->QiDescBuffer = NULL;
+        FreePages (VtdUnitInfo->QiDescBuffer, EFI_SIZE_TO_PAGES (VtdUnitInfo->QiDescBufferSize));
+        VtdUnitInfo->QiDescBuffer     = NULL;
         VtdUnitInfo->QiDescBufferSize = 0;
       }
 
@@ -551,9 +552,9 @@ DisableVTdTranslationProtection (
 **/
 EFI_STATUS
 VtdCheckUsing5LevelPaging (
-  IN  UINT8                            HostAddressWidth,
-  IN  VTD_CAP_REG                      CapReg,
-  OUT BOOLEAN                          *Is5LevelPaging
+  IN  UINT8        HostAddressWidth,
+  IN  VTD_CAP_REG  CapReg,
+  OUT BOOLEAN      *Is5LevelPaging
   )
 {
   DEBUG ((DEBUG_INFO, "  CapReg SAGAW bits : 0x%02x\n", CapReg.Bits.SAGAW));
@@ -562,19 +563,21 @@ VtdCheckUsing5LevelPaging (
   if ((CapReg.Bits.SAGAW & BIT3) != 0) {
     *Is5LevelPaging = TRUE;
     if ((HostAddressWidth <= 48) &&
-         ((CapReg.Bits.SAGAW & BIT2) != 0)) {
+        ((CapReg.Bits.SAGAW & BIT2) != 0))
+    {
       *Is5LevelPaging = FALSE;
     } else {
       return EFI_UNSUPPORTED;
     }
   }
+
   if ((CapReg.Bits.SAGAW & (BIT3 | BIT2)) == 0) {
     return EFI_UNSUPPORTED;
   }
+
   DEBUG ((DEBUG_INFO, "  Using %d Level Paging\n", *Is5LevelPaging ? 5 : 4));
   return EFI_SUCCESS;
 }
-
 
 /**
   Prepare VTD configuration.
@@ -585,13 +588,13 @@ VtdCheckUsing5LevelPaging (
 **/
 EFI_STATUS
 PrepareVtdConfig (
-  IN VTD_INFO                   *VTdInfo
+  IN VTD_INFO  *VTdInfo
   )
 {
-  EFI_STATUS                    Status;
-  UINTN                         Index;
-  VTD_UNIT_INFO                 *VtdUnitInfo;
-  UINTN                         VtdUnitBaseAddress;
+  EFI_STATUS     Status;
+  UINTN          Index;
+  VTD_UNIT_INFO  *VtdUnitInfo;
+  UINTN          VtdUnitBaseAddress;
 
   if (VTdInfo->RegsInfoBuffer == NULL) {
     VTdInfo->RegsInfoBuffer = AllocateZeroPages (EFI_SIZE_TO_PAGES (sizeof (VTD_REGESTER_THIN_INFO) + sizeof (VTD_UINT128) * VTD_CAP_REG_NFR_MAX));
@@ -603,11 +606,12 @@ PrepareVtdConfig (
     if (VtdUnitInfo->Done) {
       continue;
     }
+
     VtdUnitBaseAddress = VtdUnitInfo->VtdUnitBaseAddress;
     DEBUG ((DEBUG_INFO, "VTd Engine: 0x%08X\n", VtdUnitBaseAddress));
 
-    VtdUnitInfo->VerReg.Uint32 = MmioRead32 (VtdUnitBaseAddress + R_VER_REG);
-    VtdUnitInfo->CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
+    VtdUnitInfo->VerReg.Uint32  = MmioRead32 (VtdUnitBaseAddress + R_VER_REG);
+    VtdUnitInfo->CapReg.Uint64  = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
     VtdUnitInfo->ECapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_ECAP_REG);
     DEBUG ((DEBUG_INFO, "  VER_REG  : 0x%08X\n", VtdUnitInfo->VerReg.Uint32));
     DEBUG ((DEBUG_INFO, "  CAP_REG  : 0x%016lX\n", VtdUnitInfo->CapReg.Uint64));
@@ -619,7 +623,7 @@ PrepareVtdConfig (
       return Status;
     }
 
-    Status = PerpareCacheInvalidationInterface(&VTdInfo->VtdUnitInfo[Index]);
+    Status = PerpareCacheInvalidationInterface (&VTdInfo->VtdUnitInfo[Index]);
     if (EFI_ERROR (Status)) {
       return Status;
     }
@@ -636,16 +640,16 @@ DumpVtdIfError (
   VOID
   )
 {
-  VTD_INFO                       *VTdInfo;
-  UINTN                          Num;
-  UINTN                          VtdUnitBaseAddress;
-  UINT16                         Index;
-  VTD_REGESTER_THIN_INFO         *VtdRegInfo;
-  VTD_FRCD_REG                   FrcdReg;
-  VTD_CAP_REG                    CapReg;
-  UINT32                         FstsReg32;
-  UINT32                         FectlReg32;
-  BOOLEAN                        HasError;
+  VTD_INFO                *VTdInfo;
+  UINTN                   Num;
+  UINTN                   VtdUnitBaseAddress;
+  UINT16                  Index;
+  VTD_REGESTER_THIN_INFO  *VtdRegInfo;
+  VTD_FRCD_REG            FrcdReg;
+  VTD_CAP_REG             CapReg;
+  UINT32                  FstsReg32;
+  UINT32                  FectlReg32;
+  BOOLEAN                 HasError;
 
   VTdInfo = GetVTdInfoHob ();
   if (VTdInfo == NULL) {
@@ -658,21 +662,22 @@ DumpVtdIfError (
   }
 
   for (Num = 0; Num < VTdInfo->VTdEngineCount; Num++) {
-    HasError = FALSE;
+    HasError           = FALSE;
     VtdUnitBaseAddress = VTdInfo->VtdUnitInfo[Num].VtdUnitBaseAddress;
-    FstsReg32 = MmioRead32 (VtdUnitBaseAddress + R_FSTS_REG);
+    FstsReg32          = MmioRead32 (VtdUnitBaseAddress + R_FSTS_REG);
     if (FstsReg32 != 0) {
       HasError = TRUE;
     }
+
     FectlReg32 = MmioRead32 (VtdUnitBaseAddress + R_FECTL_REG);
     if ((FectlReg32 & BIT30) != 0) {
       HasError = TRUE;
     }
 
     CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
-    for (Index = 0; Index < (UINT16) CapReg.Bits.NFR + 1; Index++) {
+    for (Index = 0; Index < (UINT16)CapReg.Bits.NFR + 1; Index++) {
       FrcdReg.Uint64[0] = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG));
-      FrcdReg.Uint64[1] = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof(UINT64)));
+      FrcdReg.Uint64[1] = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof (UINT64)));
       if (FrcdReg.Bits.F != 0) {
         HasError = TRUE;
         break;
@@ -684,16 +689,17 @@ DumpVtdIfError (
 
       VtdRegInfo->BaseAddress = VtdUnitBaseAddress;
       VtdRegInfo->GstsReg     = MmioRead32 (VtdUnitBaseAddress + R_GSTS_REG);
-      VtdRegInfo->RtaddrReg   = MmioRead64 (VtdUnitBaseAddress + R_RTADDR_REG);;
+      VtdRegInfo->RtaddrReg   = MmioRead64 (VtdUnitBaseAddress + R_RTADDR_REG);
       VtdRegInfo->FstsReg     = FstsReg32;
       VtdRegInfo->FectlReg    = FectlReg32;
       VtdRegInfo->IqercdReg   = MmioRead64 (VtdUnitBaseAddress + R_IQERCD_REG);
 
       CapReg.Uint64 = MmioRead64 (VtdUnitBaseAddress + R_CAP_REG);
-      for (Index = 0; Index < (UINT16) CapReg.Bits.NFR + 1; Index++) {
+      for (Index = 0; Index < (UINT16)CapReg.Bits.NFR + 1; Index++) {
         VtdRegInfo->FrcdReg[Index].Uint64Lo = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG));
-        VtdRegInfo->FrcdReg[Index].Uint64Hi = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof(UINT64)));
+        VtdRegInfo->FrcdReg[Index].Uint64Hi = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof (UINT64)));
       }
+
       VtdRegInfo->FrcdRegNum = Index;
 
       DEBUG ((DEBUG_INFO, "\n#### ERROR ####\n"));
@@ -707,15 +713,16 @@ DumpVtdIfError (
       //
       // Clear
       //
-      for (Index = 0; Index < (UINT16) CapReg.Bits.NFR + 1; Index++) {
-        FrcdReg.Uint64[1] = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof(UINT64)));
+      for (Index = 0; Index < (UINT16)CapReg.Bits.NFR + 1; Index++) {
+        FrcdReg.Uint64[1] = MmioRead64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof (UINT64)));
         if (FrcdReg.Bits.F != 0) {
           //
           // Software writes the value read from this field (F) to Clear it.
           //
-          MmioWrite64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof(UINT64)), FrcdReg.Uint64[1]);
+          MmioWrite64 (VtdUnitBaseAddress + ((CapReg.Bits.FRO * 16) + (Index * 16) + R_FRCD_REG + sizeof (UINT64)), FrcdReg.Uint64[1]);
         }
       }
+
       MmioWrite32 (VtdUnitBaseAddress + R_FSTS_REG, MmioRead32 (VtdUnitBaseAddress + R_FSTS_REG));
     }
   }

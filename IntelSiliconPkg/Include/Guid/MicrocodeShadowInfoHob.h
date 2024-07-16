@@ -5,7 +5,6 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-
 #ifndef _MICROCODE_SHADOW_INFO_HOB_H_
 #define _MICROCODE_SHADOW_INFO_HOB_H_
 
@@ -17,7 +16,7 @@
     0x658903f9, 0xda66, 0x460d, { 0x8b, 0xb0, 0x9d, 0x2d, 0xdf, 0x65, 0x44, 0x59 } \
   }
 
-extern EFI_GUID gEdkiiMicrocodeShadowInfoHobGuid;
+extern EFI_GUID  gEdkiiMicrocodeShadowInfoHobGuid;
 
 typedef struct {
   //
@@ -50,7 +49,7 @@ typedef struct {
     0x2cba01b3, 0xd391, 0x4598, { 0x8d, 0x89, 0xb7, 0xfc, 0x39, 0x22, 0xfd, 0x71 } \
   }
 
-extern EFI_GUID gEdkiiMicrocodeStorageTypeFlashGuid;
+extern EFI_GUID  gEdkiiMicrocodeStorageTypeFlashGuid;
 
 typedef struct {
   //
@@ -58,7 +57,7 @@ typedef struct {
   // microcode patch address on flash. The address is placed in same
   // order as the microcode patches in MicrocodeAddrInMemory.
   //
-  UINT64  MicrocodeAddressInFlash[0];
+  UINT64    MicrocodeAddressInFlash[0];
 } EFI_MICROCODE_STORAGE_TYPE_FLASH_CONTEXT;
 
 #endif

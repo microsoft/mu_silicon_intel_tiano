@@ -17,10 +17,10 @@
 
 typedef union {
   struct {
-    UINT32  Low;
-    UINT32  High;
+    UINT32    Low;
+    UINT32    High;
   } Data32;
-  UINT64 Data;
+  UINT64    Data;
 } UINT64_STRUCT;
 
 /**
@@ -33,11 +33,11 @@ typedef union {
 **/
 UINT32
 GetGlobalVTdPlmrAlignment (
-  IN UINT8         HostAddressWidth,
-  IN UINTN         VtdUnitBaseAddress
+  IN UINT8  HostAddressWidth,
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT32        Data32;
+  UINT32  Data32;
 
   MmioWrite32 (VtdUnitBaseAddress + R_PMEN_LOW_BASE_REG, 0xFFFFFFFF);
   Data32 = MmioRead32 (VtdUnitBaseAddress + R_PMEN_LOW_BASE_REG);
@@ -56,11 +56,11 @@ GetGlobalVTdPlmrAlignment (
 **/
 UINT64_STRUCT
 GetGlobalVTdPhmrAlignment (
-  IN UINT8         HostAddressWidth,
-  IN UINTN         VtdUnitBaseAddress
+  IN UINT8  HostAddressWidth,
+  IN UINTN  VtdUnitBaseAddress
   )
 {
-  UINT64_STRUCT        Data64;
+  UINT64_STRUCT  Data64;
 
   MmioWrite64 (VtdUnitBaseAddress + R_PMEN_HIGH_BASE_REG, 0xFFFFFFFFFFFFFFFF);
   Data64.Data = MmioRead64 (VtdUnitBaseAddress + R_PMEN_HIGH_BASE_REG);
@@ -77,30 +77,30 @@ GetGlobalVTdPhmrAlignment (
 UINTN
 EFIAPI
 GetGlobalVtdPmrAlignment (
-)
+  )
 {
-  UINT32                            LowMemoryAlignment;
-  UINT64_STRUCT                     HighMemoryAlignment;
-  UINTN                             MemoryAlignment;
-  UINT32                            GlobalVTdBaseAddress;
-  EFI_STATUS                        Status;
-  UINTN                             VtdIndex;
-  EFI_ACPI_DMAR_STRUCTURE_HEADER    *DmarHeader;
-  EFI_ACPI_DMAR_DRHD_HEADER         *DrhdHeader;
-  EFI_ACPI_DMAR_HEADER              *AcpiDmarTable;
+  UINT32                          LowMemoryAlignment;
+  UINT64_STRUCT                   HighMemoryAlignment;
+  UINTN                           MemoryAlignment;
+  UINT32                          GlobalVTdBaseAddress;
+  EFI_STATUS                      Status;
+  UINTN                           VtdIndex;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
+  EFI_ACPI_DMAR_DRHD_HEADER       *DrhdHeader;
+  EFI_ACPI_DMAR_HEADER            *AcpiDmarTable;
 
   //
   // Initialization
   //
-  GlobalVTdBaseAddress = 0xFFFFFFFF;
-  LowMemoryAlignment = 0;
+  GlobalVTdBaseAddress     = 0xFFFFFFFF;
+  LowMemoryAlignment       = 0;
   HighMemoryAlignment.Data = 0;
-  MemoryAlignment = 0;
-  Status = EFI_UNSUPPORTED;
-  VtdIndex = 0;
-  DmarHeader = NULL;
-  DrhdHeader = NULL;
-  AcpiDmarTable = NULL;
+  MemoryAlignment          = 0;
+  Status                   = EFI_UNSUPPORTED;
+  VtdIndex                 = 0;
+  DmarHeader               = NULL;
+  DrhdHeader               = NULL;
+  AcpiDmarTable            = NULL;
 
   //
   // Fetch the PEI DMAR ACPI Table that created and installed in PlatformVTdInfoSamplePei.c
@@ -112,45 +112,42 @@ GetGlobalVtdPmrAlignment (
              (VOID **)&AcpiDmarTable
              );
   if (EFI_ERROR (Status)) {
-
     DEBUG ((DEBUG_ERROR, "PeiServicesLocatePpi gEdkiiVTdInfoPpiGuid failed\n"));
-    Status = EFI_NOT_FOUND;
+    Status          = EFI_NOT_FOUND;
     MemoryAlignment = SIZE_1MB;
-
   } else {
-
     //
     // Seatch the DRHD structure with INCLUDE_PCI_ALL flag Set -> Global VT-d
     //
     DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)(AcpiDmarTable + 1));
     while ((UINTN)DmarHeader < (UINTN)AcpiDmarTable + AcpiDmarTable->Header.Length) {
       switch (DmarHeader->Type) {
-      case EFI_ACPI_DMAR_TYPE_DRHD:
-        DrhdHeader = (EFI_ACPI_DMAR_DRHD_HEADER *) DmarHeader;
-        if ((DrhdHeader->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) == EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) {
-          GlobalVTdBaseAddress = (UINT32)DrhdHeader->RegisterBaseAddress;
-          DEBUG ((DEBUG_INFO,"  GlobalVTdBaseAddress: %x\n", GlobalVTdBaseAddress));
-        }
-        VtdIndex++;
+        case EFI_ACPI_DMAR_TYPE_DRHD:
+          DrhdHeader = (EFI_ACPI_DMAR_DRHD_HEADER *)DmarHeader;
+          if ((DrhdHeader->Flags & EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) == EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_PCI_ALL) {
+            GlobalVTdBaseAddress = (UINT32)DrhdHeader->RegisterBaseAddress;
+            DEBUG ((DEBUG_INFO, "  GlobalVTdBaseAddress: %x\n", GlobalVTdBaseAddress));
+          }
 
-        break;
+          VtdIndex++;
 
-      default:
-        break;
+          break;
+
+        default:
+          break;
       }
+
       DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)DmarHeader + DmarHeader->Length);
     }
 
     if (GlobalVTdBaseAddress == 0xFFFFFFFF) {
-
       DEBUG ((DEBUG_ERROR, "Error! Please set INCLUDE_PCI_ALL flag to your Global VT-d\n"));
       MemoryAlignment = SIZE_1MB;
-
     } else {
       //
       // Get the alignment information from VT-d register
       //
-      LowMemoryAlignment = GetGlobalVTdPlmrAlignment (AcpiDmarTable->HostAddressWidth, GlobalVTdBaseAddress);
+      LowMemoryAlignment  = GetGlobalVTdPlmrAlignment (AcpiDmarTable->HostAddressWidth, GlobalVTdBaseAddress);
       HighMemoryAlignment = GetGlobalVTdPhmrAlignment (AcpiDmarTable->HostAddressWidth, GlobalVTdBaseAddress);
       if (LowMemoryAlignment < HighMemoryAlignment.Data) {
         MemoryAlignment = (UINTN)HighMemoryAlignment.Data;

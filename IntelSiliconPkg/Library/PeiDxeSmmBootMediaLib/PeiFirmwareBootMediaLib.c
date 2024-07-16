@@ -28,20 +28,20 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 EFI_STATUS
 EFIAPI
 GetFirmwareBootMediaType (
-  OUT FW_BOOT_MEDIA_TYPE   *FwBootMediaType
+  OUT FW_BOOT_MEDIA_TYPE  *FwBootMediaType
   )
 {
-  FW_BOOT_MEDIA_HOB_DATA    *BootMediaHobData;
-  EFI_HOB_GUID_TYPE         *GuidHobPtr;
+  FW_BOOT_MEDIA_HOB_DATA  *BootMediaHobData;
+  EFI_HOB_GUID_TYPE       *GuidHobPtr;
 
-  GuidHobPtr  = GetFirstGuidHob (&gFirmwareBootMediaHobGuid);
+  GuidHobPtr = GetFirstGuidHob (&gFirmwareBootMediaHobGuid);
   if (GuidHobPtr == NULL) {
-      DEBUG ((DEBUG_ERROR, "The firmware boot media HOB does not exist!\n"));
-      ASSERT (GuidHobPtr != NULL);
-      return EFI_NOT_FOUND;
+    DEBUG ((DEBUG_ERROR, "The firmware boot media HOB does not exist!\n"));
+    ASSERT (GuidHobPtr != NULL);
+    return EFI_NOT_FOUND;
   }
 
-  BootMediaHobData = (FW_BOOT_MEDIA_HOB_DATA *) GET_GUID_HOB_DATA (GuidHobPtr);
+  BootMediaHobData = (FW_BOOT_MEDIA_HOB_DATA *)GET_GUID_HOB_DATA (GuidHobPtr);
   if (BootMediaHobData == NULL) {
     return EFI_NOT_FOUND;
   }
@@ -50,6 +50,7 @@ GetFirmwareBootMediaType (
     DEBUG ((DEBUG_ERROR, "The firmware boot media HOB specifies an invalid media type.\n"));
     return EFI_NOT_FOUND;
   }
+
   *FwBootMediaType = BootMediaHobData->BootMedia;
 
   return EFI_SUCCESS;
@@ -73,8 +74,8 @@ FirmwareBootMediaIsKnown (
   FW_BOOT_MEDIA_TYPE  BootMedia;
 
   BootMedia = FwBootMediaMax;
-  Status = GetFirmwareBootMediaType (&BootMedia);
-  if (EFI_ERROR (Status) || BootMedia == FwBootMediaMax) {
+  Status    = GetFirmwareBootMediaType (&BootMedia);
+  if (EFI_ERROR (Status) || (BootMedia == FwBootMediaMax)) {
     return FALSE;
   } else {
     return TRUE;

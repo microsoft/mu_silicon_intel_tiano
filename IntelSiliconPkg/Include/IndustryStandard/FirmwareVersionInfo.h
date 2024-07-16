@@ -17,8 +17,8 @@
 
 #include <IndustryStandard/SmBios.h>
 
-#define INTEL_FIRMWARE_VERSION_INFO_GROUP_NAME    "Firmware Version Info"
-#define INTEL_FVI_SMBIOS_TYPE                     0xDD
+#define INTEL_FIRMWARE_VERSION_INFO_GROUP_NAME  "Firmware Version Info"
+#define INTEL_FVI_SMBIOS_TYPE                   0xDD
 
 #pragma pack(1)
 
@@ -26,28 +26,28 @@
 /// Firmware Version Structure
 ///
 typedef struct {
-  UINT8                       MajorVersion;
-  UINT8                       MinorVersion;
-  UINT8                       Revision;
-  UINT16                      BuildNumber;
+  UINT8     MajorVersion;
+  UINT8     MinorVersion;
+  UINT8     Revision;
+  UINT16    BuildNumber;
 } INTEL_FIRMWARE_VERSION;
 
 ///
 /// Firmware Version Info (FVI) Structure
 ///
 typedef struct {
-  SMBIOS_TABLE_STRING         ComponentName;  ///< String Index of Component Name
-  SMBIOS_TABLE_STRING         VersionString;  ///< String Index of Version String
-  INTEL_FIRMWARE_VERSION      Version;        ///< Firmware version
+  SMBIOS_TABLE_STRING       ComponentName;    ///< String Index of Component Name
+  SMBIOS_TABLE_STRING       VersionString;    ///< String Index of Version String
+  INTEL_FIRMWARE_VERSION    Version;          ///< Firmware version
 } INTEL_FIRMWARE_VERSION_INFO;
 
 ///
 /// SMBIOS OEM Type Intel Firmware Version Info (FVI) Structure
 ///
 typedef struct {
-  SMBIOS_STRUCTURE            Header;         ///< SMBIOS structure header
-  UINT8                       Count;          ///< Number of FVI entries in this structure
-  INTEL_FIRMWARE_VERSION_INFO Fvi[1];         ///< FVI structure(s)
+  SMBIOS_STRUCTURE               Header;      ///< SMBIOS structure header
+  UINT8                          Count;       ///< Number of FVI entries in this structure
+  INTEL_FIRMWARE_VERSION_INFO    Fvi[1];      ///< FVI structure(s)
 } SMBIOS_TABLE_TYPE_OEM_INTEL_FVI;
 
 #pragma pack()

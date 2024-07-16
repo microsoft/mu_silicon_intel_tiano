@@ -24,12 +24,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 EFI_STATUS
 EFIAPI
 CreateConfigBlockTable (
-  IN     UINT16    TotalSize,
-  OUT    VOID      **ConfigBlockTableAddress
+  IN     UINT16  TotalSize,
+  OUT    VOID    **ConfigBlockTableAddress
   )
 {
-  CONFIG_BLOCK_TABLE_HEADER *ConfigBlkTblAddrPtr;
-  UINT32                    ConfigBlkTblHdrSize;
+  CONFIG_BLOCK_TABLE_HEADER  *ConfigBlkTblAddrPtr;
+  UINT32                     ConfigBlkTblHdrSize;
 
   ConfigBlkTblHdrSize = (UINT32)(sizeof (CONFIG_BLOCK_TABLE_HEADER));
 
@@ -41,9 +41,10 @@ CreateConfigBlockTable (
   if (ConfigBlkTblAddrPtr == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  ConfigBlkTblAddrPtr->NumberOfBlocks = 0;
+
+  ConfigBlkTblAddrPtr->NumberOfBlocks                  = 0;
   ConfigBlkTblAddrPtr->Header.GuidHob.Header.HobLength = TotalSize;
-  ConfigBlkTblAddrPtr->AvailableSize = TotalSize - ConfigBlkTblHdrSize;
+  ConfigBlkTblAddrPtr->AvailableSize                   = TotalSize - ConfigBlkTblHdrSize;
 
   *ConfigBlockTableAddress = (VOID *)ConfigBlkTblAddrPtr;
 
@@ -63,33 +64,34 @@ CreateConfigBlockTable (
 EFI_STATUS
 EFIAPI
 AddConfigBlock (
-  IN     VOID      *ConfigBlockTableAddress,
-  OUT    VOID      **ConfigBlockAddress
+  IN     VOID  *ConfigBlockTableAddress,
+  OUT    VOID  **ConfigBlockAddress
   )
 {
-  CONFIG_BLOCK              *TempConfigBlk;
-  CONFIG_BLOCK_TABLE_HEADER *ConfigBlkTblAddrPtr;
-  CONFIG_BLOCK              *ConfigBlkAddrPtr;
-  UINT16                    ConfigBlkSize;
+  CONFIG_BLOCK               *TempConfigBlk;
+  CONFIG_BLOCK_TABLE_HEADER  *ConfigBlkTblAddrPtr;
+  CONFIG_BLOCK               *ConfigBlkAddrPtr;
+  UINT16                     ConfigBlkSize;
 
   ConfigBlkTblAddrPtr = (CONFIG_BLOCK_TABLE_HEADER *)ConfigBlockTableAddress;
-  ConfigBlkAddrPtr = (CONFIG_BLOCK *)(*ConfigBlockAddress);
-  ConfigBlkSize = ConfigBlkAddrPtr->Header.GuidHob.Header.HobLength;
+  ConfigBlkAddrPtr    = (CONFIG_BLOCK *)(*ConfigBlockAddress);
+  ConfigBlkSize       = ConfigBlkAddrPtr->Header.GuidHob.Header.HobLength;
 
   if ((ConfigBlkSize % 4) != 0) {
     return EFI_INVALID_PARAMETER;
   }
+
   if (ConfigBlkTblAddrPtr->AvailableSize < ConfigBlkSize) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   TempConfigBlk = (CONFIG_BLOCK *)((UINTN)ConfigBlkTblAddrPtr + (UINTN)(ConfigBlkTblAddrPtr->Header.GuidHob.Header.HobLength - ConfigBlkTblAddrPtr->AvailableSize));
-  CopyMem (&TempConfigBlk->Header, &ConfigBlkAddrPtr->Header, sizeof(CONFIG_BLOCK_HEADER));
+  CopyMem (&TempConfigBlk->Header, &ConfigBlkAddrPtr->Header, sizeof (CONFIG_BLOCK_HEADER));
 
   ConfigBlkTblAddrPtr->NumberOfBlocks++;
   ConfigBlkTblAddrPtr->AvailableSize = ConfigBlkTblAddrPtr->AvailableSize - ConfigBlkSize;
 
-  *ConfigBlockAddress = (VOID *) TempConfigBlk;
+  *ConfigBlockAddress = (VOID *)TempConfigBlk;
   return EFI_SUCCESS;
 }
 
@@ -111,27 +113,29 @@ GetConfigBlock (
   OUT    VOID      **ConfigBlockAddress
   )
 {
-  UINT16                    OffsetIndex;
-  CONFIG_BLOCK              *TempConfigBlk;
-  CONFIG_BLOCK_TABLE_HEADER *ConfigBlkTblAddrPtr;
-  UINT32                    ConfigBlkTblHdrSize;
-  UINT32                    ConfigBlkOffset;
-  UINT16                    NumOfBlocks;
+  UINT16                     OffsetIndex;
+  CONFIG_BLOCK               *TempConfigBlk;
+  CONFIG_BLOCK_TABLE_HEADER  *ConfigBlkTblAddrPtr;
+  UINT32                     ConfigBlkTblHdrSize;
+  UINT32                     ConfigBlkOffset;
+  UINT16                     NumOfBlocks;
 
   ConfigBlkTblHdrSize = (UINT32)(sizeof (CONFIG_BLOCK_TABLE_HEADER));
   ConfigBlkTblAddrPtr = (CONFIG_BLOCK_TABLE_HEADER *)ConfigBlockTableAddress;
-  NumOfBlocks = ConfigBlkTblAddrPtr->NumberOfBlocks;
+  NumOfBlocks         = ConfigBlkTblAddrPtr->NumberOfBlocks;
 
   ConfigBlkOffset = 0;
   for (OffsetIndex = 0; OffsetIndex < NumOfBlocks; OffsetIndex++) {
     if ((ConfigBlkTblHdrSize + ConfigBlkOffset) > (ConfigBlkTblAddrPtr->Header.GuidHob.Header.HobLength)) {
       break;
     }
+
     TempConfigBlk = (CONFIG_BLOCK *)((UINTN)ConfigBlkTblAddrPtr + (UINTN)ConfigBlkTblHdrSize + (UINTN)ConfigBlkOffset);
     if (CompareGuid (&(TempConfigBlk->Header.GuidHob.Name), ConfigBlockGuid)) {
       *ConfigBlockAddress = (VOID *)TempConfigBlk;
       return EFI_SUCCESS;
     }
+
     ConfigBlkOffset = ConfigBlkOffset + TempConfigBlk->Header.GuidHob.Header.HobLength;
   }
 

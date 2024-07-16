@@ -17,13 +17,13 @@
       0x3d17e448, 0x466, 0x4e20, { 0x99, 0x9f, 0xb2, 0xe1, 0x34, 0x88, 0xee, 0x22 } \
     }
 
-typedef struct _EDKII_PLATFORM_VTD_POLICY_PROTOCOL  EDKII_PLATFORM_VTD_POLICY_PROTOCOL;
+typedef struct _EDKII_PLATFORM_VTD_POLICY_PROTOCOL EDKII_PLATFORM_VTD_POLICY_PROTOCOL;
 
-#define EDKII_PLATFORM_VTD_POLICY_PROTOCOL_REVISION 0x00010000
+#define EDKII_PLATFORM_VTD_POLICY_PROTOCOL_REVISION  0x00010000
 
 typedef struct {
-  UINT16                                   Segment;
-  VTD_SOURCE_ID                            SourceId;
+  UINT16           Segment;
+  VTD_SOURCE_ID    SourceId;
 } EDKII_PLATFORM_VTD_DEVICE_INFO;
 
 /**
@@ -55,7 +55,7 @@ typedef struct {
 **/
 typedef
 EFI_STATUS
-(EFIAPI *EDKII_PLATFORM_VTD_POLICY_GET_DEVICE_ID) (
+(EFIAPI *EDKII_PLATFORM_VTD_POLICY_GET_DEVICE_ID)(
   IN  EDKII_PLATFORM_VTD_POLICY_PROTOCOL       *This,
   IN  EFI_HANDLE                               DeviceHandle,
   OUT EDKII_PLATFORM_VTD_DEVICE_INFO           *DeviceInfo
@@ -67,46 +67,45 @@ typedef struct {
   //
   // The segment number of the device
   //
-  UINT16                                          SegmentNumber;
+  UINT16                                         SegmentNumber;
   //
   // Device scope definition in DMAR table
   //
-  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER     DeviceScope;
+  EFI_ACPI_DMAR_DEVICE_SCOPE_STRUCTURE_HEADER    DeviceScope;
   //
   // Pci path definition in DMAR table
   //
-//EFI_ACPI_DMAR_PCI_PATH                          PciPath[];
+  // EFI_ACPI_DMAR_PCI_PATH                          PciPath[];
 } EDKII_PLATFORM_VTD_DEVICE_SCOPE;
 
 typedef struct {
-  UINT16                                   VendorId;
-  UINT16                                   DeviceId;
-  UINT8                                    RevisionId;
-  UINT16                                   SubsystemVendorId;
-  UINT16                                   SubsystemDeviceId;
+  UINT16    VendorId;
+  UINT16    DeviceId;
+  UINT8     RevisionId;
+  UINT16    SubsystemVendorId;
+  UINT16    SubsystemDeviceId;
 } EDKII_PLATFORM_VTD_PCI_DEVICE_ID;
 
-#define EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_END           0
-#define EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_DEVICE_SCOPE  1
-#define EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_PCI_DEVICE_ID 2
+#define EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_END            0
+#define EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_DEVICE_SCOPE   1
+#define EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_PCI_DEVICE_ID  2
 
 typedef struct {
   //
   // EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO_TYPE_xxx defined above.
   //
-  UINT8             Type;
+  UINT8    Type;
   //
   // The length of the full data structure including EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO and Data.
   //
-  UINT8             Length;
+  UINT8    Length;
   //
   // Data can be EDKII_PLATFORM_VTD_DEVICE_SCOPE or EDKII_PLATFORM_VTD_PCI_DEVICE_ID
   //
-//UINT8             Data[Length - sizeof(EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO)];
+  // UINT8             Data[Length - sizeof(EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO)];
 } EDKII_PLATFORM_VTD_EXCEPTION_DEVICE_INFO;
 
 #pragma pack()
-
 
 /**
   Get a list of the exception devices.
@@ -125,19 +124,18 @@ typedef struct {
 **/
 typedef
 EFI_STATUS
-(EFIAPI *EDKII_PLATFORM_VTD_POLICY_GET_EXCEPTION_DEVICE_LIST) (
+(EFIAPI *EDKII_PLATFORM_VTD_POLICY_GET_EXCEPTION_DEVICE_LIST)(
   IN  EDKII_PLATFORM_VTD_POLICY_PROTOCOL       *This,
   OUT UINTN                                    *DeviceInfoCount,
   OUT VOID                                     **DeviceInfo
   );
 
 struct _EDKII_PLATFORM_VTD_POLICY_PROTOCOL {
-  UINT64                                               Revision;
-  EDKII_PLATFORM_VTD_POLICY_GET_DEVICE_ID              GetDeviceId;
-  EDKII_PLATFORM_VTD_POLICY_GET_EXCEPTION_DEVICE_LIST  GetExceptionDeviceList;
+  UINT64                                                 Revision;
+  EDKII_PLATFORM_VTD_POLICY_GET_DEVICE_ID                GetDeviceId;
+  EDKII_PLATFORM_VTD_POLICY_GET_EXCEPTION_DEVICE_LIST    GetExceptionDeviceList;
 };
 
-extern EFI_GUID gEdkiiPlatformVTdPolicyProtocolGuid;
+extern EFI_GUID  gEdkiiPlatformVTdPolicyProtocolGuid;
 
 #endif
-
