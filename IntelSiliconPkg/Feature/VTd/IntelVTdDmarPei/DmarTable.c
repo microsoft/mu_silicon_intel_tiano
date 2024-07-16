@@ -314,7 +314,7 @@ ParseDmarAcpiTableDrhd (
   )
 {
   EFI_ACPI_DMAR_STRUCTURE_HEADER  *DmarHeader;
-  UINTN                           VtdIndex;
+  UINT32                          VtdIndex;
 
   VtdIndex   = 0;
   DmarHeader = (EFI_ACPI_DMAR_STRUCTURE_HEADER *)((UINTN)(AcpiDmarTable + 1));

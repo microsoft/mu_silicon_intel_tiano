@@ -375,7 +375,7 @@ PeiIoMmuMap (
       );
   }
 
-  VTdLogAddEvent (VTDLOG_PEI_PPI_MAP, (UINT64)HostAddress, Length);
+  VTdLogAddEvent (VTDLOG_PEI_PPI_MAP, (UINT64)(UINTN)HostAddress, Length);
   return EFI_SUCCESS;
 }
 
@@ -503,7 +503,7 @@ PeiIoMmuAllocateBuffer (
 
   DEBUG ((DEBUG_INFO, "PeiIoMmuAllocateBuffer - allocate - %x\n", *HostAddress));
 
-  VTdLogAddEvent (VTDLOG_PEI_PPI_ALLOC_BUFFER, (UINT64)(*HostAddress), Length);
+  VTdLogAddEvent (VTDLOG_PEI_PPI_ALLOC_BUFFER, (UINT64)(UINTN)(*HostAddress), Length);
 
   return EFI_SUCCESS;
 }
