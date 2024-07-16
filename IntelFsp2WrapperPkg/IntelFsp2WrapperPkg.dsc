@@ -56,6 +56,8 @@
   FspWrapperHobProcessLib|IntelFsp2WrapperPkg/Library/PeiFspWrapperHobProcessLibSample/PeiFspWrapperHobProcessLibSample.inf
 
   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf   # MU_CHANGE: /GS and -fstack-protector support
+  Tpm2DebugLib|SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf ## MU_CHANGE
 
 [LibraryClasses.common.PEIM,LibraryClasses.common.PEI_CORE]
   PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf

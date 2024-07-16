@@ -46,6 +46,7 @@
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   VariableFlashInfoLib|MdeModulePkg/Library/BaseVariableFlashInfoLib/BaseVariableFlashInfoLib.inf
   IntelVTdPeiDxeLib|IntelSiliconPkg/Library/IntelVTdPeiDxeLib/IntelVTdPeiDxeLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [LibraryClasses.common.PEIM]
   PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
@@ -128,6 +129,19 @@
   IntelSiliconPkg/Library/ReportCpuHobLib/ReportCpuHobLib.inf
   IntelSiliconPkg/Library/SpiFlashCommonLibNull/SpiFlashCommonLibNull.inf
   IntelSiliconPkg/Library/SmmSpiFlashCommonLib/SmmSpiFlashCommonLib.inf
+
+  # MU_CHANGE [BEGIN]
+  IntelSiliconPkg/Feature/VTd/IntelVTdCoreDxe/IntelVTdCoreDxe.inf
+  IntelSiliconPkg/Feature/VTd/IntelVTdCorePei/IntelVTdCorePei.inf
+  IntelSiliconPkg/Library/IntelVTdPeiDxeLib/IntelVTdPeiDxeLib.inf
+  IntelSiliconPkg/Library/IntelVTdPeiDxeLib/IntelVTdPeiDxeLibExt.inf
+
+  IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLib/PeiSmmAccessLib.inf
+  IntelSiliconPkg/Feature/SmmAccess/Library/PeiSmmAccessLibSmramc/PeiSmmAccessLib.inf
+  IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
+  IntelSiliconPkg/Feature/SmmControl/Library/PeiSmmControlLib/PeiSmmControlLib.inf
+  IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
+  # MU_CHANGE [END]
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
