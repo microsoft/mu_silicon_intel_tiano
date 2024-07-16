@@ -55,6 +55,12 @@
   #
   SpiFlashCommonLib|Include/Library/SpiFlashCommonLib.h
 
+  # MU_CHANGE [BEGIN]
+  ## @libraryclass Provides services to perform IntelVTd services
+  #
+  IntelVTdPeiDxeLib|Include/Library/IntelVTdPeiDxeLib.h
+  # MU_CHANGE [END]
+
 [Guids]
   ## GUID for Package token space
   # {A9F8D54E-1107-4F0A-ADD0-4587E7A4A735}
