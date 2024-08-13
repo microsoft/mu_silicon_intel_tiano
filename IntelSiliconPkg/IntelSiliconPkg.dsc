@@ -142,6 +142,7 @@
   IntelSiliconPkg/Feature/SmmAccess/SmmAccessDxe/SmmAccess.inf
   IntelSiliconPkg/Feature/SmmControl/Library/PeiSmmControlLib/PeiSmmControlLib.inf
   IntelSiliconPkg/Library/PeiGetVtdPmrAlignmentLib/PeiGetVtdPmrAlignmentLib.inf
+  IntelSiliconPkg/Library/BaseFitQueryLib/BaseFitQueryLib.inf
   # MU_CHANGE [END]
 
 [BuildOptions]
