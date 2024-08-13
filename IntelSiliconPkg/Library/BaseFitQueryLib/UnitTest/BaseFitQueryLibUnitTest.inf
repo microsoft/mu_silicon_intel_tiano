@@ -1,0 +1,38 @@
+## @file
+# UnitTest for...
+# Library interface to retrieve structured records from Intel's FIT
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = BaseFitQueryLibUnitTest
+  FILE_GUID                      = 2AD6C439-95ED-48CF-B642-31C27A6CC583
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+
+[Sources]
+  BaseFitQueryLibUnitTest.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+  IntelSiliconPkg/IntelSiliconPkg.dec
+
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UnitTestLib
+  FitQueryLib
+
+
+[BuildOptions]
+  MSFT:NOOPT_*_*_CC_FLAGS   = -DINTERNAL_UNIT_TEST      # cspell:disable-line
+  GCC:NOOPT_*_*_CC_FLAGS    = -DINTERNAL_UNIT_TEST      # cspell:disable-line
