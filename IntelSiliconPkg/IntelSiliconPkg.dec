@@ -58,6 +58,12 @@
   ## @libraryclass Provides Intel VT-d services
   #
   IntelVTdPeiDxeLib|Include/Library/IntelVTdPeiDxeLib.h
+  
+  # MU_CHANGE [BEGIN]
+  ##  @libraryclass  Library interface to retrieve structured records from Intel's FIT
+  #
+  FitQueryLib|Include/Library/FitQueryLib.h
+  # MU_CHANGE [END]
 
 [Guids]
   ## GUID for Package token space
