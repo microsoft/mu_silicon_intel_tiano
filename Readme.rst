@@ -18,80 +18,28 @@ Branch Status - release/202405
   In Development
 
 :Entered Development:
-  June 2024
+  2023/11/24 (Date Edk2 started accepting changes which were not in a previous release)
 
 :Anticipated Stabilization:
-  November 2024
+  Nov 2024
 
 Branch Changes - release/202405
 ===============================
 
+202405 is a larger deviation than previous releases. As part of upstreaming changes to EDK2, the commits were reviewed, squashed, and some were dropped.
+Due to these changes, there may be more work required to bring an existing platform up to 202405 compatibility. 
+
 Breaking Changes-dev
 --------------------
-
 - Nothing
 
 Main Changes-dev
 ----------------
-
-- Added a new entry in the FIT table (FBM entry).  This replaces FIT_TABLE_TYPE_BIOS_DATA_AREA and might be a breaking change.
-- Added new ARCH UPD support in Fsp T.
-
-Bug Fixes-dev
--------------
-
-- Removed unnecessary asserts in VTd and just return EFI_NOT_READY.
-- Added Python 3.12 for GenCfgOpt.py and PatchFv.py
-
-2405_RefBoot Changes
---------------------
-
 - Nothing
 
-2405_CIBuild Changes
---------------------
-
-- Nothing
-
-2405_Rebase Changes
--------------------
-
-| Starting commit: 92c16fdf76
-| Destination commit: TBA
-
-
-Repo Maintenance
-================
-
-Upstream Sync Details
----------------------
-
-- edk2 - 3e722403cd (edk2-stable202405)
-- edk2_platforms - a912d9fcf7 ("edk2-platform/maintainer: Add entries for AMD packages", 2024-05-23)
-
-Instructions
-------------
-
-This repo is a composite repo of packages from 'edk2' and packages from 'edk2-platforms'. To maintain it simply, we have
-established an 'upstream' branch and an 'upstream-edk2-platforms' branch to track the current state of things. To take
-a new integration, follow the steps below:
-
-1) Update 'edk2' commits
-    a. Add 'edk2' as a remote, if it doesn't already exist
-    b. 'git fetch edk2'
-    c. On 'upstream' branch, 'git merge <target-commit, ideally a stable tag>'
-2) Update 'upstream-edk2-platforms'
-    a. In edk2-platforms repo... 'git format-patch <last_sync_commit>..<new_sync_commit> -- Silicon/Intel/IntelSiliconPkg
-        - For <sync_commit>, reference `Upstream Sync Details`_
-        - Note, in this case, you may not have a tag to work with, so try to perform this immediately after upstream stabilization
-    b. On 'upstream-edk2-platforms' branch in this repo... 'git am -p 3 ../../edk2-platforms/\*.patch'
-        - '-p 3' will drop 3 path elements, including 'a' or 'b' off the diff path
-    c. On 'upstream' branch in this repo, 'git merge --allow-unrelated-histories 'upstream-edk2-platforms''
-
-Make sure to update the `Upstream Sync Details`_ once done.
-
-To perform an integration, simply set your XXXX_Upstream tag to the top of 'upstream' and rebase as normal. Make sure
-to push 'upstream' and 'upstream-edk2-platforms' to the server after integration, along with new release branch.
+Platform Integration Reference
+------------------------------
+Reference platforms which consume release/202405 are available in [mu_tiano_platforms](https://github.com/microsoft/mu_tiano_platforms).
 
 Code of Conduct
 ===============
@@ -107,12 +55,13 @@ Contributions
 Contributions are always welcome and encouraged!
 Please open any issues in the Project Mu GitHub tracker and read https://microsoft.github.io/mu/How/contributing/
 
+For documentation:
 
 Copyright & License
 ===================
 
-Copyright (c) Microsoft Corporation.
-SPDX-License-Identifier: BSD-2-Clause-Patent
+| Copyright (c) Microsoft Corporation
+| SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
 ============================
@@ -175,7 +124,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=53&&branchName=release%2F202405
+.. _Windows_VS2022: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=53&&branchName=release%2F202405
 .. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Silicon%20Intel%20Tiano%20CI%20VS2019?branchName=release%2F202405
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/53.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
