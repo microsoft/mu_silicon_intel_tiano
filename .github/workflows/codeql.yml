@@ -29,9 +29,6 @@ on:
     branches:
       - main
       - release/*
-    # Temporarily disable CodeQL on 2405 until CodeQL changes are added
-    branches-ignore:
-      - release/202405
   pull_request:
     branches:
       - main
