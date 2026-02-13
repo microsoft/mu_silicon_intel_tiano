@@ -11,6 +11,7 @@ Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverag
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
+
 Branch Status - release/202511
 ==============================
 
@@ -18,23 +19,16 @@ Branch Status - release/202511
   In Development
 
 :Entered Development:
-  2026/11/22 (Date Edk2 started accepting changes which were not in a previous release)
+  2025/11/22 (Date Edk2 started accepting changes which were not in a previous release)
 
 :Anticipated Stabilization:
-  May 2026
+  no stabilization
 
 Branch Changes - release/202511
 ===============================
 
-- IntelFsp2Pkg and IntelFsp2WrapperPkg have moved to mu_basecore
-- ShadowMicrocodePei.h has been dropped. The associated code had been removed before, and it was a hanging header file.
-
-
-MU Overrides on EDK2
---------------------
-
-- At the end of 202502, mu_silicon_intel_tiano contained 38 commits on top of edk2-stable202502.
-- At the start of 202511, mu_silicon_intel_tiano contains 9 commits on top of edk2-stable202511.
+mu_silicon_intel_tiano repository is deprecated. The functionality in this repository has been merged into mu_basecore, and into mu_common_intel_min_platform. 
+Consuming projects should be updated to no longer rely on this repo.
 
 Repo Maintenance
 ================
@@ -42,8 +36,6 @@ Repo Maintenance
 Upstream Sync Details
 ---------------------
 
-- edk2 - 46548b1ada (edk2-stable202511)
-- edk2_platforms - 288c97a ("IntelSiliconPkg: Add INDEX_TPM_ADDRESS to FIT Record A", 2025-01-21)
 
 Instructions
 ------------

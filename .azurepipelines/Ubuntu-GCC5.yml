@@ -19,18 +19,15 @@ variables:
 - group: architectures-arm64-x86-64
 - group: tool-chain-ubuntu-gcc
 
-extends:
-  template: MuDevOpsWrapper.yml
-  parameters:
-    do_ci_build: true
-    do_ci_setup: true
-    do_non_ci_build: false
-    do_non_ci_setup: true
-    do_pr_eval: true
-    container_build: true
-    os_type: Linux
-    build_matrix:
-      TARGET_INTEL_SILICON:
-        Pkgs: 'IntelSiliconPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
+
+stages:
+- stage: UbuntuGccValidation
+  displayName: Ubuntu Gcc Pipeline Validation
+  jobs:
+  - job: ValidatePipeline
+    displayName: Validate Pipeline Entry
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - script: echo Repo is depreciated, functionality was moved into mu_basecore
+      displayName: Repo deprecation notice
